@@ -1,0 +1,36 @@
+# Heavy build dirs
+target/
+node_modules/
+.cargo/
+
+# Proving artifacts (large binaries)
+circuits/**/artifacts/*.zkey
+circuits/**/*.wasm
+circuits/**/*.r1cs
+circuits/**/*.ptau
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Environment
+.env
+.env.local
+
+# Docs
+amoeba-architecture.md
+amoeba-impl-plan.md
+amoeba-zk.md
+stellar-hacks-zk.md
+reference/
+README.md
+
+# Agent tooling
+.agents/
+.codex/
+.cursor/
+.superstack/
+
+# OS
+.DS_Store
