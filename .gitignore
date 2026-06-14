@@ -7,3 +7,20 @@ reference/
 .codex/
 .cursor/
 .superstack/
+
+# Build artifacts
+target/
+node_modules/
+.env
+
+# Proving artifacts (too large for git)
+circuits/**/artifacts/*.zkey
+circuits/**/*.wasm
+circuits/**/*.r1cs
+circuits/**/*.sym
+circuits/**/*.ptau
+
+# OS
+.DS_Store
+*.swp
+*.swo
