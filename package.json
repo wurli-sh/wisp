@@ -1,0 +1,13 @@
+{
+  "name": "amoeba",
+  "private": true,
+  "scripts": {
+    "compile:circuit": "cd circuits/circom && ./scripts/compile.sh",
+    "setup:circuit": "cd circuits/circom && ./scripts/setup.sh",
+    "prove": "cd circuits/circom && ./scripts/prove.sh",
+    "verify": "cd circuits/circom && ./scripts/verify-local.sh"
+  },
+  "devDependencies": {
+    "snarkjs": "^0.7.0"
+  }
+}
