@@ -3,12 +3,13 @@ set -euo pipefail
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ARTIFACTS="$DIR/artifacts"
-CEREMONY_DIR="$ARTIFACTS/ceremony"
+# shellcheck source=ceremony-paths.sh
+source "$DIR/scripts/ceremony-paths.sh"
 POWER="${POWER:-17}"
 PTAU_FINAL="${PTAU_FINAL:-$ARTIFACTS/pot${POWER}_final.ptau}"
 R1CS="${R1CS:-$ARTIFACTS/compliance_corridor.r1cs}"
 INITIAL_ZKEY="$CEREMONY_DIR/compliance_corridor_0000.zkey"
-TRANSCRIPT="$CEREMONY_DIR/transcript.jsonl"
+SCRIPT_DIR="$DIR/scripts"
 
 mkdir -p "$CEREMONY_DIR"
 
@@ -21,6 +22,16 @@ fi
 if [[ ! -f "$PTAU_FINAL" ]]; then
   echo "ERROR: missing PTAU: $PTAU_FINAL"
   echo "Run the Powers of Tau flow first, or set PTAU_FINAL=/path/to/pot_final.ptau"
+  exit 1
+fi
+
+if [[ -f "$TRANSCRIPT" ]]; then
+  echo "ERROR: ceremony transcript already exists: $TRANSCRIPT"
+  exit 1
+fi
+
+if [[ -f "$CEREMONY_MANIFEST" ]]; then
+  echo "ERROR: ceremony manifest already exists: $CEREMONY_MANIFEST"
   exit 1
 fi
 
@@ -43,3 +54,5 @@ EOF
 
 echo "Initial zkey: $INITIAL_ZKEY"
 echo "Transcript:   $TRANSCRIPT"
+echo "Ceremony dir: $CEREMONY_DIR"
+echo "Next: $SCRIPT_DIR/ceremony-contribute.sh $INITIAL_ZKEY $CEREMONY_DIR/compliance_corridor_0001.zkey <contributor>"

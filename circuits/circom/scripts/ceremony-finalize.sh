@@ -3,12 +3,12 @@ set -euo pipefail
 
 DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ARTIFACTS="$DIR/artifacts"
-CEREMONY_DIR="$ARTIFACTS/ceremony"
+# shellcheck source=ceremony-paths.sh
+source "$DIR/scripts/ceremony-paths.sh"
 POWER="${POWER:-17}"
 PTAU_FINAL="${PTAU_FINAL:-$ARTIFACTS/pot${POWER}_final.ptau}"
 R1CS="${R1CS:-$ARTIFACTS/compliance_corridor.r1cs}"
-TRANSCRIPT="$CEREMONY_DIR/transcript.jsonl"
-FINAL_ZKEY="$ARTIFACTS/compliance_corridor_final.zkey"
+SCRIPT_DIR="$DIR/scripts"
 
 usage() {
   echo "Usage: $0 <last-contribution.zkey>"
@@ -24,6 +24,16 @@ BEACON_ZKEY="$CEREMONY_DIR/compliance_corridor_beacon.zkey"
 BEACON_HEX="${CEREMONY_BEACON_HEX:-}"
 BEACON_ROUNDS="${CEREMONY_BEACON_ROUNDS:-10}"
 
+if [[ ! -f "$TRANSCRIPT" ]]; then
+  echo "ERROR: missing transcript: $TRANSCRIPT"
+  exit 1
+fi
+
+if [[ -f "$CEREMONY_MANIFEST" ]]; then
+  echo "ERROR: manifest already exists: $CEREMONY_MANIFEST"
+  exit 1
+fi
+
 if [[ ! -f "$INPUT_ZKEY" ]]; then
   echo "ERROR: missing input zkey: $INPUT_ZKEY"
   exit 1
@@ -34,6 +44,10 @@ if [[ -z "$BEACON_HEX" ]]; then
   echo "Example sources: future block hash, drand randomness, or another precommitted public randomness source."
   exit 1
 fi
+
+python3 "$SCRIPT_DIR/ceremony_lib.py" validate-finalize-pre \
+  --transcript "$TRANSCRIPT" \
+  --input-zkey "$INPUT_ZKEY"
 
 sha256_file() {
   sha256sum "$1" | awk '{print $1}'
@@ -50,13 +64,30 @@ echo "=== Verifying beaconed zkey ==="
 snarkjs zkey verify "$R1CS" "$PTAU_FINAL" "$BEACON_ZKEY"
 
 cp "$BEACON_ZKEY" "$FINAL_ZKEY"
-snarkjs zkey export verificationkey "$FINAL_ZKEY" "$ARTIFACTS/verification_key.json"
+snarkjs zkey export verificationkey "$FINAL_ZKEY" "$VK_JSON"
+
+FINAL_STEP="$(python3 - <<PY
+import json
+from pathlib import Path
+rows = [json.loads(line) for line in Path("$TRANSCRIPT").read_text().splitlines() if line.strip()]
+print(rows[-1]["step"] + 1)
+PY
+)"
 
 cat >> "$TRANSCRIPT" <<EOF
-{"kind":"finalize","input":"$(basename "$INPUT_ZKEY")","input_sha256":"$(sha256_file "$INPUT_ZKEY")","beacon_hex":"$BEACON_HEX","beacon_rounds":$BEACON_ROUNDS,"final_zkey":"$(basename "$FINAL_ZKEY")","final_zkey_sha256":"$(sha256_file "$FINAL_ZKEY")","verification_key":"verification_key.json","verification_key_sha256":"$(sha256_file "$ARTIFACTS/verification_key.json")","created_at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
+{"step":$FINAL_STEP,"kind":"finalize","input":"$(basename "$INPUT_ZKEY")","input_sha256":"$(sha256_file "$INPUT_ZKEY")","beacon_hex":"$BEACON_HEX","beacon_rounds":$BEACON_ROUNDS,"final_zkey":"$FINAL_ZKEY_BASENAME","final_zkey_sha256":"$(sha256_file "$FINAL_ZKEY")","verification_key":"$VK_JSON_BASENAME","verification_key_sha256":"$(sha256_file "$VK_JSON")","created_at":"$(date -u +%Y-%m-%dT%H:%M:%SZ)"}
 EOF
 
+python3 "$SCRIPT_DIR/ceremony_lib.py" write-finalize-manifest \
+  --ceremony-dir "$CEREMONY_DIR" \
+  --artifacts-dir "$ARTIFACTS" \
+  --transcript "$TRANSCRIPT" \
+  --r1cs "$R1CS" \
+  --ptau "$PTAU_FINAL"
+
 echo "Final zkey:       $FINAL_ZKEY"
-echo "Verification key: $ARTIFACTS/verification_key.json"
+echo "Verification key: $VK_JSON"
+echo "Manifest:         $CEREMONY_MANIFEST"
 echo "Transcript:       $TRANSCRIPT"
-echo "Next: ./circuits/circom/scripts/export-vk.sh"
+echo "Ceremony is NOT publishable until verifier sync completes."
+echo "Next: $SCRIPT_DIR/sync-verifier-from-ceremony.sh"
