@@ -24,7 +24,7 @@ async fn main() {
     let app = routes::router(cfg.clone(), state);
 
     let addr: SocketAddr = cfg.listen_addr.parse().expect("invalid ISSUER_LISTEN_ADDR");
-    tracing::info!("issuer-service listening on {addr}");
     let listener = tokio::net::TcpListener::bind(addr).await.expect("bind");
+    tracing::info!("issuer-service listening on {}", listener.local_addr().expect("local_addr"));
     axum::serve(listener, app).await.expect("serve");
 }

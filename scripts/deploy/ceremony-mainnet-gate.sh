@@ -11,14 +11,14 @@ VK_HASH_TXT="${CEREMONY_VK_HASH_TXT:-$CEREMONY_DIR/vk_hash.txt}"
 SCRIPT_DIR="$ROOT/circuits/circom/scripts"
 
 if [[ "${AMOEBA_MAINNET_APPROVED:-}" != "1" ]]; then
-  echo "ERROR: mainnet deploy requires AMOEBA_MAINNET_APPROVED=1 after completing MAINNET_BLOCKERS.md."
+  echo "ERROR: mainnet deploy requires AMOEBA_MAINNET_APPROVED=1 after clearing the repo's mainnet blocker checklist and ceremony evidence gate."
   exit 1
 fi
 
 for required in "$TRANSCRIPT" "$CEREMONY_MANIFEST" "$VK_JSON" "$VK_HASH_TXT" "$CEREMONY_FINAL_ZKEY"; do
   if [[ ! -f "$required" ]]; then
     echo "ERROR: missing ceremony evidence: $required"
-    echo "Complete CEREMONY_RUNBOOK.md before mainnet."
+    echo "Complete the ceremony flow and publish the evidence bundle under circuits/circom/artifacts/ceremony/ before mainnet."
     exit 1
   fi
 done
