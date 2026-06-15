@@ -32,7 +32,8 @@ echo "5. Local snarkjs verify"
 
 echo ""
 echo "6. Export VK + regenerate verifier"
-"$CIRCOM/scripts/export-vk.sh"
+CEREMONY_FINAL_ZKEY="$CIRCOM/artifacts/compliance_corridor_final.zkey" \
+  "$CIRCOM/scripts/export-vk.sh"
 
 echo ""
 echo "7. Circuit fixture checks"
