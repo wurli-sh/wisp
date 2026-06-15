@@ -212,3 +212,33 @@ await client.audit(proven.nullifier, senderPublicKey);
 ```
 
 Testnet fixtures use `AMOEBA_FIXTURE_PROFILE=testnet` and `bindings/fixtures/demo-transfer-testnet.json` (StrKeys + hex payloads).
+
+## Phase 4 — Frontend
+
+Vite + React demo UI over `@amoeba/sdk`: landing (`/`), interactive console (`/demo`), compliance hub (`/compliance`).
+
+### Local command sequence
+
+```bash
+# Gate: copy circuit artifacts, build SDK + frontend
+./scripts/dev/demo-phase4.sh
+
+# Dev server (proxies /issuer → localhost:3000)
+pnpm dev:frontend
+```
+
+Set contract IDs in `frontend/.env` (see `frontend/.env.example`). Browser proving serves wasm/zkey from `frontend/public/circuits/` (copied by `demo-phase4.sh`).
+
+### Routes
+
+| Route | Purpose |
+|-------|---------|
+| `/` | Marketing landing (zksettle copy, twiin layout) |
+| `/demo` | 11-step prove → settle → audit console |
+| `/compliance` | Tabs: Proofs · Audit · Corridors |
+
+### E2E
+
+```bash
+cd frontend && pnpm build && pnpm test:e2e
+```

@@ -1,4 +1,5 @@
 packages:
+  - "frontend"
   - "packages/amoeba-js"
   - "sdk"
   - "bindings"

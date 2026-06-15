@@ -21,14 +21,14 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 
 ## Architecture
 
-- **circuits/circom/** — BN254 Groth16 circuit with Poseidon2, 7 compliance checks, 17 public inputs
+- **circuits/circom/** — BN254 Groth16 circuit with Poseidon2, 8 compliance checks, 17 public inputs
 - **backend/programs/** — Soroban smart contracts (verifier, compliance, mock-sac)
 - **backend/crates/** — Rust crates for off-chain crypto, types, and issuer service
 - **bindings/** — Canonical ABI, generated contract clients, shared JSON fixtures
 - **packages/amoeba-js/** — Shared JS crypto (`@amoeba/js`: Poseidon2, Merkle, field ops, nullifier, witness)
 - **sdk/** — TypeScript SDK (`@amoeba/sdk`) for proving, settling, and auditing compliant transfers
 - **scripts/** — deploy, dev, fixture, and ceremony tooling
-- **frontend/** — UI (scaffold)
+- **frontend/** — Vite demo UI (`@amoeba/web`: landing, `/demo`, `/compliance`)
 
 ## Key Commands
 
@@ -51,6 +51,8 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 | `./scripts/dev/demo-e2e.sh` | Full local E2E pipeline |
 | `./scripts/dev/demo-phase2.sh` | Full Phase 2 pipeline (bindings + issuer) |
 | `./scripts/dev/demo-phase3.sh` | Full Phase 3 local demo (blockers + SDK prove) |
+| `./scripts/dev/demo-phase4.sh` | Phase 4 gate: circuit artifacts + frontend build |
+| `pnpm dev:frontend` | Amoeba demo UI dev server |
 | `./scripts/dev/verify-phase3-testnet.sh` | Full Phase 3 testnet gate check |
 | `./scripts/dev/verify-testnet.sh` | Phase 0 gate check |
 | `./scripts/dev/verify-compliance-testnet.sh` | Phase 1 testnet gate |

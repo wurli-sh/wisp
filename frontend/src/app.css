@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Onest:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #00008A;
+  --color-primary-foreground: #FFFFFF;
+  --color-primary-bright: #4D4DFF;
+  --color-primary-soft: #E8E8FF;
+  --color-primary-dark: #000066;
+
+  --color-charcoal: #1A1A1A;
+  --color-charcoal-soft: #2C2C2C;
+  --color-background: #FFFFFF;
+  --color-foreground: #0A0A2E;
+  --color-card: #F7F7FF;
+  --color-card-foreground: #0A0A2E;
+  --color-border: #D4D4F0;
+  --color-border-strong: #B8B8E8;
+  --color-muted: #E8E8FF;
+  --color-muted-foreground: #4A4A7A;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-success: #059669;
+  --color-success-soft: #d1fae5;
+  --color-warning: #d97706;
+  --color-ring: #4D4DFF;
+  --radius: 0;
+
+  --font-sans: 'Onest', system-ui, -apple-system, sans-serif;
+
+  --shadow-soft:
+    inset 0 1px 0 oklch(1 0 0 / 0.9), inset 0 -1px 0 oklch(0 0 0 / 0.04),
+    inset 0 0 0 1px oklch(0 0 0 / 0.03), 0 1px 2px oklch(0 0 0 / 0.05);
+
+  --shadow-card:
+    inset 0 1px 0 oklch(1 0 0 / 0.95), inset 0 -1px 0 oklch(0 0 0 / 0.06),
+    inset 0 0 0 1px oklch(0 0 0 / 0.04), 0 1px 2px oklch(0 0 0 / 0.06),
+    0 4px 8px oklch(0 0 0 / 0.04);
+
+  --shadow-elev:
+    inset 0 1px 0 oklch(1 0 0 / 0.12), inset 0 -1px 0 oklch(0 0 0 / 0.2),
+    inset 0 0 0 1px oklch(0 0 0 / 0.08), 0 1px 2px oklch(0 0 0 / 0.15),
+    0 6px 14px oklch(0 0 0 / 0.12), 0 18px 40px oklch(0 0 0 / 0.18);
+
+  --shadow-pill:
+    inset 0 1px 0 oklch(1 0 0 / 0.2), inset 0 -1px 0 oklch(0 0 0 / 0.15),
+    inset 0 0 0 1px oklch(0 0 0 / 0.06), 0 1px 1px oklch(0 0 0 / 0.1),
+    0 2px 4px oklch(0 0 0 / 0.08);
+
+  --shadow-blue-pill:
+    inset 0 1px 0 oklch(1 0 0 / 0.35), inset 0 -1px 0 oklch(0 0 0 / 0.1),
+    inset 0 0 0 1px oklch(0 0 0 / 0.04), 0 1px 2px oklch(0 0 0 / 0.06),
+    0 0 10px oklch(0.45 0.25 270 / 0.2);
+
+  --shadow-glow: 0 0 0 3px oklch(0.45 0.25 270 / 0.28);
+}
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    border-color: var(--color-border);
+    border-radius: 0 !important;
+    font-family: inherit;
+  }
+
+  body {
+    margin: 0;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    font-family: var(--font-sans);
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
+
+  pre,
+  code {
+    font-family: var(--font-sans);
+  }
+}
+
+.pill-gradient {
+  background-image: linear-gradient(
+    to bottom,
+    oklch(1 0 0 / 0.15) 0%,
+    oklch(1 0 0 / 0) 45%,
+    oklch(0 0 0 / 0.08) 100%
+  );
+}
+
+.shadow-soft { box-shadow: var(--shadow-soft); }
+.shadow-card { box-shadow: var(--shadow-card); }
+.shadow-elev { box-shadow: var(--shadow-elev); }
+.shadow-pill { box-shadow: var(--shadow-pill); }
+.shadow-blue-pill { box-shadow: var(--shadow-blue-pill); }
+.shadow-glow { box-shadow: var(--shadow-glow); }
+
+.console-mono {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+[data-sonner-toaster] {
+  --normal-bg: var(--color-primary);
+  --normal-text: var(--color-primary-foreground);
+  --normal-border: var(--color-primary-dark);
+  --success-bg: var(--color-primary-bright);
+  --success-border: var(--color-primary);
+  --success-text: var(--color-primary-foreground);
+  --error-bg: #fee2e2;
+  --error-border: var(--color-destructive);
+  --error-text: var(--color-destructive);
+}
+
+pre {
+  background: var(--color-charcoal);
+  color: #ffffff;
+  padding: 1rem;
+  overflow-x: auto;
+}

@@ -13,6 +13,8 @@ target/
 node_modules/
 packages/amoeba-js/dist/
 sdk/dist/
+frontend/dist/
+frontend/test-results/
 bindings/generated/**/package-lock.json
 bindings/generated/publicInputs.mjs
 .env
