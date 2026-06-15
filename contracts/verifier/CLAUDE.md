@@ -19,5 +19,8 @@ VK hash = SHA-256 of concatenated VK bytes (circuit identity fingerprint).
 ## Regeneration
 
 ```bash
-./circuits/circom/scripts/export-vk.sh
+./circuits/circom/scripts/export-vk.sh              # from local setup zkey
+./circuits/circom/scripts/sync-verifier-from-ceremony.sh  # from ceremony final zkey
 ```
+
+VK hash drift is checked by `compute-vk-hash.py` — the test `vk_hash_matches_compute_vk_hash_script` enforces on-chain == off-chain in CI.

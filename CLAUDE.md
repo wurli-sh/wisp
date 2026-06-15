@@ -8,9 +8,9 @@ ZK compliance infrastructure for Stellar stablecoins and RWAs. Groth16 proofs ve
 - **contracts/** — Soroban smart contracts (verifier, compliance, mock-sac)
 - **bindings/** — Canonical ABI, generated contract clients, shared JSON fixtures
 - **crates/** — Rust crates for off-chain crypto, types, and issuer service
-- **packages/amoeba-crypto/** — Shared JS crypto (Poseidon2, Merkle, field ops, nullifier)
+- **packages/amoeba-crypto/** — Shared JS crypto (Poseidon2, Merkle, field ops, nullifier, witness builder)
 - **scripts/** — deploy, dev, fixture, and ceremony tooling
-- **sdk/** — TypeScript SDK (scaffold)
+- **sdk/** — TypeScript SDK for proving, settling, and auditing compliant transfers
 - **frontend/** — UI (scaffold)
 
 ## Key Commands
@@ -27,11 +27,17 @@ ZK compliance infrastructure for Stellar stablecoins and RWAs. Groth16 proofs ve
 | `pnpm test:circuit` | Node circuit tests |
 | `pnpm test:bindings` | Binding ABI + circuit-abi drift tests |
 | `cargo test -p verifier -p compliance -p mock-sac` | Contract unit tests |
-| `cargo test -p amoeba-crypto -p amoeba-types -p issuer-service` | Phase 2 crate tests |
+| `cargo test -p amoeba-crypto -p amoeba-types -p issuer-service` | Crate tests |
 | `./scripts/dev/demo-e2e.sh` | Full local E2E pipeline |
 | `./scripts/dev/demo-phase2.sh` | Full Phase 2 pipeline (bindings + issuer) |
+| `./scripts/dev/demo-phase3.sh` | Full Phase 3 local demo (blockers + SDK prove) |
+| `./scripts/dev/verify-phase3-testnet.sh` | Full Phase 3 testnet gate check |
 | `./scripts/dev/verify-testnet.sh` | Phase 0 gate check |
 | `./scripts/dev/verify-compliance-testnet.sh` | Phase 1 testnet gate |
+| `./circuits/circom/scripts/ceremony-init.sh` | Initialize multi-party ceremony |
+| `./circuits/circom/scripts/ceremony-contribute.sh` | Contribute entropy to ceremony |
+| `./circuits/circom/scripts/ceremony-finalize.sh` | Finalize ceremony with beacon |
+| `./circuits/circom/scripts/compute-vk-hash.py` | Compute VK hash for drift check |
 
 ## Conventions
 
