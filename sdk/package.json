@@ -1,0 +1,11 @@
+{
+  "name": "@amoeba/sdk",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^14.5.0"
+  }
+}
