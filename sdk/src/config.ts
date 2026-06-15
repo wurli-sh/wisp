@@ -24,6 +24,19 @@ export interface AmoebaConfig {
   zkeyPath: string;
   wasmPath: string;
   witnessGen: string;
+  /** Browser proving artifact URLs (frontend). */
+  wasmUrl?: string;
+  zkeyUrl?: string;
+  /** JSON URL or inline demo strkeys for browser settle (no fs). */
+  demoFixtureUrl?: string;
+  demoStrkeys?: DemoStrkeys;
+}
+
+export interface DemoStrkeys {
+  issuer_strkey?: string;
+  asset_strkey?: string;
+  sender_strkey?: string;
+  recipient_strkey?: string;
 }
 
 export function loadConfig(overrides: Record<string, string | undefined> = {}): AmoebaConfig {
@@ -56,5 +69,8 @@ export function loadConfig(overrides: Record<string, string | undefined> = {}): 
         REPO_ROOT,
         "circuits/circom/artifacts/compliance_corridor_js/generate_witness.js",
       ),
+    wasmUrl: env.AMOEBA_WASM_URL ?? env.VITE_AMOEBA_WASM_URL,
+    zkeyUrl: env.AMOEBA_ZKEY_URL ?? env.VITE_AMOEBA_ZKEY_URL,
+    demoFixtureUrl: env.AMOEBA_DEMO_FIXTURE_URL ?? env.VITE_AMOEBA_DEMO_FIXTURE_URL,
   };
 }

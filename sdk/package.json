@@ -17,7 +17,8 @@
     "@amoeba/bindings": "workspace:*",
     "@amoeba/js": "workspace:*",
     "@stellar/stellar-sdk": "^14.5.0",
-    "compliance": "workspace:*"
+    "compliance": "workspace:*",
+    "snarkjs": "^0.7.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

@@ -15,7 +15,18 @@ interface DemoFixture {
   recipient_strkey?: string;
 }
 
-function loadDemoFixture(cfg: AmoebaConfig): DemoFixture {
+let cachedRemoteFixture: DemoFixture | null = null;
+
+async function loadDemoFixture(cfg: AmoebaConfig): Promise<DemoFixture> {
+  if (cfg.demoStrkeys) return cfg.demoStrkeys;
+  if (cfg.demoFixtureUrl) {
+    if (!cachedRemoteFixture) {
+      const res = await fetch(cfg.demoFixtureUrl);
+      if (!res.ok) throw new Error(`demo fixture fetch failed: ${res.status}`);
+      cachedRemoteFixture = (await res.json()) as DemoFixture;
+    }
+    return cachedRemoteFixture;
+  }
   const name =
     cfg.profile === "testnet"
       ? "demo-transfer-testnet.json"
@@ -27,8 +38,8 @@ function loadDemoFixture(cfg: AmoebaConfig): DemoFixture {
   return JSON.parse(raw) as DemoFixture;
 }
 
-function transferArgs(proven: ProvenTransfer, pkg: ProofPackage, cfg: AmoebaConfig) {
-  const fixture = loadDemoFixture(cfg);
+async function transferArgs(proven: ProvenTransfer, pkg: ProofPackage, cfg: AmoebaConfig) {
+  const fixture = await loadDemoFixture(cfg);
   const issuer = cfg.issuerPublicKey ?? fixture.issuer_strkey;
   if (!issuer) throw new Error("ISSUER_PUBLIC_KEY or fixture issuer_strkey required");
 
@@ -78,7 +89,7 @@ export async function settleWithKeypair(
   });
 
   const assembled = await client.compliant_transfer({
-    args: transferArgs(proven, pkg, cfg),
+    args: await transferArgs(proven, pkg, cfg),
     proof: proven.proof,
     public_inputs: publicInputsVector(proven),
   });
@@ -107,7 +118,7 @@ export async function settleWithWallet(
   });
 
   const assembled = await client.compliant_transfer({
-    args: transferArgs(proven, pkg, cfg),
+    args: await transferArgs(proven, pkg, cfg),
     proof: proven.proof,
     public_inputs: publicInputsVector(proven),
   });
@@ -132,7 +143,7 @@ export async function simulateSettle(
   });
 
   const assembled = await client.compliant_transfer({
-    args: transferArgs(proven, pkg, cfg),
+    args: await transferArgs(proven, pkg, cfg),
     proof: proven.proof,
     public_inputs: publicInputsVector(proven),
   });

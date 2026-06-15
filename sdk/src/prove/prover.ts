@@ -4,13 +4,13 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { proofPackageToWitnessInput } from "@amoeba/js/witness";
 import type { ProofPackage } from "@amoeba/js";
-import { PUBLIC_INPUT_FIELDS } from "@amoeba/bindings/publicInputs";
 import type { AmoebaConfig } from "../config.js";
 import { REPO_ROOT } from "../config.js";
-import { serializeSnarkjsProof, type SnarkjsProof } from "./serialize.js";
+import { type SerializedProof, type SnarkjsProof } from "./serialize.js";
+import { buildProvenTransfer } from "./build.js";
 
 export interface ProvenTransfer {
-  proof: ReturnType<typeof serializeSnarkjsProof>;
+  proof: SerializedProof;
   snarkjsProof: SnarkjsProof;
   publicSignals: string[];
   publicInputs: Record<string, string>;
@@ -46,15 +46,5 @@ export async function proveFromPackage(
   const proof = JSON.parse(fs.readFileSync(proofPath, "utf8")) as SnarkjsProof;
   const publicSignals = JSON.parse(fs.readFileSync(publicPath, "utf8")) as string[];
 
-  const publicInputs = Object.fromEntries(
-    PUBLIC_INPUT_FIELDS.map((name, i) => [name, publicSignals[i]]),
-  );
-
-  return {
-    proof: serializeSnarkjsProof(proof),
-    snarkjsProof: proof,
-    publicSignals,
-    publicInputs,
-    nullifier: publicInputs.nullifier,
-  };
+  return buildProvenTransfer(proof, publicSignals);
 }
