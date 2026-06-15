@@ -42,6 +42,38 @@ const DEMO_ASSET: [u8; 32] = [
 ];
 
 #[derive(Deserialize)]
+struct DemoTransferJson {
+    sender_hex: String,
+    recipient_hex: String,
+    asset_hex: String,
+}
+
+fn hex_to_array32(hex: &str) -> [u8; 32] {
+    let mut out = [0u8; 32];
+    for (i, chunk) in hex.as_bytes().chunks(2).enumerate() {
+        let s = std::str::from_utf8(chunk).unwrap();
+        out[i] = u8::from_str_radix(s, 16).unwrap();
+    }
+    out
+}
+
+#[test]
+fn demo_bytes_match_shared_fixture() {
+    let demo: DemoTransferJson = serde_json::from_str(include_str!(
+        "../../../bindings/fixtures/demo-transfer.json"
+    ))
+    .unwrap();
+    assert_eq!(hex_to_array32(&demo.sender_hex), DEMO_SENDER);
+    assert_eq!(hex_to_array32(&demo.recipient_hex), DEMO_RECIPIENT);
+    assert_eq!(hex_to_array32(&demo.asset_hex), DEMO_ASSET);
+}
+
+#[test]
+fn public_input_count_matches_generated_abi() {
+    assert_eq!(crate::storage::PUBLIC_INPUT_COUNT, 17);
+}
+
+#[derive(Deserialize)]
 struct SnarkProof {
     pi_a: [String; 3],
     pi_b: [[String; 2]; 3],
@@ -366,13 +398,24 @@ fn compliant_transfer_rejects_tampered_amount() {
 }
 
 #[test]
-#[should_panic(expected = "insufficient balance")]
 fn failed_sac_transfer_does_not_burn_nullifier() {
     let (env, compliance_id, fixture) = setup_compliance_fixture(false);
     let compliance = ComplianceClient::new(&env, &compliance_id);
 
     let args = transfer_args(&env, &fixture);
+    assert!(compliance
+        .try_compliant_transfer(&args, &fixture.proof, &fixture.public)
+        .is_err());
+    assert!(!compliance.check_attestation(&args.nullifier));
+
+    let amount: i128 = fixture.input.amount.parse().unwrap();
+    let token = TokenClient::new(&env, &fixture.asset);
+    MockSacClient::new(&env, &fixture.asset).mint(&fixture.sender, &amount);
     compliance.compliant_transfer(&args, &fixture.proof, &fixture.public);
+
+    assert!(compliance.check_attestation(&args.nullifier));
+    assert_eq!(token.balance(&fixture.sender), 0);
+    assert_eq!(token.balance(&fixture.recipient), amount);
 }
 
 #[test]
