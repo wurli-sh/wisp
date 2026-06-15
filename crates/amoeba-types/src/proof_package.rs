@@ -81,6 +81,14 @@ pub struct DemoTransferFixture {
     pub epoch: String,
     pub jurisdiction: String,
     pub credential_expiry: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sender_strkey: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub recipient_strkey: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub asset_strkey: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub issuer_strkey: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

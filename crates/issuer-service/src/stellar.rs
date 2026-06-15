@@ -21,8 +21,8 @@ pub fn publish_roots(cfg: &Config, roots: &Roots, corridor_id: u32) -> Result<St
         .as_ref()
         .ok_or("COMPLIANCE_CONTRACT_ID not set")?;
     let source = cfg
-        .publish_source_key()
-        .ok_or("ADMIN_SECRET_KEY or ISSUER_SECRET_KEY not set")?;
+        .publish_source_account()
+        .ok_or("Set PUBLISH_SOURCE_ACCOUNT / SOURCE (e.g. amoeba-admin) or ADMIN_SECRET_KEY / ISSUER_SECRET_KEY")?;
     let issuer = cfg
         .issuer_public_key
         .as_ref()
@@ -70,6 +70,14 @@ pub fn publish_roots(cfg: &Config, roots: &Roots, corridor_id: u32) -> Result<St
         if !stderr.contains("AlreadyExists") && !stderr.contains("already") {
             return Err(format!("register_issuer failed: {stderr}"));
         }
+        let auth = cfg.publish_auth_key().ok_or_else(|| {
+            if cfg.admin_signs_publish() {
+                "ADMIN_PUBLIC_KEY required when admin signs update_issuer_root (--auth must match signer)"
+                    .to_string()
+            } else {
+                "ISSUER_PUBLIC_KEY required when issuer signs update_issuer_root".to_string()
+            }
+        })?;
         let update = Command::new("stellar")
             .args([
                 "contract",
@@ -90,6 +98,8 @@ pub fn publish_roots(cfg: &Config, roots: &Roots, corridor_id: u32) -> Result<St
                 &sanctions,
                 "--jurisdiction_root",
                 &jurisdiction,
+                "--auth",
+                &auth,
             ])
             .output()
             .map_err(|e| format!("stellar invoke failed: {e}"))?;
