@@ -25,6 +25,7 @@ circuits/**/*.wasm
 circuits/**/*.r1cs
 circuits/**/*.sym
 circuits/**/*.ptau
+circuits/**/*.wtns
 
 # OS
 .DS_Store
