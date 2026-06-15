@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 NETWORK="${NETWORK:-testnet}"
 SOURCE="${SOURCE:-amoeba-admin}"
-FIXTURE="${ROOT}/circuits/circom/inputs/valid.us-mx.json"
+FIXTURE="${FIXTURE:-${ROOT}/circuits/circom/inputs/valid.us-mx.json}"
 DEPLOY_DIR="${ROOT}/.amoeba"
 
 if [[ -f "$DEPLOY_DIR/compliance.env" ]]; then

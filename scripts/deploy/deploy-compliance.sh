@@ -6,18 +6,12 @@ NETWORK="${NETWORK:-testnet}"
 SOURCE="${SOURCE:-amoeba-admin}"
 ADMIN="${ADMIN:-$SOURCE}"
 DEPLOY_DIR="${ROOT}/.amoeba"
+SCRIPT_DIR="$ROOT/circuits/circom/scripts"
 mkdir -p "$DEPLOY_DIR"
 
 if [[ "$NETWORK" == "mainnet" ]]; then
-  if [[ "${AMOEBA_MAINNET_APPROVED:-}" != "1" ]]; then
-    echo "ERROR: mainnet deploy requires AMOEBA_MAINNET_APPROVED=1 after completing MAINNET_BLOCKERS.md."
-    exit 1
-  fi
-  if [[ ! -f "${ROOT}/circuits/circom/artifacts/ceremony/transcript.jsonl" ]]; then
-    echo "ERROR: missing ceremony transcript. Complete CEREMONY_RUNBOOK.md before mainnet."
-    exit 1
-  fi
-  "${ROOT}/circuits/circom/scripts/ceremony-verify.sh"
+  # shellcheck source=ceremony-mainnet-gate.sh
+  source "$ROOT/scripts/deploy/ceremony-mainnet-gate.sh"
 fi
 
 if [[ -f "$DEPLOY_DIR/verifier.env" ]]; then
@@ -37,11 +31,18 @@ echo "Verifier: ${VERIFIER_ID}"
 cd "$ROOT"
 stellar contract build --package compliance
 
-VK_HASH=$(stellar contract invoke \
+VK_HASH_RAW=$(stellar contract invoke \
   --id "$VERIFIER_ID" \
   --source-account "$SOURCE" \
   --network "$NETWORK" \
   -- vk_hash | tail -1)
+
+VK_HASH=$(python3 "$SCRIPT_DIR/ceremony_lib.py" normalize-vk-hash "$VK_HASH_RAW")
+
+if [[ "$NETWORK" == "mainnet" ]]; then
+  python3 "$SCRIPT_DIR/ceremony_lib.py" compare-vk-hashes "$LOCAL_VK_HASH" "$VK_HASH_RAW"
+  echo "vk_hash verified against ceremony evidence"
+fi
 
 COMPLIANCE_ID=$(stellar contract deploy \
   --package compliance \
@@ -55,7 +56,7 @@ stellar contract invoke \
   -- initialize \
   --admin "$ADMIN" \
   --verifier "$VERIFIER_ID" \
-  --expected_vk_hash "$VK_HASH"
+  --expected_vk_hash "$VK_HASH_RAW"
 
 {
   echo "VERIFIER_ID=${VERIFIER_ID}"
