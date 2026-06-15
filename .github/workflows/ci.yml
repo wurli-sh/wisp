@@ -1,0 +1,66 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  zk-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 25
+          cache: pnpm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt,clippy
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Install Rust audit tooling
+        run: cargo install cargo-audit --locked
+
+      - name: Install Stellar CLI
+        run: cargo install stellar-cli --locked --version 25.2.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Dependency audits
+        run: |
+          pnpm audit --audit-level moderate
+          cargo audit
+
+      - name: Rust formatting and lint
+        run: |
+          cargo fmt --all --check
+          cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Contract tests
+        run: cargo test -p verifier -p compliance -p mock-sac
+
+      - name: Circuit fixture checks
+        run: ./circuits/circom/test/verify-fixtures.sh
+
+      - name: Circuit unit tests
+        run: pnpm test:circuit
+
+      - name: Local proof verification
+        run: ./circuits/circom/scripts/verify-local.sh
+
+      - name: Ceremony artifact verification
+        run: ./circuits/circom/scripts/ceremony-verify.sh
+
+      - name: Soroban build
+        run: stellar contract build

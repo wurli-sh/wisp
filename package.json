@@ -4,10 +4,19 @@
   "scripts": {
     "compile:circuit": "cd circuits/circom && ./scripts/compile.sh",
     "setup:circuit": "cd circuits/circom && ./scripts/setup.sh",
+    "gen:fixtures": "node circuits/circom/scripts/gen-fixture.mjs",
     "prove": "cd circuits/circom && ./scripts/prove.sh",
-    "verify": "cd circuits/circom && ./scripts/verify-local.sh"
+    "verify": "cd circuits/circom && ./scripts/verify-local.sh",
+    "test:circuit": "node --experimental-strip-types --test circuits/circom/test/*.test.ts",
+    "ceremony:init": "cd circuits/circom && ./scripts/ceremony-init.sh",
+    "ceremony:verify": "cd circuits/circom && ./scripts/ceremony-verify.sh"
   },
   "devDependencies": {
     "snarkjs": "^0.7.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "underscore": "1.13.8"
+    }
   }
 }
