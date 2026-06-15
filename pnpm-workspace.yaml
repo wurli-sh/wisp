@@ -1,5 +1,11 @@
 packages:
-  - "circuits/circom"
-  - "packages/amoeba-crypto"
-  - "bindings"
+  - "packages/amoeba-js"
   - "sdk"
+  - "bindings"
+  - "bindings/generated/compliance"
+  - "bindings/generated/verifier"
+  - "circuits/circom"
+allowBuilds:
+  esbuild: set this to true or false
+overrides:
+  underscore: 1.13.8

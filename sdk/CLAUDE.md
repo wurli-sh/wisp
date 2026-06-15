@@ -1,24 +1,21 @@
-# sdk
+# sdk/
 
-Node `@amoeba/sdk` — prove, settle, and audit compliant transfers.
+TypeScript SDK (`@amoeba/sdk`) — prove, settle, audit compliant transfers on Stellar.
 
-## Usage
+## Layout
 
-```javascript
-import { AmoebaClient } from "@amoeba/sdk";
+| Path | Purpose |
+|------|---------|
+| `src/prove/` | Groth16 prover + snarkjs proof serialization |
+| `src/issuer/` | Issuer HTTP client |
+| `src/settle/` | `compliant_transfer` via generated compliance client |
+| `src/audit/` | Nullifier attestation checks |
+| `src/config.ts` | Env-backed config (`loadConfig`) |
+| `src/env.ts` | `.env` / `.amoeba/*.env` loader (`loadAmoebaEnv`) |
+| `src/index.ts` | `AmoebaClient` facade |
 
-const client = AmoebaClient.fromEnv();
-const pkg = await client.issuer.getDemoTransfer();
-const proven = await client.prove({ package: pkg });
-const result = await client.settleWithKeypair(proven, pkg, senderSecret);
-const audit = await client.audit(proven.nullifier, senderPublicKey);
-```
+Build: `pnpm --filter @amoeba/sdk run build` (requires compliance client + `@amoeba/js` built first).
 
-## Scripts
+`REPO_ROOT` resolves from package location (not cwd), so tests work via `pnpm --filter @amoeba/sdk`.
 
-| Command | Description |
-|---------|-------------|
-| `./scripts/dev/demo-phase3.sh` | Local Phase 3 gate (blockers + SDK prove) |
-| `./scripts/dev/verify-phase3-blockers.sh` | Stage 1 blocker gate |
-| `./scripts/dev/bootstrap-testnet-demo.sh` | Testnet fixture + deploy bootstrap |
-| `./scripts/dev/verify-phase3-testnet.sh` | Full testnet `compliant_transfer` |
+Tests: `pnpm test:sdk` — integration test skips if issuer-service is not on `:3000`; `./scripts/dev/demo-phase3.sh` starts issuer and runs the full prove path.

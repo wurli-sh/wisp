@@ -1,0 +1,31 @@
+{
+  "name": "@amoeba/js",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./witness": {
+      "types": "./dist/witness.d.ts",
+      "default": "./dist/witness.js"
+    },
+    "./strkey": {
+      "types": "./dist/strkey.d.ts",
+      "default": "./dist/strkey.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test src/witness.test.ts"
+  },
+  "dependencies": {
+    "ffjavascript": "^0.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

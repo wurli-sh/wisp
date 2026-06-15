@@ -1,11 +1,9 @@
-# packages
+# packages/
 
-Shared JavaScript packages for off-chain Amoeba components.
+JavaScript workspace packages.
 
-## Packages
+| Package | Purpose |
+|---------|---------|
+| `amoeba-js` (`@amoeba/js`) | Poseidon2, BN254 field ops, Merkle tree, nullifier, witness builder (compiled TS → `dist/`) |
 
-| Package | Description |
-|---------|-------------|
-| `amoeba-crypto` | Poseidon2, BN254 field ops, Merkle tree, nullifier computation |
-
-All packages are plain Node ESM (`"type": "module"`) with zero runtime dependencies.
+Rust crypto lives in `backend/crates/amoeba-crypto`.
