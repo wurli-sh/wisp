@@ -24,4 +24,4 @@ Development and testnet verification scripts.
 | `phase3-testnet-settle.ts` | SDK settle + double-publish checks on testnet |
 | `load-amoeba-env.ts` | Load `.amoeba/*.env` files into process env (superseded by `@amoeba/sdk` `env.ts`) |
 
-Dev `.ts` helpers run via `pnpm exec tsx scripts/dev/<name>.ts` from repo root.
+Dev `.ts` helpers run via `node --import tsx scripts/dev/<name>.ts` from repo root.

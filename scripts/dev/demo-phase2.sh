@@ -57,7 +57,7 @@ curl -sf "http://${ADDR}/health" | grep -q '"status":"ok"'
 
 echo ""
 echo "7. Demo transfer package vs golden public inputs"
-curl -sf "http://${ADDR}/v1/fixtures/demo-transfer" | pnpm exec tsx scripts/dev/assert-public-inputs.ts
+curl -sf "http://${ADDR}/v1/fixtures/demo-transfer" | node --import tsx scripts/dev/assert-public-inputs.ts
 
 echo ""
 echo "8. Unauthorized publish rejected"

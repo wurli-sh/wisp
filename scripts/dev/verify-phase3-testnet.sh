@@ -43,12 +43,12 @@ FIXTURE="${ROOT}/circuits/circom/inputs/valid.testnet.json" \
 
 echo ""
 echo "1. Refresh testnet fixture epoch + reprove"
-pnpm exec tsx "${ROOT}/scripts/dev/gen-testnet-fixture.ts"
+node --import tsx "${ROOT}/scripts/dev/gen-testnet-fixture.ts"
 export AMOEBA_FIXTURE_PROFILE=testnet
-pnpm exec tsx "${ROOT}/circuits/circom/scripts/gen-fixture.ts"
+node --import tsx "${ROOT}/circuits/circom/scripts/gen-fixture.ts"
 "${ROOT}/circuits/circom/scripts/prove.sh" \
   "${ROOT}/circuits/circom/inputs/valid.testnet.json"
-pnpm exec tsx "${ROOT}/scripts/dev/write-testnet-golden.ts"
+node --import tsx "${ROOT}/scripts/dev/write-testnet-golden.ts"
 
 echo ""
 echo "2. Start issuer-service (testnet profile)"
@@ -93,7 +93,7 @@ export AMOEBA_FIXTURE_PROFILE=testnet
 
 echo ""
 echo "4. Prove → settle → audit → replay check"
-pnpm exec tsx "${ROOT}/scripts/dev/phase3-testnet-settle.ts"
+node --import tsx "${ROOT}/scripts/dev/phase3-testnet-settle.ts"
 
 echo ""
 echo "=== Phase 3 Testnet Gate: PASSED ==="

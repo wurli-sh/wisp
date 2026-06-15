@@ -9,7 +9,7 @@ echo "=== Amoeba Phase 1 E2E (local) ==="
 echo ""
 echo "1. Generate fixtures (if missing)"
 if [[ ! -f "$CIRCOM/inputs/valid.us-mx.json" ]]; then
-  pnpm exec tsx "$CIRCOM/scripts/gen-fixture.ts"
+  node --import tsx "$CIRCOM/scripts/gen-fixture.ts"
 fi
 
 echo ""

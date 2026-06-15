@@ -46,7 +46,7 @@ pnpm gen:fixtures                     # valid + invalid witness inputs
 ./scripts/setup.sh                    # local/testnet-only one-person setup (POWER=17)
 ./scripts/prove.sh inputs/valid.us-mx.json
 ./scripts/verify-local.sh
-./scripts/export-vk.sh                # exports VK + regenerates backend/programs/verifier
+./circuits/circom/scripts/export-vk.sh  # exports VK + regenerates backend/programs/verifier
 
 cd ../..
 cargo test -p verifier -p compliance
@@ -109,14 +109,11 @@ Direct SAC transfers can bypass Amoeba unless issuer authorization is configured
 - The final zkey must remain locally available for strict deploy-time verification (not committed to git)
 - Flow: `ceremony:init` → contribute (≥3) → finalize → `ceremony:sync` → `ceremony:publish`
 
-See `CEREMONY_RUNBOOK.md` and the `ceremony:*` npm scripts.
+Use the `ceremony:*` npm scripts plus the manifests under `circuits/circom/artifacts/ceremony/`; the older top-level runbook docs are not part of this repo layout anymore.
 
 ### Launch runbooks
 
-- `TESTNET_RUNBOOK.md` — full testnet deploy and verification flow.
-- `CEREMONY_RUNBOOK.md` — multi-party Groth16 phase 2 ceremony.
-- `MAINNET_BLOCKERS.md` — hard gates before mainnet.
-- `MAINNET_RUNBOOK.md` — guarded mainnet pilot procedure.
+The executable source of truth in this repo is the deploy/testnet script set under `scripts/deploy/` and `scripts/dev/`. Older top-level runbook markdown filenames referenced in previous layouts are not checked into this repo.
 
 ## Phase 2 — Bindings + Backend
 
@@ -146,7 +143,7 @@ cargo run -p issuer-service
 curl -sf localhost:3000/v1/fixtures/demo-transfer
 
 # Verify public inputs match Phase 1 golden fixture
-curl -sf localhost:3000/v1/fixtures/demo-transfer | pnpm exec tsx scripts/dev/assert-public-inputs.ts
+curl -sf localhost:3000/v1/fixtures/demo-transfer | node --import tsx scripts/dev/assert-public-inputs.ts
 ```
 
 ### Bindings
