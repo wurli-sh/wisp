@@ -52,13 +52,13 @@ def compute_vk_hash(vk_rs_path: Path) -> str:
 
 def main() -> None:
     script_dir = Path(__file__).resolve().parent
-    default_vk = script_dir / "../../../contracts/verifier/src/vk.rs"
+    default_vk = script_dir / "../../../backend/programs/verifier/src/vk.rs"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--vk-rs",
         type=Path,
         default=default_vk.resolve(),
-        help="Path to contracts/verifier/src/vk.rs",
+        help="Path to backend/programs/verifier/src/vk.rs",
     )
     args = parser.parse_args()
     if not args.vk_rs.is_file():

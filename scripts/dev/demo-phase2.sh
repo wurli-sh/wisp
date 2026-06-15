@@ -12,12 +12,11 @@ cd "$ROOT"
 
 echo ""
 echo "1. Generate bindings"
-node bindings/scripts/generate.mjs
+pnpm gen:bindings
 
 echo ""
 echo "2. Generate crypto fixtures"
-node bindings/scripts/gen-crypto-fixtures.mjs
-node bindings/scripts/gen-addresses.mjs
+pnpm gen:crypto-fixtures
 
 echo ""
 echo "3. Rust crate tests"
@@ -25,7 +24,7 @@ cargo test -p amoeba-crypto -p amoeba-types -p issuer-service
 
 echo ""
 echo "4. Bindings tests"
-node --test bindings/test/public-inputs.test.mjs bindings/test/circuit-abi.test.mjs
+pnpm test:bindings
 
 echo ""
 echo "5. Start issuer-service"
@@ -58,7 +57,7 @@ curl -sf "http://${ADDR}/health" | grep -q '"status":"ok"'
 
 echo ""
 echo "7. Demo transfer package vs golden public inputs"
-curl -sf "http://${ADDR}/v1/fixtures/demo-transfer" | node scripts/dev/assert-public-inputs.mjs
+curl -sf "http://${ADDR}/v1/fixtures/demo-transfer" | pnpm exec tsx scripts/dev/assert-public-inputs.ts
 
 echo ""
 echo "8. Unauthorized publish rejected"

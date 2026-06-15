@@ -19,11 +19,11 @@ cargo test -p issuer-service
 
 echo ""
 echo "2. Witness module round-trip"
-node --test packages/amoeba-crypto/test/witness.test.mjs
+pnpm test:witness
 
 echo ""
 echo "3. Local fixture generation (profile=local)"
-AMOEBA_FIXTURE_PROFILE=local node circuits/circom/scripts/gen-fixture.mjs
+AMOEBA_FIXTURE_PROFILE=local pnpm exec tsx circuits/circom/scripts/gen-fixture.ts
 
 echo ""
 echo "4. Phase 1 contract + circuit tests"
@@ -55,9 +55,9 @@ if [[ ! -f "${ROOT}/bindings/fixtures/demo-transfer-testnet.json" ]]; then
 fi
 
 export AMOEBA_FIXTURE_PROFILE=testnet
-node circuits/circom/scripts/gen-fixture.mjs
+pnpm exec tsx circuits/circom/scripts/gen-fixture.ts
 ./circuits/circom/scripts/prove.sh circuits/circom/inputs/valid.testnet.json
-node scripts/dev/write-testnet-golden.mjs
+pnpm exec tsx scripts/dev/write-testnet-golden.ts
 test -f bindings/fixtures/public-inputs.testnet.json
 
 echo ""

@@ -41,12 +41,12 @@ Or step by step:
 
 ```bash
 cd circuits/circom
-node scripts/gen-fixture.mjs          # valid + invalid witness inputs
+pnpm gen:fixtures                     # valid + invalid witness inputs
 ./scripts/compile.sh
 ./scripts/setup.sh                    # local/testnet-only one-person setup (POWER=17)
 ./scripts/prove.sh inputs/valid.us-mx.json
 ./scripts/verify-local.sh
-./scripts/export-vk.sh                # exports VK + regenerates contracts/verifier
+./scripts/export-vk.sh                # exports VK + regenerates backend/programs/verifier
 
 cd ../..
 cargo test -p verifier -p compliance
@@ -132,9 +132,8 @@ Freeze the 17-field public input ABI and run the issuer HTTP service that serves
 Or step by step:
 
 ```bash
-node bindings/scripts/generate.mjs
-node bindings/scripts/gen-crypto-fixtures.mjs
-node bindings/scripts/gen-addresses.mjs
+pnpm gen:bindings
+pnpm gen:crypto-fixtures
 cargo test -p amoeba-crypto -p amoeba-types -p issuer-service
 pnpm test:bindings
 
@@ -147,7 +146,7 @@ cargo run -p issuer-service
 curl -sf localhost:3000/v1/fixtures/demo-transfer
 
 # Verify public inputs match Phase 1 golden fixture
-curl -sf localhost:3000/v1/fixtures/demo-transfer | node scripts/dev/assert-public-inputs.mjs
+curl -sf localhost:3000/v1/fixtures/demo-transfer | pnpm exec tsx scripts/dev/assert-public-inputs.ts
 ```
 
 ### Bindings
@@ -206,7 +205,7 @@ AMOEBA_RUN_TESTNET_BLOCKERS=1 ./scripts/dev/verify-phase3-blockers.sh
 ### SDK API
 
 ```javascript
-import { AmoebaClient } from "./sdk/src/index.mjs";
+import { AmoebaClient } from "@amoeba/sdk";
 
 const client = AmoebaClient.fromEnv();
 const pkg = await client.issuer.getDemoTransfer();

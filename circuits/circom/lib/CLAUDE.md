@@ -1,11 +1,7 @@
 # circuits/circom/lib
 
-JavaScript libraries for off-circuit computation (matching the Circom circuit logic).
+Off-circuit crypto lives in `@amoeba/js` (`packages/amoeba-js`). This directory previously held `.mjs` shims re-exporting that package; they were removed during the TypeScript migration.
 
-## Files
+Import from `@amoeba/js` in fixture scripts and tests:
 
-| File | Purpose |
-|------|---------|
-| `poseidon2.mjs` | Poseidon2 hash in JS (BN254, t=4, 64 rounds) |
-| `merkle.mjs` | Merkle tree path generation utilities |
-| `field.mjs` | BN254 field arithmetic helpers |
+- `field`, `poseidon2`, `merkle`, `protocol`, `strkey`, `witness`

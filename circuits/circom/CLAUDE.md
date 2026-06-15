@@ -2,7 +2,7 @@
 
 BN254 Groth16 compliance corridor circuit with Poseidon2 hashing.
 
-## Circuit Checks (7 in one snark)
+## Circuit Checks (8 in one snark)
 
 | # | Check | Description |
 |---|-------|-------------|
@@ -13,6 +13,7 @@ BN254 Groth16 compliance corridor circuit with Poseidon2 hashing.
 | 5 | Expiry | `timestamp <= credential_expiry` |
 | 6 | Corridor source jurisdiction | Sender's jurisdiction in corridor's source tree |
 | 7 | Corridor destination address | Recipient in corridor's destination tree |
+| 8 | Corridor binding | On-chain `corridor_config_hash` matches circuit input |
 
 ## Public Inputs (17)
 

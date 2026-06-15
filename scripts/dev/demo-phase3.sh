@@ -14,8 +14,8 @@ echo "1. Blocker gate (local)"
 ./scripts/dev/verify-phase3-blockers.sh
 
 echo ""
-echo "2. Build compliance TS client"
-(cd bindings/generated/compliance && npm install --silent && npx tsc)
+echo "2. Build JS packages"
+pnpm build:js
 
 echo ""
 echo "3. Start issuer-service"
@@ -44,7 +44,7 @@ trap cleanup EXIT
 
 echo ""
 echo "4. SDK tests (prove + golden public inputs)"
-node --test sdk/test/sdk.test.mjs
+pnpm test:sdk
 
 echo ""
 echo "=== Phase 3 local E2E: PASSED ==="

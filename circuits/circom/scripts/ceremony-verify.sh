@@ -10,7 +10,7 @@ PTAU_FINAL="${PTAU_FINAL:-$ARTIFACTS/pot${POWER}_final.ptau}"
 R1CS="${R1CS:-$ARTIFACTS/compliance_corridor.r1cs}"
 SCRIPT_DIR="$DIR/scripts"
 ROOT="$(cd "$DIR/../.." && pwd)"
-VK_RS="$ROOT/contracts/verifier/src/vk.rs"
+VK_RS="$ROOT/backend/programs/verifier/src/vk.rs"
 
 require_file() {
   if [[ ! -f "$1" ]]; then

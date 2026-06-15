@@ -29,7 +29,7 @@ if [[ ! -f "${ROOT}/circuits/circom/artifacts/proof.json" ]]; then
 fi
 
 echo "1. Serializing proof for Stellar CLI..."
-node "${ROOT}/scripts/dev/serialize-compliance-proof.mjs"
+pnpm exec tsx "${ROOT}/scripts/dev/serialize-compliance-proof.ts"
 
 if [[ -f "${DEPLOY_DIR}/verifier.env" ]]; then
   # shellcheck disable=SC1091

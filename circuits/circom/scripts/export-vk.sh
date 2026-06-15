@@ -45,12 +45,12 @@ echo "=== Regenerating Soroban verifier contract ==="
 soroban-verifier-gen \
   --curve bn254 \
   --vk "$VK_OUT" \
-  --out "$ROOT/contracts/verifier" \
+  --out "$ROOT/backend/programs/verifier" \
   --crate-name verifier \
   --contract-name Groth16Verifier
 
 "$ROOT/scripts/patch-verifier.sh"
 
-echo "Regenerated and patched: $ROOT/contracts/verifier"
+echo "Regenerated and patched: $ROOT/backend/programs/verifier"
 echo "Next: stellar contract build --package verifier"
 echo "Then: python3 $SCRIPT_DIR/compute-vk-hash.py"

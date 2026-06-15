@@ -11,7 +11,7 @@ Circom pipeline scripts.
 | `prove.sh` | Witness generation + Groth16 proof. Usage: `./prove.sh inputs/valid.us-mx.json` |
 | `verify-local.sh` | `snarkjs groth16 verify` |
 | `export-vk.sh` | Export VK from zkey -> soroban-verifier-gen -> patch |
-| `gen-fixture.mjs` | Generate valid + invalid witness fixture JSON files |
+| `gen-fixture.ts` | Generate valid + invalid witness fixture JSON files (via `pnpm gen:fixtures`) |
 | `ceremony-init.sh` | Initialize multi-party phase 2 ceremony |
 | `ceremony-contribute.sh` | Apply entropy contribution to ceremony zkey |
 | `ceremony-finalize.sh` | Apply beacon, produce final zkey + VK + manifest |

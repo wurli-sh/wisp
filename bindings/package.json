@@ -3,6 +3,11 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./publicInputs": "./generated/publicInputs.ts"
+    "./publicInputs": "./generated/publicInputs.ts",
+    "./proofPackage": "./generated/proofPackage.ts",
+    "./contracts": "./generated/contracts.ts"
+  },
+  "dependencies": {
+    "@amoeba/js": "workspace:*"
   }
 }

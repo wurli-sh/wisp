@@ -43,12 +43,12 @@ FIXTURE="${ROOT}/circuits/circom/inputs/valid.testnet.json" \
 
 echo ""
 echo "1. Refresh testnet fixture epoch + reprove"
-node "${ROOT}/scripts/dev/gen-testnet-fixture.mjs"
+pnpm exec tsx "${ROOT}/scripts/dev/gen-testnet-fixture.ts"
 export AMOEBA_FIXTURE_PROFILE=testnet
-node "${ROOT}/circuits/circom/scripts/gen-fixture.mjs"
+pnpm exec tsx "${ROOT}/circuits/circom/scripts/gen-fixture.ts"
 "${ROOT}/circuits/circom/scripts/prove.sh" \
   "${ROOT}/circuits/circom/inputs/valid.testnet.json"
-node "${ROOT}/scripts/dev/write-testnet-golden.mjs"
+pnpm exec tsx "${ROOT}/scripts/dev/write-testnet-golden.ts"
 
 echo ""
 echo "2. Start issuer-service (testnet profile)"
@@ -84,13 +84,8 @@ trap cleanup EXIT
 curl -sf "http://${ADDR}/health" | grep -q '"status":"ok"'
 
 echo ""
-echo "3. Build compliance client + SDK deps"
-if [[ ! -d "${ROOT}/sdk/node_modules/@stellar/stellar-sdk" ]]; then
-  echo "   Installing @amoeba/sdk dependencies..."
-  (cd "${ROOT}/sdk" && npm install --silent)
-fi
-export NODE_PATH="${ROOT}/sdk/node_modules${NODE_PATH:+:${NODE_PATH}}"
-(cd "${ROOT}/bindings/generated/compliance" && npm install --silent && npx tsc)
+echo "3. Build JS packages"
+pnpm build:js
 
 SENDER_SECRET=$(stellar keys secret amoeba-sender)
 export SENDER_SECRET
@@ -98,41 +93,7 @@ export AMOEBA_FIXTURE_PROFILE=testnet
 
 echo ""
 echo "4. Prove → settle → audit → replay check"
-(cd "${ROOT}" && node --input-type=module <<'NODE'
-import { AmoebaClient } from "./sdk/src/index.mjs";
-import { loadAmoebaEnv } from "./scripts/dev/load-amoeba-env.mjs";
-
-const env = loadAmoebaEnv();
-const client = AmoebaClient.fromEnv({
-  AMOEBA_FIXTURE_PROFILE: "testnet",
-  ISSUER_PUBLIC_KEY: env.ISSUER_PUBLIC_KEY,
-  COMPLIANCE_CONTRACT_ID: env.COMPLIANCE_ID ?? env.COMPLIANCE_CONTRACT_ID,
-});
-
-const pkg = await client.issuer.getDemoTransfer();
-console.log("Proving (epoch=%s)...", pkg.transfer.epoch);
-const proven = await client.prove({ package: pkg });
-console.log("Settling on testnet...");
-const secret = process.env.SENDER_SECRET;
-const result = await client.settleWithKeypair(proven, pkg, secret);
-console.log("Tx:", result.getTransactionResponse?.txHash ?? result.sendTransactionResponse?.hash ?? result);
-
-const senderPk = env.SENDER_PUBLIC_KEY;
-if (!senderPk) throw new Error("SENDER_PUBLIC_KEY missing from testnet-demo.env");
-const audit = await client.audit(proven.nullifier, senderPk);
-console.log("Attestation:", audit.attested);
-if (!audit.attested) process.exit(1);
-
-console.log("Replay check (expect failure)...");
-try {
-  await client.settleWithKeypair(proven, pkg, secret);
-  console.error("ERROR: duplicate settle succeeded");
-  process.exit(1);
-} catch (e) {
-  console.log("Duplicate settle rejected as expected:", e.message?.slice(0, 120));
-}
-NODE
-)
+pnpm exec tsx "${ROOT}/scripts/dev/phase3-testnet-settle.ts"
 
 echo ""
 echo "=== Phase 3 Testnet Gate: PASSED ==="

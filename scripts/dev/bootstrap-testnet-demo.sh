@@ -49,7 +49,7 @@ source "${DEPLOY_DIR}/testnet-demo.env"
 
 echo ""
 echo "2. Generate testnet transfer fixture (dynamic epoch)"
-node "${ROOT}/scripts/dev/gen-testnet-fixture.mjs"
+pnpm exec tsx "${ROOT}/scripts/dev/gen-testnet-fixture.ts"
 
 echo ""
 echo "3. Compile / setup circuit (if needed)"
@@ -61,11 +61,11 @@ fi
 echo ""
 echo "4. Generate witness + prove (testnet profile)"
 export AMOEBA_FIXTURE_PROFILE=testnet
-node "${ROOT}/circuits/circom/scripts/gen-fixture.mjs"
+pnpm exec tsx "${ROOT}/circuits/circom/scripts/gen-fixture.ts"
 "${ROOT}/circuits/circom/scripts/prove.sh" \
   "${ROOT}/circuits/circom/inputs/valid.testnet.json"
 
-node "${ROOT}/scripts/dev/write-testnet-golden.mjs"
+pnpm exec tsx "${ROOT}/scripts/dev/write-testnet-golden.ts"
 
 echo ""
 echo "5. Deploy contracts (align VK with embedded vk.rs)"

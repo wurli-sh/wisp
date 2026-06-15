@@ -35,24 +35,38 @@ jobs:
         run: cargo install stellar-cli --locked --version 25.2.0
 
       - name: Install dependencies
-        run: |
-          pnpm install --frozen-lockfile
-          npm install --prefix packages/amoeba-crypto
-          npm install --prefix circuits/circom
+        run: pnpm install --frozen-lockfile
+
+      - name: Build JS packages
+        run: pnpm build:js
 
       - name: Generate bindings and check drift
         run: |
-          node bindings/scripts/generate.mjs
+          pnpm gen:bindings
           git diff --exit-code bindings/generated/
 
       - name: Generate crypto fixtures and check drift
         run: |
-          node bindings/scripts/gen-crypto-fixtures.mjs
-          node bindings/scripts/gen-addresses.mjs
+          pnpm gen:crypto-fixtures
           git diff --exit-code bindings/fixtures/crypto.json bindings/fixtures/addresses.json
 
-      - name: Bindings tests
-        run: pnpm test:bindings
+      - name: JS tests
+        run: |
+          pnpm test:witness
+          pnpm test:bindings
+
+      - name: SDK prove integration (issuer-service)
+        run: |
+          mkdir -p .amoeba
+          export ISSUER_STATE_PATH="$PWD/.amoeba/issuer-state-ci.json"
+          export ISSUER_API_TOKEN=demo-token
+          export AMOEBA_FIXTURES_DIR="$PWD/bindings/fixtures"
+          cargo build -p issuer-service
+          ./target/debug/issuer-service &
+          ISSUER_PID=$!
+          sleep 4
+          pnpm test:sdk
+          kill "$ISSUER_PID" || true
 
       - name: Phase 2 crate tests
         run: cargo test -p amoeba-crypto -p amoeba-types -p issuer-service
@@ -86,3 +100,6 @@ jobs:
 
       - name: Soroban build
         run: stellar contract build
+
+      - name: Backend path audit
+        run: ./scripts/dev/audit-backend-paths.sh

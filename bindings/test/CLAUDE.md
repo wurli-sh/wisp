@@ -6,5 +6,7 @@ Verification tests for binding correctness and cross-repo consistency.
 
 | Test | Description |
 |------|-------------|
-| `public-inputs.test.mjs` | Validates public input JSON against canonical schema and field count |
-| `circuit-abi.test.mjs` | Ensures circuit witness JSON keys match the ABI field order — detects drift between circuit and bindings |
+| `public-inputs.test.ts` | Validates public input JSON against canonical schema and field count |
+| `circuit-abi.test.ts` | Ensures circuit witness JSON keys match the ABI field order — detects drift between circuit and bindings |
+
+Run via root `pnpm test:bindings`.

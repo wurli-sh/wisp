@@ -15,9 +15,13 @@ Development and testnet verification scripts.
 | `verify-phase3-blockers.sh` | Phase 3 stage 1: blocker checks (strkey, env, binary) |
 | `verify-phase3-testnet.sh` | Phase 3 gate: full `compliant_transfer` via SDK on testnet |
 | `ensure-testnet-vk.sh` | Ensure VK exists and matches verifier contract |
-| `serialize-compliance-proof.mjs` | Convert snarkjs proof/public.json to Stellar CLI format |
-| `assert-public-inputs.mjs` | Verify a proof package matches Phase 1 golden fixture |
+| `audit-backend-paths.sh` | Fail if `backend/` Rust crates use stale `../../bindings` paths |
+| `serialize-compliance-proof.ts` | Convert snarkjs proof/public.json to Stellar CLI format |
+| `assert-public-inputs.ts` | Verify a proof package matches Phase 1 golden fixture |
 | `publish-roots-via-service.sh` | Publish issuer + corridor roots via issuer service API |
-| `gen-testnet-fixture.mjs` | Generate testnet-specific proof fixture JSON |
-| `write-testnet-golden.mjs` | Write golden serialized proof for testnet |
-| `load-amoeba-env.mjs` | Load `.amoeba/*.env` files into process env |
+| `gen-testnet-fixture.ts` | Generate testnet-specific proof fixture JSON |
+| `write-testnet-golden.ts` | Write golden serialized proof for testnet |
+| `phase3-testnet-settle.ts` | SDK settle + double-publish checks on testnet |
+| `load-amoeba-env.ts` | Load `.amoeba/*.env` files into process env (superseded by `@amoeba/sdk` `env.ts`) |
+
+Dev `.ts` helpers run via `pnpm exec tsx scripts/dev/<name>.ts` from repo root.

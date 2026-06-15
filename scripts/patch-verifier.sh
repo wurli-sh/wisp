@@ -2,10 +2,10 @@
 # Re-apply Amoeba-specific fixes after soroban-verifier-gen overwrites the crate.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-LIB="$ROOT/contracts/verifier/src/lib.rs"
-VK="$ROOT/contracts/verifier/src/vk.rs"
-CARGO="$ROOT/contracts/verifier/Cargo.toml"
-TEST="$ROOT/contracts/verifier/src/test.rs"
+LIB="$ROOT/backend/programs/verifier/src/lib.rs"
+VK="$ROOT/backend/programs/verifier/src/vk.rs"
+CARGO="$ROOT/backend/programs/verifier/Cargo.toml"
+TEST="$ROOT/backend/programs/verifier/src/test.rs"
 
 python3 <<PY
 from pathlib import Path

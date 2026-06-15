@@ -10,7 +10,7 @@ Canonical source of truth for the Amoeba 17-field public input ABI. Includes gen
 | `protocol.json` | Protocol constants (domain tags, corridor config) |
 | `contracts.json` | Deployed contract address registry |
 | `fixtures/` | Demo identities, transfer params, crypto test vectors |
-| `scripts/` | `generate.mjs`, `gen-crypto-fixtures.mjs`, `gen-addresses.mjs` |
+| `scripts/` | `generate.ts`, `gen-crypto-fixtures.ts`, `gen-addresses.ts` |
 | `test/` | ABI roundtrip + circuit-abi consistency tests |
 | `generated/` | Auto-generated TypeScript (compliance, verifier) + Rust `public_inputs.rs` |
 

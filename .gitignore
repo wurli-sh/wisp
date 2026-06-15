@@ -11,6 +11,10 @@ reference/
 # Build artifacts
 target/
 node_modules/
+packages/amoeba-js/dist/
+sdk/dist/
+bindings/generated/**/package-lock.json
+bindings/generated/publicInputs.mjs
 .env
 
 # Proving artifacts (too large for git)
