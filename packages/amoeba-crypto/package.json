@@ -1,0 +1,11 @@
+{
+  "name": "@amoeba/crypto",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.mjs"
+  },
+  "dependencies": {
+    "ffjavascript": "^0.3.1"
+  }
+}
