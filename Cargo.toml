@@ -1,6 +1,13 @@
 [workspace]
 resolver = "2"
-members = ["contracts/verifier", "contracts/compliance", "contracts/mock-sac"]
+members = [
+    "contracts/verifier",
+    "contracts/compliance",
+    "contracts/mock-sac",
+    "crates/amoeba-crypto",
+    "crates/amoeba-types",
+    "crates/issuer-service",
+]
 
 [workspace.dependencies]
 soroban-sdk = "25.1.0"
@@ -14,4 +21,3 @@ debug-assertions = false
 panic = "abort"
 codegen-units = 1
 lto = true
-
