@@ -30,3 +30,8 @@ circuits/**/*.ptau
 .DS_Store
 *.swp
 *.swo
+
+# Local issuer state
+.amoeba/issuer-state.json
+.amoeba/issuer-service.pid
+.amoeba/issuer-service.log

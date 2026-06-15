@@ -1,4 +1,4 @@
 packages:
   - "circuits/circom"
-  - "sdk"
-  - "frontend"
+  - "packages/amoeba-crypto"
+  - "bindings"

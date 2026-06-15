@@ -4,10 +4,13 @@
   "scripts": {
     "compile:circuit": "cd circuits/circom && ./scripts/compile.sh",
     "setup:circuit": "cd circuits/circom && ./scripts/setup.sh",
+    "gen:bindings": "node bindings/scripts/generate.mjs",
+    "gen:crypto-fixtures": "node bindings/scripts/gen-crypto-fixtures.mjs && node bindings/scripts/gen-addresses.mjs",
     "gen:fixtures": "node circuits/circom/scripts/gen-fixture.mjs",
     "prove": "cd circuits/circom && ./scripts/prove.sh",
     "verify": "cd circuits/circom && ./scripts/verify-local.sh",
     "test:circuit": "node --experimental-strip-types --test circuits/circom/test/*.test.ts",
+    "test:bindings": "node --test bindings/test/public-inputs.test.mjs bindings/test/circuit-abi.test.mjs",
     "ceremony:init": "cd circuits/circom && ./scripts/ceremony-init.sh",
     "ceremony:verify": "cd circuits/circom && ./scripts/ceremony-verify.sh"
   },

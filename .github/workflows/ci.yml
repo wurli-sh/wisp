@@ -35,7 +35,27 @@ jobs:
         run: cargo install stellar-cli --locked --version 25.2.0
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          pnpm install --frozen-lockfile
+          npm install --prefix packages/amoeba-crypto
+          npm install --prefix circuits/circom
+
+      - name: Generate bindings and check drift
+        run: |
+          node bindings/scripts/generate.mjs
+          git diff --exit-code bindings/generated/
+
+      - name: Generate crypto fixtures and check drift
+        run: |
+          node bindings/scripts/gen-crypto-fixtures.mjs
+          node bindings/scripts/gen-addresses.mjs
+          git diff --exit-code bindings/fixtures/crypto.json bindings/fixtures/addresses.json
+
+      - name: Bindings tests
+        run: pnpm test:bindings
+
+      - name: Phase 2 crate tests
+        run: cargo test -p amoeba-crypto -p amoeba-types -p issuer-service
 
       - name: Dependency audits
         run: |
