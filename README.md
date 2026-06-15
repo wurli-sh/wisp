@@ -110,3 +110,62 @@ Direct SAC transfers can bypass Amoeba unless issuer authorization is configured
 - `CEREMONY_RUNBOOK.md` — multi-party Groth16 phase 2 ceremony.
 - `MAINNET_BLOCKERS.md` — hard gates before mainnet.
 - `MAINNET_RUNBOOK.md` — guarded mainnet pilot procedure.
+
+## Phase 2 — Bindings + Backend
+
+Freeze the 17-field public input ABI and run the issuer HTTP service that serves proof packages and publishes roots.
+
+### Local command sequence
+
+```bash
+# Full Phase 2 pipeline
+./scripts/dev/demo-phase2.sh
+```
+
+Or step by step:
+
+```bash
+node bindings/scripts/generate.mjs
+node bindings/scripts/gen-crypto-fixtures.mjs
+node bindings/scripts/gen-addresses.mjs
+cargo test -p amoeba-crypto -p amoeba-types -p issuer-service
+pnpm test:bindings
+
+# Start issuer service (copy .env.example → .env first)
+export ISSUER_STATE_PATH=.amoeba/issuer-state.json
+export ISSUER_API_TOKEN=demo-token
+cargo run -p issuer-service
+
+# Fetch demo proof package
+curl -sf localhost:3000/v1/fixtures/demo-transfer
+
+# Verify public inputs match Phase 1 golden fixture
+curl -sf localhost:3000/v1/fixtures/demo-transfer | node scripts/dev/assert-public-inputs.mjs
+```
+
+### Bindings
+
+Canonical ABI: [`bindings/public-inputs.json`](bindings/public-inputs.json). See [`bindings/README.md`](bindings/README.md) for encoding rules.
+
+Regenerate after ABI edits:
+
+```bash
+pnpm gen:bindings
+pnpm gen:crypto-fixtures
+```
+
+### Issuer service endpoints
+
+| Method | Path |
+|--------|------|
+| GET | `/health` |
+| GET | `/v1/fixtures/demo-transfer` |
+| GET | `/v1/merkle-path/:wallet` |
+| POST | `/v1/roots/publish` (Bearer token) |
+
+Publish roots via service (testnet):
+
+```bash
+export ISSUER_API_TOKEN=...
+./scripts/dev/publish-roots-via-service.sh
+```
