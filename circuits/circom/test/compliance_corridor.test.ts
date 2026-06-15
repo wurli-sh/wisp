@@ -9,6 +9,7 @@ import {
   computeCorridorConfigHash,
   CORRIDOR_ID,
   NULLIFIER_DOMAIN_TAG,
+  PUBLIC_INPUT_FIELDS,
 } from "../scripts/gen-fixture.mjs";
 import { mod } from "../lib/field.mjs";
 import { poseidon2Hash1, poseidon2Hash11 } from "../lib/poseidon2.mjs";
@@ -16,31 +17,12 @@ import { poseidon2Hash1, poseidon2Hash11 } from "../lib/poseidon2.mjs";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const INPUTS = join(__dirname, "..", "inputs");
 
-test("public input field order matches ABI (17 fields)", () => {
+test("public input field order matches generated ABI", () => {
   const witness = buildWitnessInput({});
-  const keys = [
-    "merkle_root",
-    "nullifier",
-    "asset_lo",
-    "asset_hi",
-    "sender_lo",
-    "sender_hi",
-    "epoch",
-    "recipient_lo",
-    "recipient_hi",
-    "amount",
-    "sanctions_root",
-    "jurisdiction_root",
-    "timestamp",
-    "corridor_id",
-    "corridor_config_hash",
-    "source_jurisdiction_root",
-    "dest_address_root",
-  ];
-  for (const key of keys) {
+  for (const key of PUBLIC_INPUT_FIELDS) {
     assert.ok(key in witness, `missing public field ${key}`);
   }
-  assert.equal(keys.length, 17);
+  assert.equal(PUBLIC_INPUT_FIELDS.length, 17);
 });
 
 test("nullifier binds corridor_id per circuit", () => {

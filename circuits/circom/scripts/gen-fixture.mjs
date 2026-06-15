@@ -1,76 +1,47 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { mod, toString } from "../lib/field.mjs";
-import { poseidon2Hash1, poseidon2Hash2, poseidon2Hash10, poseidon2Hash11 } from "../lib/poseidon2.mjs";
 import {
-  MERKLE_DEPTH,
+  addressToLimbs,
+  computeCorridorConfigHash,
+  computeNullifier,
+} from "../../../packages/amoeba-crypto/src/index.mjs";
+import {
   fieldToJson,
   fieldsToJson,
   getMerklePathForIndex,
   merkleRootForLeafAtIndex,
+  poseidon2Hash1,
+  poseidon2Hash2,
   sparseSanctionsPath,
-} from "../lib/merkle.mjs";
+} from "../../../packages/amoeba-crypto/src/index.mjs";
+import { PUBLIC_INPUT_FIELDS, PROTOCOL } from "../../../bindings/generated/publicInputs.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const INPUTS_DIR = path.join(__dirname, "..", "inputs");
+const FIXTURES_DIR = path.join(__dirname, "..", "..", "..", "bindings", "fixtures");
 
-export const EPOCH_LEN_SECS = 86400;
-export const CORRIDOR_ID = 1;
+export const EPOCH_LEN_SECS = PROTOCOL.EPOCH_LEN_SECS;
+export const CORRIDOR_ID = PROTOCOL.CORRIDOR_ID;
+export const NULLIFIER_DOMAIN_TAG = PROTOCOL.NULLIFIER_DOMAIN_TAG;
+export const CORRIDOR_DOMAIN_TAG = PROTOCOL.CORRIDOR_DOMAIN_TAG;
 
-// Domain tags must match compliance_corridor.circom Poseidon2Hash1 inputs.
-export const NULLIFIER_DOMAIN_TAG = 1204609112206068373041n;
-export const CORRIDOR_DOMAIN_TAG = 0x414d4f4542415f5631n;
+const demoTransfer = JSON.parse(
+  fs.readFileSync(path.join(FIXTURES_DIR, "demo-transfer.json"), "utf8"),
+);
 
-// Demo 32-byte identities (fake StrKey payloads, not real accounts)
 export const DEMO = {
-  credential_secret: 424242n,
-  sender: Buffer.from(
-    "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301",
-    "hex",
-  ),
-  recipient: Buffer.from(
-    "102132435465768798a9babbdcedfe0f0f1e2d3c4b5a69788796a5b4c3d2e1f0",
-    "hex",
-  ),
-  asset: Buffer.from(
-    "ffeeddccbbaa998877665544332211000123456789abcdeffedcba9876543210",
-    "hex",
-  ),
-  amount: 10_000_000n,
-  epoch: 20600n,
-  jurisdiction: 840n, // US ISO numeric
-  credential_expiry: 2000000000n,
+  credential_secret: BigInt(demoTransfer.credential_secret),
+  sender: Buffer.from(demoTransfer.sender_hex, "hex"),
+  recipient: Buffer.from(demoTransfer.recipient_hex, "hex"),
+  asset: Buffer.from(demoTransfer.asset_hex, "hex"),
+  amount: BigInt(demoTransfer.amount),
+  epoch: BigInt(demoTransfer.epoch),
+  jurisdiction: BigInt(demoTransfer.jurisdiction),
+  credential_expiry: BigInt(demoTransfer.credential_expiry),
 };
 
-export function addressToLimbs(bytes32) {
-  const hi = BigInt("0x" + bytes32.subarray(0, 16).toString("hex"));
-  const lo = BigInt("0x" + bytes32.subarray(16, 32).toString("hex"));
-  return { lo: mod(lo), hi: mod(hi) };
-}
-
-export function computeCorridorConfigHash({
-  corridorId,
-  sourceJurisdictionRoot,
-  destAddressRoot,
-  enabled = 1n,
-  travelRuleThreshold = 0n,
-}) {
-  // AMOEBA_CORRIDOR_V1 domain via fixed label field
-  const label = poseidon2Hash1(mod(CORRIDOR_DOMAIN_TAG));
-  return poseidon2Hash10([
-    label,
-    mod(corridorId),
-    mod(sourceJurisdictionRoot),
-    mod(destAddressRoot),
-    mod(travelRuleThreshold),
-    mod(enabled),
-    mod(0),
-    mod(0),
-    mod(0),
-    mod(0),
-  ]);
-}
+export { addressToLimbs, computeCorridorConfigHash, PUBLIC_INPUT_FIELDS };
 
 export function buildWitnessInput(overrides = {}) {
   const d = { ...DEMO, ...overrides };
@@ -98,20 +69,18 @@ export function buildWitnessInput(overrides = {}) {
 
   const corridorId = d.corridor_id ?? CORRIDOR_ID;
 
-  const nullifier_domain = poseidon2Hash1(mod(NULLIFIER_DOMAIN_TAG));
-  const nullifier = poseidon2Hash11([
-    nullifier_domain,
-    d.credential_secret,
-    senderLimbs.lo,
-    senderLimbs.hi,
-    assetLimbs.lo,
-    assetLimbs.hi,
-    d.epoch,
-    recipientLimbs.lo,
-    recipientLimbs.hi,
-    d.amount,
+  const nullifier = computeNullifier({
+    credentialSecret: d.credential_secret,
+    senderLo: senderLimbs.lo,
+    senderHi: senderLimbs.hi,
+    assetLo: assetLimbs.lo,
+    assetHi: assetLimbs.hi,
+    epoch: d.epoch,
+    recipientLo: recipientLimbs.lo,
+    recipientHi: recipientLimbs.hi,
+    amount: d.amount,
     corridorId,
-  ]);
+  });
 
   const corridorConfigHash = computeCorridorConfigHash({
     corridorId,
@@ -167,7 +136,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     "valid.us-mx": {},
     "invalid.expired": { credential_expiry: 1n },
     "invalid.sanctioned": {
-      sanctions_leaf_value: 1n, // will fail circuit - use for negative test doc only
+      sanctions_leaf_value: 1n,
     },
   };
 
@@ -196,13 +165,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
   for (const [name, overrides] of Object.entries(fixtures)) {
     if (name === "invalid.sanctioned") {
-      // Sanctioned fixture requires non-zero leaf - circuit enforces zero
       const w = buildWitnessInput({});
       w.sanctions_leaf_value = "1";
       fs.mkdirSync(INPUTS_DIR, { recursive: true });
       fs.writeFileSync(
         path.join(INPUTS_DIR, `${name}.json`),
-        JSON.stringify(w, null, 2) + "\n"
+        JSON.stringify(w, null, 2) + "\n",
       );
       console.log("wrote", name);
       continue;
