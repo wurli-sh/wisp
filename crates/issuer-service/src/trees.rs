@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 use amoeba_crypto::{
     address_to_limbs, compute_corridor_config_hash, compute_nullifier, fr_to_canonical_decimal,
     get_merkle_path_for_index, merkle_root_for_leaf_at_index, mod_u128, mod_u64, poseidon2_hash1,
@@ -59,7 +61,7 @@ pub fn build_demo_proof_package(demo: &DemoTransferFixture) -> ProofPackage {
         mod_u64(epoch),
         recipient_limbs.lo,
         recipient_limbs.hi,
-        mod_u64(amount as u64),
+        mod_u64(u64::try_from(amount).expect("amount overflow")),
         mod_u64(corridor_id as u64),
     );
 

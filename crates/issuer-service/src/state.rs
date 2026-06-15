@@ -99,7 +99,7 @@ impl AppState {
         let roots = self.roots();
         format!(
             "{:x}",
-            md5_hash(&format!(
+            hash_to_u64(&format!(
                 "{}{}{}{}{}{}",
                 roots.merkle_root,
                 roots.sanctions_root,
@@ -139,9 +139,10 @@ impl AppState {
 }
 
 fn load_demo_transfer(cfg: &Config) -> DemoTransferFixture {
-    let path = Path::new(&cfg.fixtures_dir).join("demo-transfer.json");
-    let raw = fs::read_to_string(path).expect("demo-transfer.json");
-    serde_json::from_str(&raw).expect("parse demo-transfer")
+    let filename = cfg.demo_transfer_filename();
+    let path = Path::new(&cfg.fixtures_dir).join(filename);
+    let raw = fs::read_to_string(&path).unwrap_or_else(|_| panic!("{filename}"));
+    serde_json::from_str(&raw).unwrap_or_else(|_| panic!("parse {filename}"))
 }
 
 fn load_demo_users(cfg: &Config) -> DemoUsersFixture {
@@ -150,7 +151,7 @@ fn load_demo_users(cfg: &Config) -> DemoUsersFixture {
     serde_json::from_str(&raw).expect("parse demo-users")
 }
 
-fn md5_hash(s: &str) -> u64 {
+fn hash_to_u64(s: &str) -> u64 {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     let mut h = DefaultHasher::new();
