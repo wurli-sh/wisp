@@ -16,6 +16,23 @@ use soroban_sdk::{
 
 use crate::{Groth16Verifier, Groth16VerifierClient, Proof};
 
+fn repo_root() -> std::path::PathBuf {
+    std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../..")
+        .canonicalize()
+        .expect("repo root")
+}
+
+fn bytes_to_hex(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut out = String::with_capacity(bytes.len() * 2);
+    for b in bytes {
+        out.push(HEX[(b >> 4) as usize] as char);
+        out.push(HEX[(b & 0xf) as usize] as char);
+    }
+    out
+}
+
 #[derive(Deserialize)]
 struct SnarkProof {
     pi_a: [String; 3],
@@ -136,4 +153,30 @@ fn rejects_tampered_proof() {
     }
 
     assert!(!verifier.verify_proof(&bad, &signals));
+}
+
+#[test]
+fn vk_hash_matches_compute_vk_hash_script() {
+    let env = Env::default();
+    let verifier_id = env.register(Groth16Verifier, ());
+    let verifier = Groth16VerifierClient::new(&env, &verifier_id);
+
+    let on_chain = bytes_to_hex(&verifier.vk_hash().to_array());
+
+    let script = repo_root().join("circuits/circom/scripts/compute-vk-hash.py");
+    let output = std::process::Command::new("python3")
+        .arg(&script)
+        .output()
+        .expect("run compute-vk-hash.py");
+    assert!(
+        output.status.success(),
+        "compute-vk-hash.py failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let expected: String = String::from_utf8(output.stdout)
+        .expect("utf8 stdout")
+        .trim()
+        .into();
+
+    assert_eq!(on_chain, expected);
 }
