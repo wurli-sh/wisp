@@ -1,0 +1,8 @@
+{
+  "name": "@amoeba/bindings",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./publicInputs": "./generated/publicInputs.ts"
+  }
+}

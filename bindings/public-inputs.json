@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "fields": [
+    { "index": 0, "name": "merkle_root", "type": "field" },
+    { "index": 1, "name": "nullifier", "type": "field" },
+    { "index": 2, "name": "asset_lo", "type": "field" },
+    { "index": 3, "name": "asset_hi", "type": "field" },
+    { "index": 4, "name": "sender_lo", "type": "field" },
+    { "index": 5, "name": "sender_hi", "type": "field" },
+    { "index": 6, "name": "epoch", "type": "u64" },
+    { "index": 7, "name": "recipient_lo", "type": "field" },
+    { "index": 8, "name": "recipient_hi", "type": "field" },
+    { "index": 9, "name": "amount", "type": "i128" },
+    { "index": 10, "name": "sanctions_root", "type": "field" },
+    { "index": 11, "name": "jurisdiction_root", "type": "field" },
+    { "index": 12, "name": "timestamp", "type": "u64" },
+    { "index": 13, "name": "corridor_id", "type": "u32" },
+    { "index": 14, "name": "corridor_config_hash", "type": "field" },
+    { "index": 15, "name": "source_jurisdiction_root", "type": "field" },
+    { "index": 16, "name": "dest_address_root", "type": "field" }
+  ]
+}

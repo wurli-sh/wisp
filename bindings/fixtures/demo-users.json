@@ -1,0 +1,23 @@
+{
+  "demo_only": true,
+  "users": [
+    {
+      "wallet_hex": "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301",
+      "jurisdiction": "US",
+      "jurisdiction_code": 840,
+      "credential_expiry": 2000000000,
+      "sanctions_clear": true,
+      "corridor_eligibility": [1]
+    }
+  ],
+  "corridors": [
+    {
+      "id": 1,
+      "name": "US-MX",
+      "enabled": true,
+      "allowed_destinations_hex": [
+        "102132435465768798a9babbdcedfe0f0f1e2d3c4b5a69788796a5b4c3d2e1f0"
+      ]
+    }
+  ]
+}

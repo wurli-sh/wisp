@@ -1,0 +1,24 @@
+{
+  "env": {
+    "VERIFIER_CONTRACT_ID": "VERIFIER_CONTRACT_ID",
+    "COMPLIANCE_CONTRACT_ID": "COMPLIANCE_CONTRACT_ID",
+    "SAC_CONTRACT_ID": "SAC_CONTRACT_ID",
+    "STELLAR_RPC_URL": "STELLAR_RPC_URL",
+    "NETWORK_PASSPHRASE": "NETWORK_PASSPHRASE",
+    "ADMIN_SECRET_KEY": "ADMIN_SECRET_KEY",
+    "ISSUER_SECRET_KEY": "ISSUER_SECRET_KEY",
+    "ISSUER_PUBLIC_KEY": "ISSUER_PUBLIC_KEY",
+    "ISSUER_API_TOKEN": "ISSUER_API_TOKEN"
+  },
+  "compliance": {
+    "register_issuer": "register_issuer",
+    "update_issuer_root": "update_issuer_root",
+    "register_corridor": "register_corridor",
+    "update_corridor": "update_corridor",
+    "compliant_transfer": "compliant_transfer"
+  },
+  "verifier": {
+    "verify_proof": "verify_proof",
+    "vk_hash": "vk_hash"
+  }
+}
