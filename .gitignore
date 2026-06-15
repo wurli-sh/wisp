@@ -2,6 +2,10 @@ amoeba-architecture.md
 amoeba-impl-plan.md
 amoeba-zk.md
 stellar-hacks-zk.md
+CEREMONY_RUNBOOK.md
+MAINNET_BLOCKERS.md
+MAINNET_RUNBOOK.md
+TESTNET_RUNBOOK.md
 reference/
 .agents/
 .codex/
@@ -15,6 +19,8 @@ node_modules/
 
 # Proving artifacts (too large for git)
 circuits/**/artifacts/*.zkey
+circuits/**/artifacts/ceremony/*.zkey
+circuits/**/artifacts/ceremony/*.ptau
 circuits/**/*.wasm
 circuits/**/*.r1cs
 circuits/**/*.sym
