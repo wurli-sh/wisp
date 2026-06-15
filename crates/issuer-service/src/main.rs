@@ -1,0 +1,30 @@
+mod auth;
+mod config;
+mod routes;
+mod state;
+mod stellar;
+mod trees;
+
+use std::net::SocketAddr;
+
+use config::Config;
+use state::AppState;
+use tracing_subscriber::EnvFilter;
+
+#[tokio::main]
+async fn main() {
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            EnvFilter::from_default_env().add_directive("issuer_service=info".parse().unwrap()),
+        )
+        .init();
+
+    let cfg = Config::from_env();
+    let state = AppState::load(&cfg);
+    let app = routes::router(cfg.clone(), state);
+
+    let addr: SocketAddr = cfg.listen_addr.parse().expect("invalid ISSUER_LISTEN_ADDR");
+    tracing::info!("issuer-service listening on {addr}");
+    let listener = tokio::net::TcpListener::bind(addr).await.expect("bind");
+    axum::serve(listener, app).await.expect("serve");
+}

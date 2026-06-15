@@ -1,0 +1,109 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Credential {
+    pub wallet: String,
+    pub jurisdiction: String,
+    pub credential_expiry: u64,
+    #[serde(default)]
+    pub sanctions_clear: bool,
+    #[serde(default)]
+    pub corridor_eligibility: Vec<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub credential_commitment: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransferParams {
+    pub asset: String,
+    pub sender: String,
+    pub recipient: String,
+    pub amount: String,
+    pub corridor_id: u32,
+    pub epoch: u64,
+    pub timestamp: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Roots {
+    pub merkle_root: String,
+    pub sanctions_root: String,
+    pub jurisdiction_root: String,
+    pub source_jurisdiction_root: String,
+    pub dest_address_root: String,
+    pub corridor_config_hash: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MerklePaths {
+    pub membership: Vec<String>,
+    pub membership_indices: Vec<u8>,
+    pub sanctions: Vec<String>,
+    pub sanctions_indices: Vec<u8>,
+    pub jurisdiction: Vec<String>,
+    pub jurisdiction_indices: Vec<u8>,
+    pub source_jurisdiction: Vec<String>,
+    pub source_jurisdiction_indices: Vec<u8>,
+    pub dest_address: Vec<String>,
+    pub dest_address_indices: Vec<u8>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WitnessPrivate {
+    pub demo_unsafe: bool,
+    pub credential_secret: String,
+    pub jurisdiction: String,
+    pub credential_expiry: String,
+    pub sanctions_leaf_value: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProofPackage {
+    pub credential: Credential,
+    pub transfer: TransferParams,
+    pub roots: Roots,
+    pub paths: MerklePaths,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub witness_private: Option<WitnessPrivate>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub public_inputs: Option<std::collections::HashMap<String, String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DemoTransferFixture {
+    pub demo_only: bool,
+    pub credential_secret: String,
+    pub corridor_id: u32,
+    pub sender_hex: String,
+    pub recipient_hex: String,
+    pub asset_hex: String,
+    pub amount: String,
+    pub epoch: String,
+    pub jurisdiction: String,
+    pub credential_expiry: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DemoUsersFixture {
+    pub demo_only: bool,
+    pub users: Vec<DemoUser>,
+    pub corridors: Vec<DemoCorridor>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DemoUser {
+    pub wallet_hex: String,
+    pub jurisdiction: String,
+    pub jurisdiction_code: u32,
+    pub credential_expiry: u64,
+    pub sanctions_clear: bool,
+    pub corridor_eligibility: Vec<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DemoCorridor {
+    pub id: u32,
+    pub name: String,
+    pub enabled: bool,
+    pub allowed_destinations_hex: Vec<String>,
+}
