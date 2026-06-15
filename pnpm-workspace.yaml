@@ -2,3 +2,4 @@ packages:
   - "circuits/circom"
   - "packages/amoeba-crypto"
   - "bindings"
+  - "sdk"

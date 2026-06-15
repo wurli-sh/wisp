@@ -2,10 +2,6 @@ amoeba-architecture.md
 amoeba-impl-plan.md
 amoeba-zk.md
 stellar-hacks-zk.md
-CEREMONY_RUNBOOK.md
-MAINNET_BLOCKERS.md
-MAINNET_RUNBOOK.md
-TESTNET_RUNBOOK.md
 reference/
 .agents/
 .codex/
@@ -21,6 +17,10 @@ node_modules/
 circuits/**/artifacts/*.zkey
 circuits/**/artifacts/ceremony/*.zkey
 circuits/**/artifacts/ceremony/*.ptau
+!circuits/circom/artifacts/ceremony/transcript.jsonl
+!circuits/circom/artifacts/ceremony/manifest.json
+!circuits/circom/artifacts/ceremony/verification_key.json
+!circuits/circom/artifacts/ceremony/vk_hash.txt
 circuits/**/*.wasm
 circuits/**/*.r1cs
 circuits/**/*.sym

@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.mjs"
+    ".": "./src/index.mjs",
+    "./witness": "./src/witness.mjs",
+    "./strkey": "./src/strkey.mjs"
   },
   "dependencies": {
     "ffjavascript": "^0.3.1"

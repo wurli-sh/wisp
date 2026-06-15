@@ -102,7 +102,14 @@ Direct SAC transfers can bypass Amoeba unless issuer authorization is configured
 
 ### Mainnet ceremony gate
 
-`circuits/circom/scripts/setup.sh` is not a mainnet ceremony. A guarded mainnet pilot using the current Groth16 circuit requires a completed and published multi-party phase 2 ceremony. See `CEREMONY_RUNBOOK.md` and the `ceremony:*` scripts.
+`circuits/circom/scripts/setup.sh` is not a mainnet ceremony. Mainnet requires a completed, published multi-party phase 2 ceremony with verifier sync.
+
+- Canonical evidence package: `circuits/circom/artifacts/ceremony/`
+- Required flags in `manifest.json`: `published: true`, `verifier_contract_synced: true`
+- The final zkey must remain locally available for strict deploy-time verification (not committed to git)
+- Flow: `ceremony:init` → contribute (≥3) → finalize → `ceremony:sync` → `ceremony:publish`
+
+See `CEREMONY_RUNBOOK.md` and the `ceremony:*` npm scripts.
 
 ### Launch runbooks
 
@@ -169,3 +176,43 @@ Publish roots via service (testnet):
 export ISSUER_API_TOKEN=...
 ./scripts/dev/publish-roots-via-service.sh
 ```
+
+## Phase 3 — SDK + Testnet Settlement
+
+Node SDK orchestrates issuer paths → witness → Groth16 prove → Soroban `compliant_transfer`.
+
+### Stage 1 — Blocker gate (run first)
+
+```bash
+./scripts/dev/verify-phase3-blockers.sh
+# Optional testnet checks (requires funded keys + deploy):
+AMOEBA_RUN_TESTNET_BLOCKERS=1 ./scripts/dev/verify-phase3-blockers.sh
+```
+
+### Stage 2 — Local SDK demo
+
+```bash
+./scripts/dev/demo-phase3.sh
+# or: pnpm test:sdk  (with issuer-service running)
+```
+
+### Testnet settlement
+
+```bash
+./scripts/dev/bootstrap-testnet-demo.sh      # once: keys, mock SAC, fixture, prove, deploy
+./scripts/dev/verify-phase3-testnet.sh       # prove → settle → audit → replay rejection
+```
+
+### SDK API
+
+```javascript
+import { AmoebaClient } from "./sdk/src/index.mjs";
+
+const client = AmoebaClient.fromEnv();
+const pkg = await client.issuer.getDemoTransfer();
+const proven = await client.prove({ package: pkg });
+await client.settleWithKeypair(proven, pkg, senderSecret);
+await client.audit(proven.nullifier, senderPublicKey);
+```
+
+Testnet fixtures use `AMOEBA_FIXTURE_PROFILE=testnet` and `bindings/fixtures/demo-transfer-testnet.json` (StrKeys + hex payloads).

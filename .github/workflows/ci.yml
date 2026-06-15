@@ -79,8 +79,10 @@ jobs:
       - name: Local proof verification
         run: ./circuits/circom/scripts/verify-local.sh
 
-      - name: Ceremony artifact verification
-        run: ./circuits/circom/scripts/ceremony-verify.sh
+      - name: Ceremony gate tests
+        run: |
+          pnpm test:ceremony
+          python3 circuits/circom/scripts/compute-vk-hash.py > /dev/null
 
       - name: Soroban build
         run: stellar contract build

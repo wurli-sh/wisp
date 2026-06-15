@@ -7,12 +7,21 @@
     "gen:bindings": "node bindings/scripts/generate.mjs",
     "gen:crypto-fixtures": "node bindings/scripts/gen-crypto-fixtures.mjs && node bindings/scripts/gen-addresses.mjs",
     "gen:fixtures": "node circuits/circom/scripts/gen-fixture.mjs",
+    "gen:testnet-fixture": "node scripts/dev/gen-testnet-fixture.mjs",
+    "build:bindings-clients": "pnpm --filter compliance exec tsc && pnpm --filter verifier exec tsc",
+    "test:witness": "node --test packages/amoeba-crypto/test/witness.test.mjs",
+    "test:sdk": "node --test sdk/test/sdk.test.mjs",
+    "verify:phase3-blockers": "./scripts/dev/verify-phase3-blockers.sh",
+    "demo:phase3": "./scripts/dev/demo-phase3.sh",
     "prove": "cd circuits/circom && ./scripts/prove.sh",
     "verify": "cd circuits/circom && ./scripts/verify-local.sh",
     "test:circuit": "node --experimental-strip-types --test circuits/circom/test/*.test.ts",
     "test:bindings": "node --test bindings/test/public-inputs.test.mjs bindings/test/circuit-abi.test.mjs",
     "ceremony:init": "cd circuits/circom && ./scripts/ceremony-init.sh",
-    "ceremony:verify": "cd circuits/circom && ./scripts/ceremony-verify.sh"
+    "ceremony:verify": "cd circuits/circom && ./scripts/ceremony-verify.sh",
+    "ceremony:sync": "cd circuits/circom && ./scripts/sync-verifier-from-ceremony.sh",
+    "ceremony:publish": "cd circuits/circom && ./scripts/ceremony-publish.sh",
+    "test:ceremony": "./circuits/circom/test/ceremony-gates.test.sh"
   },
   "devDependencies": {
     "snarkjs": "^0.7.0"
