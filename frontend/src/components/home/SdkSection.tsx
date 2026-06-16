@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, ClipboardCopy } from "lucide-react";
+import { PAGE_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
 import { HighlightedText } from "@/components/spell/highlighted-text";
 import { cn } from "@/lib/cn";
@@ -23,8 +24,8 @@ export function SdkSection() {
   };
 
   return (
-    <section className="bg-primary-soft/35 py-24">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+    <section className="bg-background py-24">
+      <div className={cn("mx-auto px-4 sm:px-6", PAGE_MAX)}>
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -42,10 +43,10 @@ export function SdkSection() {
             variants={fadeInUp}
             className="mt-4 text-3xl font-bold text-foreground sm:text-4xl"
           >
+            {sdk.headlineLead}{" "}
             <HighlightedText variant="bright" from="bottom" inView delay={0.05}>
-              Three lines
-            </HighlightedText>{" "}
-            of code.
+              {sdk.headlineAccent}
+            </HighlightedText>
           </motion.h2>
           <motion.p
             variants={fadeInUp}
@@ -67,8 +68,9 @@ export function SdkSection() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
+                aria-pressed={activeTab === tab.id}
                 className={cn(
-                  "relative shrink-0 px-5 py-3.5 text-sm font-medium transition-colors",
+                  "relative shrink-0 px-5 py-3.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-charcoal",
                   activeTab === tab.id
                     ? "text-white"
                     : "text-white/40 hover:text-white/70",
@@ -97,7 +99,7 @@ export function SdkSection() {
               type="button"
               aria-label="Copy"
               onClick={handleCopy}
-              className="shrink-0 cursor-pointer p-1 text-white/40 transition-colors hover:text-white"
+              className="shrink-0 cursor-pointer p-2 text-white/40 transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-charcoal"
             >
               {copied ? <Check size={16} /> : <ClipboardCopy size={16} />}
             </button>

@@ -7,8 +7,8 @@ import {
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
+import { PAGE_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
-import { HighlightedText } from "@/components/spell/highlighted-text";
 import { cn } from "@/lib/cn";
 import { fadeInUp, scrollViewport, staggerContainer } from "@/lib/animations";
 
@@ -44,11 +44,11 @@ function MarketTags({ tags }: { tags: readonly string[] }) {
 }
 
 export function UseCasesSection() {
-  const { useCases } = COPY;
+  const { builders } = COPY;
 
   return (
     <section className="bg-background py-24">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+      <div className={cn("mx-auto px-4 sm:px-6", PAGE_MAX)}>
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -60,23 +60,19 @@ export function UseCasesSection() {
             variants={fadeInUp}
             className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
           >
-            {useCases.eyebrow}
+            {builders.eyebrow}
           </motion.p>
           <motion.h2
             variants={fadeInUp}
             className="mt-3 text-3xl font-bold text-foreground sm:text-4xl"
           >
-            {useCases.headline}
+            {builders.headline}
           </motion.h2>
           <motion.p
             variants={fadeInUp}
             className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground"
           >
-            One{" "}
-            <HighlightedText variant="sky" from="bottom" inView>
-              Groth16 proof
-            </HighlightedText>{" "}
-            gates every flow below.
+            {builders.sub}
           </motion.p>
         </motion.div>
 
@@ -87,7 +83,7 @@ export function UseCasesSection() {
           variants={staggerContainer}
           className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-6"
         >
-          {useCases.markets.map((market, index) => {
+          {builders.benefits.map((market, index) => {
             const layout = BENTO[index];
             const Icon = layout.icon;
             const isFeatured = index === 0;
@@ -141,7 +137,7 @@ export function UseCasesSection() {
 
                   {isFeatured && (
                     <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-colors duration-300 group-hover:text-primary-bright">
-                      {useCases.featuredNote}
+                      {builders.featuredNote}
                     </p>
                   )}
                 </div>

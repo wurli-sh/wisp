@@ -1,6 +1,8 @@
 import { motion } from "framer-motion";
 import { ShieldCheck } from "lucide-react";
+import { PAGE_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
+import { cn } from "@/lib/cn";
 import { TiltCard } from "@/components/spell/tilt-card";
 import { HighlightedText } from "@/components/spell/highlighted-text";
 import { fadeInUp, scrollViewport, staggerContainer } from "@/lib/animations";
@@ -64,7 +66,7 @@ export function ComplianceCardSection() {
 
   return (
     <section className="py-24">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6">
+      <div className={cn("mx-auto px-4 sm:px-6", PAGE_MAX)}>
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -82,12 +84,11 @@ export function ComplianceCardSection() {
             variants={fadeInUp}
             className="mx-auto mt-4 max-w-2xl text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base"
           >
-            Complete KYC once. Every transfer after carries its own cryptographic proof — like a{" "}
+            {complianceCard.subLead}{" "}
             <HighlightedText variant="soft" from="bottom" inView>
-              prepaid compliance card
+              {complianceCard.subAccent}
             </HighlightedText>{" "}
-            for Stellar stablecoins. Credentials stay off-chain; the ledger only sees verified
-            outcomes.
+            {complianceCard.subTail}
           </motion.p>
         </motion.div>
 

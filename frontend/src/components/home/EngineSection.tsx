@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
+import { PAGE_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
+import { cn } from "@/lib/cn";
 import { HighlightedText } from "@/components/spell/highlighted-text";
 import { fadeInUp, scrollViewport, staggerContainer } from "@/lib/animations";
 
@@ -7,8 +9,8 @@ export function EngineSection() {
   const { engine } = COPY;
 
   return (
-    <section id="how-it-works" className="bg-primary-soft/40 py-20">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+    <section id="how-it-works" className="py-20">
+      <div className={cn("mx-auto px-4 sm:px-6", PAGE_MAX)}>
         <motion.div
           initial="hidden"
           whileInView="visible"

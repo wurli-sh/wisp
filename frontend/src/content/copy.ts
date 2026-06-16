@@ -5,9 +5,9 @@ export interface HeroCta {
 
 export const COPY = {
   hero: {
-    eyebrow: "COMPLIANCE FOR PROGRAMMABLE MONEY",
-    headline: "Prove without showing.",
-    sub: "Stablecoins moved $9.3T last year. Compliance is still spreadsheets. Amoeba lets every Stellar transfer carry its own audit — cryptographic, instant, private credentials.",
+    eyebrow: "COMPLIANCE RAIL FOR STELLAR STABLECOINS",
+    headline: "Compliant transfers, without exposing user data.",
+    sub: "Prove corridor compliance on every Stellar transfer. Keep customer credentials off-chain.",
     ctas: {
       primary: { label: "See a live proof →", href: "/demo" },
       secondary: { label: "How it works", href: "#how-it-works" },
@@ -15,19 +15,49 @@ export const COPY = {
   },
 
   paradoxAct: {
-    eyebrow: "$9T moved in 2025. Until now, only one option.",
-    headline: "Same transaction. Two realities.",
-    closer: "Compliance and privacy — one proof.",
+    eyebrow: "PUBLIC-CHAIN COMPLIANCE STILL FORCES A BAD TRADEOFF",
+    headline: "Every transfer needs proof.",
+    headlineAccent: "Not paperwork.",
+    closer: "Compliance evidence and customer privacy — one rail.",
     withoutZk: {
-      label: "Without ZK",
-      rows: ["Recipient", "Tax ID", "Country", "Amount"],
-      pill: "VIOLATES GDPR · LGPD · MiCA",
+      label: "Manual compliance",
+      tagline: "Sensitive customer data follows the payment",
+      rows: [
+        { field: "Recipient", value: "GDKT…4H2P" },
+        { field: "Tax ID", value: "489-32-7104" },
+        { field: "Country", value: "US (from KYC file)" },
+        { field: "Amount", value: "$50,000.00 USDC" },
+      ],
+      pill: "HIGH DATA RISK · FRAGMENTED AUDIT",
     },
     withZk: {
-      label: "With ZK",
+      label: "Amoeba rail",
+      tagline: "Proof settles with the transfer, credentials stay off-chain",
+      rows: [
+        { field: "Recipient", value: "GDKT…4H2P", revealed: true },
+        { field: "Tax ID", value: "Groth16 membership", revealed: false },
+        { field: "Country", value: "Jurisdiction proven", revealed: false },
+        { field: "Amount", value: "$50,000.00 USDC", revealed: true },
+      ],
       pill: "COMPLIANT · VERIFIED",
-      caption: "Both prove the user is verified. Only one can stand in court.",
+      caption: "Both move money. Only one leaves reusable proof.",
     },
+  },
+
+  whatItProves: {
+    eyebrow: "WHAT EVERY TRANSFER PROVES",
+    headline: "Eight checks.",
+    sub: "Transfers stay visible. Credentials stay private.",
+    checks: [
+      { name: "KYC membership", detail: "Sender is in the issuer's verified-user Merkle tree." },
+      { name: "Nullifier binding", detail: "Each transfer gets a unique anti-replay nullifier." },
+      { name: "Sanctions exclusion", detail: "Sender is not in the OFAC sanctions tree." },
+      { name: "Jurisdiction", detail: "Sender's KYC jurisdiction is allowed for the corridor." },
+      { name: "Credential expiry", detail: "KYC credential is still valid at proof time." },
+      { name: "Corridor source", detail: "Sender jurisdiction matches the corridor source (e.g. US)." },
+      { name: "Corridor destination", detail: "Recipient is in the corridor destination registry." },
+      { name: "Corridor binding", detail: "On-chain corridor config hash matches the proof." },
+    ],
   },
 
   engine: {
@@ -37,7 +67,7 @@ export const COPY = {
       {
         title: "Verify once.",
         kicker: "identity intake",
-        body: "KYC issuer signs once. The Merkle root goes on-chain via Soroban. You never expose a document again.",
+        body: "An issuer verifies once and publishes a root on-chain. The document does not travel with the payment.",
         benchmarks: [
           { value: "1", label: "Credential" },
           { value: "0", label: "PII on ledger" },
@@ -46,7 +76,7 @@ export const COPY = {
       {
         title: "Prove anywhere.",
         kicker: "local proving",
-        body: "The browser generates a Groth16 proof in <5s. No server. No trust assumption.",
+        body: "The browser generates a fresh proof for the sender, recipient, corridor, asset, and amount.",
         benchmarks: [
           { value: "<5s", label: "Proof generation" },
           { value: "256B", label: "Proof size" },
@@ -55,7 +85,7 @@ export const COPY = {
       {
         title: "Settle forever.",
         kicker: "on-chain verification",
-        body: "The compliance contract verifies in Soroban, records a nullifier, and gates the SAC transfer. Audit trail lives forever.",
+        body: "Soroban verifies the proof, records the nullifier, and gates the SAC transfer in one flow.",
         benchmarks: [
           { value: "<$0.001", label: "Verify cost" },
           { value: "8", label: "Checks in one proof" },
@@ -64,54 +94,56 @@ export const COPY = {
     ],
   },
 
-  useCases: {
-    eyebrow: "USE CASES",
-    headline: "One primitive. Five markets.",
-    sub: "One Groth16 proof gates every flow below.",
-    featuredNote: "US→MX · Stellar testnet",
-    markets: [
+  builders: {
+    eyebrow: "WHY BUILDERS CARE",
+    headline: "Ship the rail, not another compliance backlog.",
+    sub: "Corridor policy, issuer credentials, proof settlement, and audit evidence in one rail.",
+    featuredNote: "US→MX corridor live on Stellar testnet",
+    benefits: [
       {
-        name: "Travel rule",
-        stat: "$9T",
-        statLabel: "Stablecoin vol.",
-        body: "Corridor compliance without tax IDs or passport data on-chain.",
-        tags: ["GENIUS Act", "MiCA", "US→MX"],
+        name: "Faster integration",
+        stat: "1",
+        statLabel: "Shared rail",
+        body: "Reuse one compliance flow instead of rebuilding checks per product.",
+        tags: ["SDK", "Demo"],
       },
       {
-        name: "Proof of solvency",
-        stat: "$5T",
-        statLabel: "Lending TAM",
-        body: "Prove reserves and ratios without opening your book.",
-        tags: ["DeFi", "RWA"],
+        name: "Corridor logic included",
+        stat: "8",
+        statLabel: "Checks per proof",
+        body: "Bind sender, recipient, corridor, asset, and amount in one proof.",
+        tags: ["Travel rule", "Policy"],
       },
       {
-        name: "ZK credit score",
+        name: "Less exposed data",
         stat: "0",
-        statLabel: "PII exposed",
-        body: "Underwrite on history and behavior — not government ID.",
-        tags: ["Lending", "Neobanks"],
+        statLabel: "Raw PII on-chain",
+        body: "Keep credentials off-chain while preserving compliance evidence.",
+        tags: ["Privacy", "GDPR"],
       },
       {
-        name: "AML by behavior",
-        stat: "100%",
-        statLabel: "Trail auditable",
-        body: "Prove a clean pattern without linking wallet to identity.",
-        tags: ["AML", "Privacy"],
+        name: "Portable credentials",
+        stat: "1",
+        statLabel: "Issuer verification",
+        body: "Verify once with an issuer, then reuse the credential across transfers.",
+        tags: ["Anchors", "SEP-24"],
       },
       {
-        name: "Proof of reserves",
-        stat: "$300B",
-        statLabel: "RWA market",
-        body: "Attest backing exists. Hide custody and position size.",
-        tags: ["Stablecoins", "Custody"],
+        name: "Audit-ready settlement",
+        stat: "∞",
+        statLabel: "Replayable trail",
+        body: "Nullifiers and events leave an auditable trail without the documents.",
+        tags: ["Audit", "Soroban"],
       },
     ],
   },
 
   sdk: {
     eyebrow: "SDK",
-    headline: "Three lines of code.",
-    sub: "One TypeScript client — prove in the browser, settle with Freighter, audit from chain events.",
+    headline: "See the rail. Then integrate it.",
+    headlineLead: "See the rail.",
+    headlineAccent: "Then integrate it.",
+    sub: "One TypeScript client to prove in the browser, settle with Freighter, and replay the audit trail.",
     tabs: [
       { id: "pnpm", label: "pnpm", command: "pnpm add @amoeba/sdk" },
       { id: "npm", label: "npm", command: "npm install @amoeba/sdk" },
@@ -132,8 +164,11 @@ await client.settleWithWallet(proven, pkg, wallet);`,
   },
 
   complianceCard: {
-    headline: "A visa for compliant money.",
-    sub: "Complete KYC once. Every transfer after carries its own cryptographic proof — like a prepaid compliance card for Stellar stablecoins. Credentials stay off-chain; the ledger only sees verified outcomes.",
+    headline: "A reusable compliance credential for every transfer.",
+    sub: "Complete issuer verification once. Every transfer after carries its own proof without exposing the customer record.",
+    subLead: "Complete issuer verification once. Every transfer after carries its own proof, like a",
+    subAccent: "compliance credential",
+    subTail: "that travels with the payment, not the customer record.",
     card: {
       brand: "Amoeba",
       network: "Stellar",
@@ -161,8 +196,8 @@ await client.settleWithWallet(proven, pkg, wallet);`,
 
   move: {
     closer: {
-      headline: "Compliance is no longer a six-month moat.",
-      sub: "It's an SDK. Integrate in an afternoon. Pay per proof.",
+      headline: "Stop rebuilding regulated transfer flows from scratch.",
+      sub: "Open the demo to watch a proof generate, settle on Stellar, and leave an audit trail.",
       ctas: {
         primary: { label: "Open demo →", href: "/demo" },
         secondary: { label: "View on GitHub", href: "https://github.com/amoeba-zk/amoeba" },
@@ -174,7 +209,6 @@ await client.settleWithWallet(proven, pkg, wallet);`,
     links: [
       { label: "Home", href: "/" },
       { label: "Demo", href: "/demo" },
-      { label: "Compliance", href: "/compliance" },
     ],
     wallet: { connect: "Connect Wallet", choose: "Choose Wallet" },
   },
@@ -200,6 +234,22 @@ await client.settleWithWallet(proven, pkg, wallet);`,
   demo: {
     title: "Generate a compliant transfer",
     honesty: "Real protocol. Outcomes come from Soroban — not mocked success.",
+    transfer: {
+      title: "Transfer",
+      youSend: "You send",
+      recipient: "Recipient",
+      corridor: "US → MX",
+      asset: "USDC",
+      complianceDetails: "Compliance",
+      corridorId: "Corridor",
+      nullifier: "Nullifier",
+      transaction: "Transaction",
+      connectWallet: "Connect Freighter",
+      fetchPackage: "Fetch proof package",
+      proofStatus: "Proof status",
+      proofReady: "Ready",
+      proofPending: "Not generated",
+    },
     steps: [
       "Wallet connected",
       "Demo sender funded",
@@ -231,7 +281,7 @@ await client.settleWithWallet(proven, pkg, wallet);`,
 
   footer: {
     blurb:
-      "It's an SDK. Integrate in an afternoon. Pay per proof. ZK compliance for Stellar stablecoins — credentials stay private, every transfer stays auditable.",
+      "Amoeba is a compliance rail for Stellar stablecoins: private credentials and auditable settlement in one flow.",
     highlight: "Stellar.",
   },
 } as const;

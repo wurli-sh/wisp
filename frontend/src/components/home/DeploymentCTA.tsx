@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { PAGE_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
+import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/Button";
-import { HighlightedText } from "@/components/spell/highlighted-text";
 import { fadeInUp, scrollViewport } from "@/lib/animations";
 
 export function DeploymentCTA() {
@@ -10,7 +11,7 @@ export function DeploymentCTA() {
 
   return (
     <section className="py-24">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+      <div className={cn("mx-auto px-4 sm:px-6", PAGE_MAX)}>
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -19,10 +20,7 @@ export function DeploymentCTA() {
           className="border-2 border-primary/20 bg-primary-soft p-10 text-center shadow-card"
         >
           <h2 className="text-3xl font-bold text-primary sm:text-4xl">
-            Compliance is no longer a{" "}
-            <HighlightedText variant="bright" from="bottom" inView>
-              six-month moat.
-            </HighlightedText>
+            {closer.headline}
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-muted-foreground">{closer.sub}</p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
