@@ -3,8 +3,15 @@ use std::env;
 #[derive(Clone, Debug)]
 pub struct Config {
     pub listen_addr: String,
+    #[allow(dead_code)]
     pub state_path: Option<String>,
     pub api_token: Option<String>,
+    pub webhook_secrets: Vec<(String, String)>,
+    #[allow(dead_code)]
+    pub supabase_url: Option<String>,
+    #[allow(dead_code)]
+    pub supabase_service_role_key: Option<String>,
+    pub supabase_db_url: Option<String>,
     #[allow(dead_code)]
     pub rpc_url: String,
     pub network_passphrase: String,
@@ -25,6 +32,17 @@ impl Config {
             listen_addr: env::var("ISSUER_LISTEN_ADDR").unwrap_or_else(|_| "127.0.0.1:3000".into()),
             state_path: env::var("ISSUER_STATE_PATH").ok().filter(|s| !s.is_empty()),
             api_token: env::var("ISSUER_API_TOKEN").ok().filter(|s| !s.is_empty()),
+            webhook_secrets: parse_provider_secrets(
+                &env::var("PROVIDER_WEBHOOK_SECRETS").unwrap_or_default(),
+            ),
+            supabase_url: env::var("SUPABASE_URL").ok().filter(|s| !s.is_empty()),
+            supabase_service_role_key: env::var("SUPABASE_SERVICE_ROLE_KEY")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            supabase_db_url: env::var("SUPABASE_DB_URL")
+                .ok()
+                .filter(|s| !s.is_empty())
+                .or_else(|| env::var("DATABASE_URL").ok().filter(|s| !s.is_empty())),
             rpc_url: env::var("STELLAR_RPC_URL")
                 .unwrap_or_else(|_| "https://soroban-testnet.stellar.org".into()),
             network_passphrase: env::var("NETWORK_PASSPHRASE")
@@ -97,6 +115,27 @@ impl Config {
             "demo-transfer.json"
         }
     }
+
+    pub fn webhook_secret_for(&self, provider: &str) -> Option<&str> {
+        self.webhook_secrets
+            .iter()
+            .find(|(name, _)| name == provider)
+            .map(|(_, secret)| secret.as_str())
+    }
+}
+
+fn parse_provider_secrets(raw: &str) -> Vec<(String, String)> {
+    raw.split(',')
+        .filter_map(|part| {
+            let (provider, secret) = part.split_once('=')?;
+            let provider = provider.trim();
+            let secret = secret.trim();
+            if provider.is_empty() || secret.is_empty() {
+                return None;
+            }
+            Some((provider.to_string(), secret.to_string()))
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -108,6 +147,10 @@ mod tests {
             listen_addr: "127.0.0.1:3000".into(),
             state_path: None,
             api_token: None,
+            webhook_secrets: Vec::new(),
+            supabase_url: None,
+            supabase_service_role_key: None,
+            supabase_db_url: None,
             rpc_url: String::new(),
             network_passphrase: String::new(),
             compliance_id: None,
@@ -154,5 +197,13 @@ mod tests {
         assert_eq!(cfg.demo_transfer_filename(), "demo-transfer-testnet.json");
         cfg.fixture_profile = "local".into();
         assert_eq!(cfg.demo_transfer_filename(), "demo-transfer.json");
+    }
+
+    #[test]
+    fn parses_provider_webhook_secrets() {
+        let parsed = parse_provider_secrets("persona=abc, sumsub = def ");
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0], ("persona".into(), "abc".into()));
+        assert_eq!(parsed[1], ("sumsub".into(), "def".into()));
     }
 }

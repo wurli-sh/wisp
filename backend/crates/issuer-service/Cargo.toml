@@ -14,12 +14,20 @@ amoeba-types = { path = "../amoeba-types" }
 ark-bn254 = "0.6"
 ark-ff = "0.6"
 axum = "0.8"
+ed25519-dalek = { version = "2", features = ["rand_core"] }
+hex = "0.4.3"
+rand = "0.10.1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sha2 = "0.11.0"
+stellar-strkey = "0.0.11"
+stellar-xdr = { version = "23", features = ["curr", "std", "base64"] }
 tokio = { version = "1", features = ["full"] }
+tokio-postgres = { version = "0.7", features = ["with-serde_json-1"] }
 tower-http = { version = "0.6", features = ["cors"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1.23.3", features = ["v4"] }
 
 [dev-dependencies]
 axum = "0.8"

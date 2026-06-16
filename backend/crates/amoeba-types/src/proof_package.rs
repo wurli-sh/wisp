@@ -58,11 +58,29 @@ pub struct WitnessPrivate {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DemoPackageMetadata {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sender_strkey: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub recipient_strkey: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub asset_strkey: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub issuer_strkey: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_country: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dest_country: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProofPackage {
     pub credential: Credential,
     pub transfer: TransferParams,
     pub roots: Roots,
     pub paths: MerklePaths,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub demo: Option<DemoPackageMetadata>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub witness_private: Option<WitnessPrivate>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -89,6 +107,29 @@ pub struct DemoTransferFixture {
     pub asset_strkey: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub issuer_strkey: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub source_country: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dest_country: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DemoTransferRequest {
+    pub sender_strkey: String,
+    pub recipient_strkey: String,
+    pub amount: String,
+    pub corridor_id: u32,
+    pub source_country: String,
+    pub dest_country: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CorridorOption {
+    pub id: u32,
+    pub name: String,
+    pub source_country: String,
+    pub dest_country: String,
+    pub enabled: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

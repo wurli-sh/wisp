@@ -1,5 +1,6 @@
 mod auth;
 mod config;
+mod mock_kyc;
 mod routes;
 mod state;
 mod stellar;
@@ -15,12 +16,14 @@ use tracing_subscriber::EnvFilter;
 async fn main() {
     tracing_subscriber::fmt()
         .with_env_filter(
-            EnvFilter::from_default_env().add_directive("issuer_service=info".parse().unwrap()),
+            EnvFilter::from_default_env()
+                .add_directive("issuer_service=debug".parse().unwrap())
+                .add_directive("tower_http=info".parse().unwrap()),
         )
         .init();
 
     let cfg = Config::from_env();
-    let state = AppState::load(&cfg);
+    let state = AppState::load(&cfg).await;
     let app = routes::router(cfg.clone(), state);
 
     let addr: SocketAddr = cfg.listen_addr.parse().expect("invalid ISSUER_LISTEN_ADDR");
