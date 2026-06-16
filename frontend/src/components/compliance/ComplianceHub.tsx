@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { ProofSettledEvent } from "@amoeba/sdk";
@@ -26,17 +25,25 @@ function shorten(value: string, head = 6, tail = 4): string {
   return `${value.slice(0, head)}…${value.slice(-tail)}`;
 }
 
-export function CompliancePage() {
+interface ComplianceHubProps {
+  tab: string;
+  onTabChange: (tab: string) => void;
+  initialNullifier?: string;
+  initialTx?: string;
+}
+
+export function ComplianceHub({
+  tab,
+  onTabChange,
+  initialNullifier = "",
+  initialTx = "",
+}: ComplianceHubProps) {
   const client = useAmoebaClient();
-  const [params, setParams] = useSearchParams();
-  const tab = params.get("tab") ?? "proofs";
 
   const [events, setEvents] = useState<ProofSettledEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
-  const [txQuery, setTxQuery] = useState(() => params.get("tx") ?? "");
-  const [nullifierQuery, setNullifierQuery] = useState(
-    () => params.get("nullifier") ?? "",
-  );
+  const [txQuery, setTxQuery] = useState(initialTx);
+  const [nullifierQuery, setNullifierQuery] = useState(initialNullifier);
   const [auditResult, setAuditResult] = useState<ProofSettledEvent | null>(null);
   const [auditBusy, setAuditBusy] = useState(false);
 
@@ -55,6 +62,41 @@ export function CompliancePage() {
   useEffect(() => {
     if (tab === "proofs") void loadEvents();
   }, [tab, loadEvents]);
+
+  useEffect(() => {
+    if (!initialNullifier && !initialTx) return;
+    onTabChange("audit");
+    if (initialNullifier) setNullifierQuery(initialNullifier);
+    if (initialTx) setTxQuery(initialTx);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- seed audit fields once from URL
+  }, []);
+
+  useEffect(() => {
+    if (tab !== "audit") return;
+    if (!initialNullifier && !initialTx) return;
+
+    void (async () => {
+      setAuditBusy(true);
+      setAuditResult(null);
+      try {
+        if (initialTx.trim()) {
+          const hit = await client.getProofSettledByTxHash(initialTx.trim());
+          setAuditResult(hit);
+          return;
+        }
+        if (initialNullifier.trim()) {
+          const hit = await client.getProofSettledByNullifier(
+            initialNullifier.trim().replace(/^0x/i, ""),
+          );
+          setAuditResult(hit);
+        }
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Audit search failed");
+      } finally {
+        setAuditBusy(false);
+      }
+    })();
+  }, [client, initialNullifier, initialTx, tab]);
 
   const runAuditSearch = async () => {
     setAuditBusy(true);
@@ -87,7 +129,7 @@ export function CompliancePage() {
       <Tabs
         layoutId="complianceTab"
         active={tab}
-        onChange={(key) => setParams({ tab: key })}
+        onChange={onTabChange}
         items={[
           { key: "proofs", label: "Proofs" },
           { key: "audit", label: "Audit" },

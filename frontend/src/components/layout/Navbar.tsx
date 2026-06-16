@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, ClipboardCopy, ExternalLink, LogOut } from "lucide-react";
+import { PAGE_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
 import { stellarExplorerAccount } from "@/config/env";
 import { useWallet } from "@/hooks/useWallet";
@@ -24,7 +25,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 flex w-full justify-center px-4">
-      <div className="mt-4 grid h-14 w-full max-w-5xl grid-cols-[1fr_auto_1fr] items-center border-2 border-border bg-primary-soft/80 px-4 shadow-soft backdrop-blur-md sm:px-6">
+      <div className={cn("mt-4 grid h-14 w-full grid-cols-[1fr_auto_1fr] items-center border-2 border-border bg-primary-soft/80 px-4 shadow-soft backdrop-blur-md sm:px-6", PAGE_MAX)}>
         <Link to="/" className="group flex select-none items-center gap-2">
           <div className="flex size-4 items-center justify-center bg-primary-bright shadow-blue-pill" />
           <span className="text-base font-bold tracking-tight text-primary transition-colors group-hover:text-primary-bright">

@@ -1,0 +1,1 @@
+export const PAGE_MAX = "max-w-4xl";

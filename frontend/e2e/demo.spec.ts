@@ -7,30 +7,30 @@ test.describe("Amoeba demo UI", () => {
     await expect(page.getByRole("link", { name: "See a live proof →" })).toBeVisible();
   });
 
-  test("nav routes to demo and compliance", async ({ page }) => {
+  test("landing page shows what it proves", async ({ page }) => {
+    await page.goto("/#what-it-proves");
+    await expect(page.getByRole("heading", { name: /Eight checks/i })).toBeVisible();
+    await expect(page.getByText("KYC membership")).toBeVisible();
+  });
+
+  test("nav routes to demo", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("link", { name: "Demo", exact: true }).click();
     await expect(page).toHaveURL(/\/demo$/);
     await expect(page.getByText("Generate a compliant transfer")).toBeVisible();
-
-    await page.getByRole("link", { name: "Compliance", exact: true }).click();
-    await expect(page).toHaveURL(/\/compliance$/);
-    await expect(page.getByText("Proof settlements")).toBeVisible();
   });
 
   test("demo page shows stepper and action buttons", async ({ page }) => {
     await page.goto("/demo");
     await expect(page.getByText("Wallet connected")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Generate proof" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Submit compliant transfer" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Connect Freighter" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Try invalid proof" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Replay last proof" })).toBeDisabled();
   });
 
-  test("compliance tabs switch", async ({ page }) => {
-    await page.goto("/compliance");
-    await page.getByRole("button", { name: "Audit" }).click();
-    await expect(page.getByText("Audit lookup")).toBeVisible();
-    await page.getByRole("button", { name: "Corridors" }).click();
-    await expect(page.getByText("US-MX")).toBeVisible();
+  test("legacy compliance route redirects to demo", async ({ page }) => {
+    await page.goto("/compliance?tab=corridors");
+    await expect(page).toHaveURL(/\/demo$/);
+    await expect(page.getByText("Generate a compliant transfer")).toBeVisible();
   });
 });
