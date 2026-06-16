@@ -1,4 +1,4 @@
-# crates/issuer-service
+# backend/crates/issuer-service
 
 Off-chain issuer backend service — manages identity trees, generates Merkle proofs, serves proof packages via HTTP.
 
@@ -45,3 +45,11 @@ Off-chain issuer backend service — manages identity trees, generates Merkle pr
 | `auth` | Bearer token middleware |
 | `stellar` | Soroban contract interaction |
 | `config` | Env-based configuration |
+| `mock_kyc` | Mock KYC challenge/response for demo flows |
+
+## Migrations
+
+| File | Purpose |
+|------|---------|
+| `migrations/001_supabase_issuer.sql` | Supabase schema for issuer state persistence |
+| `migrations/002_mock_kyc_challenges.sql` | Mock KYC challenge table for demo |

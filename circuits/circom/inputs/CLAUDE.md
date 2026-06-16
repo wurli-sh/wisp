@@ -6,7 +6,8 @@ Generated witness input JSON files for circuit testing.
 
 | File | Description |
 |------|-------------|
-| `valid.us-mx.json` | Happy-path US→MX corridor transfer |
+| `valid.us-mx.json` | Happy-path US→MX corridor transfer (local) |
+| `valid.testnet.json` | Happy-path testnet transfer fixture |
 | `invalid.amount.json` | Transfer with zero/jinx amount |
 | `invalid.corridor.json` | Unregistered corridor ID |
 | `invalid.expired.json` | Expired credential timestamp |

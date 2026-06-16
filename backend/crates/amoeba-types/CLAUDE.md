@@ -1,4 +1,4 @@
-# crates/amoeba-types
+# backend/crates/amoeba-types
 
 Shared type definitions shared across the Amoeba Rust ecosystem.
 
@@ -9,3 +9,6 @@ Shared type definitions shared across the Amoeba Rust ecosystem.
 | `PublicInputs` | 17-field Groth16 public input struct with serde + default |
 | `ProofPackage` | Full transfer package: proof, public inputs, identity metadata |
 | `VerificationKey` | Groth16 VK struct matching snarkjs output format |
+| `Credential` | KYC credential with wallet, jurisdiction, expiry |
+| `DemoTransferFixture` | Full demo fixture including transfer params, paths, proof package |
+| `MerklePaths` | All Merkle proof paths (membership, sanctions, jurisdiction, dest) |

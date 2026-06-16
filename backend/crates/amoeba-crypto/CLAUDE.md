@@ -1,4 +1,4 @@
-# crates/amoeba-crypto
+# backend/crates/amoeba-crypto
 
 Off-chain cryptographic utilities — Rust port of Poseidon2 (t=4, BN254), field arithmetic, Merkle tree helpers, nullifier computation, and protocol constants.
 
