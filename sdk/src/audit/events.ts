@@ -18,44 +18,133 @@ function parseProofSettledValue(value: xdr.ScVal): ProofSettledData {
   return native;
 }
 
-export async function listProofSettledEvents(
+function topicIsSettled(topic: xdr.ScVal | undefined): boolean {
+  if (!topic) return false;
+  const native = scValToNative(topic);
+  return native === "settled";
+}
+
+function parseTxContractEvent(
+  event: xdr.ContractEvent,
+  ledger: number,
+  ledgerClosedAt: string,
+  txHash: string,
+): ProofSettledEvent | null {
+  let v0: { topics: () => xdr.ScVal[]; data: () => xdr.ScVal };
+  try {
+    v0 = event.body().v0();
+  } catch {
+    return null;
+  }
+
+  const topics = v0.topics();
+  if (!topicIsSettled(topics.at(0))) return null;
+
+  return {
+    txHash,
+    ledger,
+    ledgerClosedAt,
+    data: parseProofSettledValue(v0.data()),
+  };
+}
+
+async function pagedProofSettledEvents(
   cfg: AmoebaConfig,
-  opts: { limit?: number; startLedger?: number } = {},
+  opts: { limit?: number; startLedger?: number; endLedger?: number; maxPages?: number } = {},
 ): Promise<ProofSettledEvent[]> {
   if (!cfg.complianceId) throw new Error("COMPLIANCE_CONTRACT_ID not set");
 
   const server = new rpc.Server(cfg.rpcUrl);
   const latest = await server.getLatestLedger();
   const startLedger = opts.startLedger ?? Math.max(1, latest.sequence - 50_000);
+  const pageSize = Math.min(opts.limit ?? 100, 200);
+  const maxPages = opts.maxPages ?? 10;
 
-  const resp = await server.getEvents({
-    startLedger,
-    filters: [
-      {
-        type: "contract",
-        contractIds: [cfg.complianceId],
-        topics: [settledTopicFilter()],
-      },
-    ],
-    limit: opts.limit ?? 50,
+  let cursor: string | null = null;
+  const events: ProofSettledEvent[] = [];
+
+  for (let page = 0; page < maxPages; page += 1) {
+    const resp: rpc.Api.GetEventsResponse = cursor
+      ? await server.getEvents({
+          cursor,
+          filters: [
+            {
+              type: "contract",
+              contractIds: [cfg.complianceId],
+              topics: [settledTopicFilter()],
+            },
+          ],
+          limit: pageSize,
+        })
+      : await server.getEvents({
+          startLedger,
+          endLedger: opts.endLedger,
+          filters: [
+            {
+              type: "contract",
+              contractIds: [cfg.complianceId],
+              topics: [settledTopicFilter()],
+            },
+          ],
+          limit: pageSize,
+        });
+
+    events.push(
+      ...resp.events
+        .filter((e: rpc.Api.EventResponse) => e.inSuccessfulContractCall)
+        .map((e: rpc.Api.EventResponse) => ({
+          txHash: e.txHash,
+          ledger: e.ledger,
+          ledgerClosedAt: e.ledgerClosedAt,
+          data: parseProofSettledValue(e.value),
+        })),
+    );
+
+    if (resp.events.length < pageSize || !resp.cursor || resp.cursor === cursor) break;
+    cursor = resp.cursor;
+  }
+
+  return events;
+}
+
+export async function listProofSettledEvents(
+  cfg: AmoebaConfig,
+  opts: { limit?: number; startLedger?: number; endLedger?: number } = {},
+): Promise<ProofSettledEvent[]> {
+  return pagedProofSettledEvents(cfg, {
+    limit: opts.limit,
+    startLedger: opts.startLedger,
+    endLedger: opts.endLedger,
+    maxPages: 1,
   });
-
-  return resp.events
-    .filter((e) => e.inSuccessfulContractCall)
-    .map((e) => ({
-      txHash: e.txHash,
-      ledger: e.ledger,
-      ledgerClosedAt: e.ledgerClosedAt,
-      data: parseProofSettledValue(e.value),
-    }));
 }
 
 export async function getProofSettledByTxHash(
   cfg: AmoebaConfig,
   txHash: string,
 ): Promise<ProofSettledEvent | null> {
-  const events = await listProofSettledEvents(cfg, { limit: 200 });
-  return events.find((e) => e.txHash === txHash) ?? null;
+  const server = new rpc.Server(cfg.rpcUrl);
+  const tx = await server.getTransaction(txHash);
+
+  if (tx.status === rpc.Api.GetTransactionStatus.NOT_FOUND) {
+    return null;
+  }
+
+  const ledgerClosedAt = new Date(tx.createdAt * 1000).toISOString();
+  for (const group of tx.events.contractEventsXdr) {
+    for (const event of group) {
+      const parsed = parseTxContractEvent(event, tx.ledger, ledgerClosedAt, tx.txHash);
+      if (parsed) return parsed;
+    }
+  }
+
+  const indexed = await pagedProofSettledEvents(cfg, {
+    startLedger: tx.ledger,
+    endLedger: tx.ledger,
+    limit: 100,
+    maxPages: 3,
+  });
+  return indexed.find((event) => event.txHash === txHash) ?? null;
 }
 
 export async function getProofSettledByNullifier(
@@ -63,7 +152,7 @@ export async function getProofSettledByNullifier(
   nullifierHex: string,
 ): Promise<ProofSettledEvent | null> {
   const needle = nullifierHex.replace(/^0x/i, "").toLowerCase();
-  const events = await listProofSettledEvents(cfg, { limit: 200 });
+  const events = await pagedProofSettledEvents(cfg, { limit: 100, maxPages: 10 });
   return (
     events.find((e) => e.data.nullifier.toString("hex").toLowerCase() === needle) ??
     null

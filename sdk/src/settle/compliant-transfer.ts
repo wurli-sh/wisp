@@ -6,6 +6,7 @@ import type { ProofPackage } from "@amoeba/js";
 import type { AmoebaConfig } from "../config.js";
 import { REPO_ROOT } from "../config.js";
 import type { ProvenTransfer } from "../prove/prover.js";
+import { sdkCheckpoint } from "../debug.js";
 import { fieldDecimalToBytes32, fieldDecimalToU256String } from "./encoding.js";
 
 interface DemoFixture {
@@ -13,6 +14,15 @@ interface DemoFixture {
   asset_strkey?: string;
   sender_strkey?: string;
   recipient_strkey?: string;
+}
+
+function packageStrkeys(pkg: ProofPackage): DemoFixture {
+  return {
+    issuer_strkey: pkg.demo?.issuer_strkey,
+    asset_strkey: pkg.demo?.asset_strkey,
+    sender_strkey: pkg.demo?.sender_strkey,
+    recipient_strkey: pkg.demo?.recipient_strkey,
+  };
 }
 
 let cachedRemoteFixture: DemoFixture | null = null;
@@ -40,15 +50,16 @@ async function loadDemoFixture(cfg: AmoebaConfig): Promise<DemoFixture> {
 
 async function transferArgs(proven: ProvenTransfer, pkg: ProofPackage, cfg: AmoebaConfig) {
   const fixture = await loadDemoFixture(cfg);
-  const issuer = cfg.issuerPublicKey ?? fixture.issuer_strkey;
+  const pkgFixture = packageStrkeys(pkg);
+  const issuer = cfg.issuerPublicKey ?? pkgFixture.issuer_strkey ?? fixture.issuer_strkey;
   if (!issuer) throw new Error("ISSUER_PUBLIC_KEY or fixture issuer_strkey required");
 
-  const asset = fixture.asset_strkey;
-  const sender = fixture.sender_strkey;
-  const recipient = fixture.recipient_strkey;
+  const asset = pkgFixture.asset_strkey ?? fixture.asset_strkey;
+  const sender = pkgFixture.sender_strkey ?? fixture.sender_strkey;
+  const recipient = pkgFixture.recipient_strkey ?? fixture.recipient_strkey;
   if (!asset || !sender || !recipient) {
     throw new Error(
-      "Settle requires strkeys in demo-transfer fixture (testnet profile)",
+      "Settle requires sender/recipient/asset strkeys from the package or demo fixture",
     );
   }
 
@@ -62,6 +73,26 @@ async function transferArgs(proven: ProvenTransfer, pkg: ProofPackage, cfg: Amoe
     epoch: BigInt(String(pkg.transfer!.epoch)),
     nullifier: fieldDecimalToBytes32(proven.nullifier),
   };
+}
+
+function logSettleCheckpoint(
+  cfg: AmoebaConfig,
+  proven: ProvenTransfer,
+  pkg: ProofPackage,
+  args: Awaited<ReturnType<typeof transferArgs>>,
+  walletPublicKey?: string,
+): void {
+  sdkCheckpoint("settle.checkpoint", {
+    compliance_id: cfg.complianceId,
+    freighter: walletPublicKey,
+    fixture_sender: args.sender,
+    wallet_matches_sender: walletPublicKey ? walletPublicKey === args.sender : undefined,
+    epoch: String(args.epoch),
+    nullifier: proven.nullifier,
+    amount: String(args.amount),
+    corridor_id: args.corridor_id,
+    merkle_root: pkg.roots?.merkle_root,
+  });
 }
 
 function publicInputsVector(proven: ProvenTransfer): bigint[] {
@@ -88,8 +119,11 @@ export async function settleWithKeypair(
     publicKey: kp.publicKey(),
   });
 
+  const args = await transferArgs(proven, pkg, cfg);
+  logSettleCheckpoint(cfg, proven, pkg, args, kp.publicKey());
+
   const assembled = await client.compliant_transfer({
-    args: await transferArgs(proven, pkg, cfg),
+    args,
     proof: proven.proof,
     public_inputs: publicInputsVector(proven),
   });
@@ -117,8 +151,11 @@ export async function settleWithWallet(
     publicKey: wallet.publicKey,
   });
 
+  const args = await transferArgs(proven, pkg, cfg);
+  logSettleCheckpoint(cfg, proven, pkg, args, wallet.publicKey);
+
   const assembled = await client.compliant_transfer({
-    args: await transferArgs(proven, pkg, cfg),
+    args,
     proof: proven.proof,
     public_inputs: publicInputsVector(proven),
   });
@@ -142,8 +179,12 @@ export async function simulateSettle(
     publicKey,
   });
 
+  const args = await transferArgs(proven, pkg, cfg);
+  logSettleCheckpoint(cfg, proven, pkg, args, publicKey);
+  sdkCheckpoint("settle.simulate", { freighter: publicKey });
+
   const assembled = await client.compliant_transfer({
-    args: await transferArgs(proven, pkg, cfg),
+    args,
     proof: proven.proof,
     public_inputs: publicInputsVector(proven),
   });

@@ -103,4 +103,13 @@ export { fieldDecimalToBytes32, normalizeField } from "./settle/encoding.js";
 export type { ProofSettledEvent };
 export type { WalletSigner } from "./settle/compliant-transfer.js";
 export type { ProvenTransfer } from "./prove/prover.js";
+export type {
+  MockKycChallengeResponse,
+  MockKycLifecycleStatus,
+  MockKycMissing,
+  MockKycStatusResponse,
+  MockKycSubmitRequest,
+  MockKycSubmitResponse,
+  MockKycSubmitStatus,
+} from "./issuer/client.js";
 export type { DemoStrkeys } from "./config.js";
