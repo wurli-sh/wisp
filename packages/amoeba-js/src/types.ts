@@ -53,6 +53,14 @@ export interface ProofPackage {
     epoch?: string | number;
     timestamp?: string | number;
   };
+  demo?: {
+    sender_strkey?: string;
+    recipient_strkey?: string;
+    asset_strkey?: string;
+    issuer_strkey?: string;
+    source_country?: string;
+    dest_country?: string;
+  };
   roots?: Record<string, string>;
   paths: ProofPackagePaths;
   witness_private?: {
@@ -63,6 +71,23 @@ export interface ProofPackage {
     sanctions_leaf_value?: string;
   };
   public_inputs?: Record<string, string | number>;
+}
+
+export interface DemoTransferRequest {
+  sender_strkey: string;
+  recipient_strkey: string;
+  amount: string;
+  corridor_id: number;
+  source_country: string;
+  dest_country: string;
+}
+
+export interface CorridorOption {
+  id: number;
+  name: string;
+  source_country: string;
+  dest_country: string;
+  enabled: boolean;
 }
 
 export type WitnessInput = Record<string, string | number | string[] | number[]>;
