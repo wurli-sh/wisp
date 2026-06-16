@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { COPY } from "@/content/copy";
+import { HighlightedText } from "@/components/spell/highlighted-text";
 import { Button } from "@/components/ui/Button";
 import {
   buttonHover,
@@ -36,7 +37,10 @@ export function Hero() {
             className="text-balance text-4xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-5xl lg:text-6xl"
             variants={fadeInUp}
           >
-            {COPY.hero.headline}
+            {COPY.hero.headlineLead}{" "}
+            <HighlightedText variant="primary" from="bottom" delay={0.12}>
+              {COPY.hero.headlineAccent}
+            </HighlightedText>
           </motion.h1>
 
           <motion.p

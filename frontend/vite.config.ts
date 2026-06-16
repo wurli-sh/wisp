@@ -27,7 +27,7 @@ export default defineConfig({
     "process.env": {},
   },
   optimizeDeps: {
-    include: ["buffer", "snarkjs"],
+    include: ["buffer", "snarkjs", "@stellar/stellar-sdk"],
     esbuildOptions: {
       define: {
         global: "globalThis",

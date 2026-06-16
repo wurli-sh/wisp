@@ -123,3 +123,55 @@ pre {
   padding: 1rem;
   overflow-x: auto;
 }
+
+@keyframes text-shimmer-sweep {
+  0% {
+    background-position: 100% center;
+  }
+  100% {
+    background-position: -100% center;
+  }
+}
+
+[data-component="text-shimmer"] {
+  position: relative;
+  display: inline-block;
+}
+
+[data-slot="text-shimmer-char"] {
+  position: relative;
+  display: inline-grid;
+}
+
+[data-slot="text-shimmer-char"] > * {
+  grid-area: 1 / 1;
+}
+
+[data-slot="text-shimmer-char-base"] {
+  opacity: 1;
+  transition: opacity var(--text-shimmer-swap, 220ms) ease;
+}
+
+[data-active="true"] [data-slot="text-shimmer-char-base"] {
+  opacity: 0.4;
+}
+
+[data-slot="text-shimmer-char-shimmer"] {
+  opacity: 0;
+  transition: opacity var(--text-shimmer-swap, 220ms) ease;
+  background: linear-gradient(
+    90deg,
+    currentColor 0%,
+    var(--color-primary-bright) 50%,
+    currentColor 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-slot="text-shimmer-char-shimmer"][data-run="true"] {
+  opacity: 1;
+  animation: text-shimmer-sweep 1.2s ease-in-out infinite;
+}

@@ -1,6 +1,6 @@
 import { Hero } from "@/components/home/Hero";
 import { ParadoxSection } from "@/components/home/ParadoxSection";
-import { WhatItProvesSection } from "@/components/home/WhatItProvesSection";
+// import { WhatItProvesSection } from "@/components/home/WhatItProvesSection";
 import { EngineSection } from "@/components/home/EngineSection";
 import { UseCasesSection } from "@/components/home/UseCasesSection";
 import { ComplianceCardSection } from "@/components/home/ComplianceCardSection";
@@ -13,7 +13,7 @@ export function HomePage() {
     <div className="bg-background">
       <Hero />
       <ParadoxSection />
-      <WhatItProvesSection />
+      {/* <WhatItProvesSection /> */}
       <EngineSection />
       <ComplianceCardSection />
       <UseCasesSection />

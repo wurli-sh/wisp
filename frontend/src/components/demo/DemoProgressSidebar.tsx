@@ -4,10 +4,10 @@ import { cn } from "@/lib/cn";
 
 const MILESTONES = [
   { label: "Wallet", end: 1 },
-  { label: "Transfer", end: 4 },
+  { label: "Setup", end: 4 },
   { label: "Package", end: 5 },
   { label: "Proof", end: 7 },
-  { label: "Submit", end: 9 },
+  { label: "Settle", end: 9 },
   { label: "Audit", end: 10 },
 ] as const;
 
