@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
 
+fn zero_string() -> String {
+    "0".to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Credential {
     pub wallet: String,
@@ -52,6 +56,8 @@ pub struct MerklePaths {
 pub struct WitnessPrivate {
     pub demo_unsafe: bool,
     pub credential_secret: String,
+    #[serde(default = "zero_string")]
+    pub transfer_nonce: String,
     pub jurisdiction: String,
     pub credential_expiry: String,
     pub sanctions_leaf_value: String,
@@ -91,6 +97,8 @@ pub struct ProofPackage {
 pub struct DemoTransferFixture {
     pub demo_only: bool,
     pub credential_secret: String,
+    #[serde(default = "zero_string")]
+    pub transfer_nonce: String,
     pub corridor_id: u32,
     pub sender_hex: String,
     pub recipient_hex: String,

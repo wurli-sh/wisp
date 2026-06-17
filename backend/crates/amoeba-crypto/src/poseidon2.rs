@@ -547,3 +547,33 @@ pub fn poseidon2_hash11(inputs: [Fr; 11]) -> Fr {
     ]);
     p4[0]
 }
+
+pub fn poseidon2_hash12(inputs: [Fr; 12]) -> Fr {
+    let iv = two_pow_64() * mod_u64(12);
+    let p0 = poseidon2_permutation([Fr::ZERO, Fr::ZERO, Fr::ZERO, iv]);
+    let p1 = poseidon2_permutation([
+        p0[0] + mod_fr(inputs[0]),
+        p0[1] + mod_fr(inputs[1]),
+        p0[2] + mod_fr(inputs[2]),
+        p0[3],
+    ]);
+    let p2 = poseidon2_permutation([
+        p1[0] + mod_fr(inputs[3]),
+        p1[1] + mod_fr(inputs[4]),
+        p1[2] + mod_fr(inputs[5]),
+        p1[3],
+    ]);
+    let p3 = poseidon2_permutation([
+        p2[0] + mod_fr(inputs[6]),
+        p2[1] + mod_fr(inputs[7]),
+        p2[2] + mod_fr(inputs[8]),
+        p2[3],
+    ]);
+    let p4 = poseidon2_permutation([
+        p3[0] + mod_fr(inputs[9]),
+        p3[1] + mod_fr(inputs[10]),
+        p3[2] + mod_fr(inputs[11]),
+        p3[3],
+    ]);
+    p4[0]
+}

@@ -12,7 +12,8 @@ pub use merkle::{
     merkle_root_from_path, sparse_sanctions_path, MerklePath, SparseSanctionsPath, MERKLE_DEPTH,
 };
 pub use poseidon2::{
-    poseidon2_hash1, poseidon2_hash10, poseidon2_hash11, poseidon2_hash2, poseidon2_permutation,
+    poseidon2_hash1, poseidon2_hash10, poseidon2_hash11, poseidon2_hash12, poseidon2_hash2,
+    poseidon2_permutation,
 };
 pub use protocol::{
     address_to_limbs, compute_corridor_config_hash, compute_nullifier, AddressLimbs,

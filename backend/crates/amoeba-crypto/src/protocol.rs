@@ -1,7 +1,7 @@
 use ark_bn254::Fr;
 
 use crate::field::{bytes16_to_fr, mod_fr, mod_u128};
-use crate::poseidon2::{poseidon2_hash1, poseidon2_hash10, poseidon2_hash11};
+use crate::poseidon2::{poseidon2_hash1, poseidon2_hash10, poseidon2_hash12};
 
 pub const NULLIFIER_DOMAIN_TAG: u128 = 1_204_609_112_206_068_373_041;
 pub const CORRIDOR_DOMAIN_TAG: u128 = 0x414d4f4542415f5631;
@@ -56,9 +56,10 @@ pub fn compute_nullifier(
     recipient_hi: Fr,
     amount: Fr,
     corridor_id: Fr,
+    transfer_nonce: Fr,
 ) -> Fr {
     let nullifier_domain = poseidon2_hash1(mod_u128(NULLIFIER_DOMAIN_TAG));
-    poseidon2_hash11([
+    poseidon2_hash12([
         nullifier_domain,
         mod_fr(credential_secret),
         mod_fr(sender_lo),
@@ -70,5 +71,6 @@ pub fn compute_nullifier(
         mod_fr(recipient_hi),
         mod_fr(amount),
         mod_fr(corridor_id),
+        mod_fr(transfer_nonce),
     ])
 }

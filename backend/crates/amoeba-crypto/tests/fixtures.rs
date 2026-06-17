@@ -9,6 +9,10 @@ use amoeba_crypto::{
     sparse_sanctions_path, NULLIFIER_DOMAIN_TAG,
 };
 
+fn zero_string() -> String {
+    "0".to_string()
+}
+
 fn fixture_path(name: &str) -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../../bindings/fixtures")
@@ -88,6 +92,8 @@ struct StellarAddressEntry {
 #[derive(Deserialize)]
 struct DemoTransfer {
     credential_secret: String,
+    #[serde(default = "zero_string")]
+    transfer_nonce: String,
     corridor_id: u64,
     sender_hex: String,
     recipient_hex: String,
@@ -181,6 +187,7 @@ fn crypto_fixtures_match_js() {
         recipient_limbs.hi,
         fr_from_decimal(&demo.amount),
         fr_from_decimal(&demo.corridor_id.to_string()),
+        fr_from_decimal(&demo.transfer_nonce),
     );
     assert_fr_eq(nullifier, &crypto.nullifier);
 
