@@ -8,7 +8,7 @@ import {
   mod,
   NULLIFIER_DOMAIN_TAG,
   poseidon2Hash1,
-  poseidon2Hash11,
+  poseidon2Hash12,
   toString,
 } from "@amoeba/js";
 import {
@@ -31,7 +31,7 @@ test("public input field order matches generated ABI", () => {
 test("nullifier binds corridor_id per circuit", () => {
   const witness = buildWitnessInput({});
   const domain = poseidon2Hash1(mod(NULLIFIER_DOMAIN_TAG));
-  const recomputed = poseidon2Hash11([
+  const recomputed = poseidon2Hash12([
     domain,
     mod(424242n),
     mod(witness.sender_lo as string),
@@ -43,6 +43,7 @@ test("nullifier binds corridor_id per circuit", () => {
     mod(witness.recipient_hi as string),
     mod(witness.amount as string),
     mod(CORRIDOR_ID),
+    mod(witness.transfer_nonce as string),
   ]);
   assert.equal(witness.nullifier, toString(recomputed));
 });

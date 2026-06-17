@@ -238,3 +238,36 @@ template Poseidon2Hash11() {
   p4.state_in[3] <== p3.state_out[3];
   out <== p4.state_out[0];
 }
+
+template Poseidon2Hash12() {
+  signal input in[12];
+  signal output out;
+  var TWO_POW_64 = 18446744073709551616;
+  var iv = 12 * TWO_POW_64;
+  component p0 = Poseidon2Permutation();
+  p0.state_in[0] <== 0;
+  p0.state_in[1] <== 0;
+  p0.state_in[2] <== 0;
+  p0.state_in[3] <== iv;
+  component p1 = Poseidon2Permutation();
+  p1.state_in[0] <== p0.state_out[0] + in[0];
+  p1.state_in[1] <== p0.state_out[1] + in[1];
+  p1.state_in[2] <== p0.state_out[2] + in[2];
+  p1.state_in[3] <== p0.state_out[3];
+  component p2 = Poseidon2Permutation();
+  p2.state_in[0] <== p1.state_out[0] + in[3];
+  p2.state_in[1] <== p1.state_out[1] + in[4];
+  p2.state_in[2] <== p1.state_out[2] + in[5];
+  p2.state_in[3] <== p1.state_out[3];
+  component p3 = Poseidon2Permutation();
+  p3.state_in[0] <== p2.state_out[0] + in[6];
+  p3.state_in[1] <== p2.state_out[1] + in[7];
+  p3.state_in[2] <== p2.state_out[2] + in[8];
+  p3.state_in[3] <== p2.state_out[3];
+  component p4 = Poseidon2Permutation();
+  p4.state_in[0] <== p3.state_out[0] + in[9];
+  p4.state_in[1] <== p3.state_out[1] + in[10];
+  p4.state_in[2] <== p3.state_out[2] + in[11];
+  p4.state_in[3] <== p3.state_out[3];
+  out <== p4.state_out[0];
+}

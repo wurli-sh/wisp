@@ -42,6 +42,7 @@ template ComplianceCorridor() {
   signal input sanctions_path[MERKLE_DEPTH];
   signal input sanctions_path_indices[MERKLE_DEPTH];
   signal input sanctions_leaf_value;
+  signal input transfer_nonce;
 
   // ── Check 1: Merkle membership ──
   component membership = MerklePath();
@@ -58,7 +59,7 @@ template ComplianceCorridor() {
   // ── Check 2: Nullifier binding (domain-separated, includes corridor_id) ──
   component nullifier_domain = Poseidon2Hash1();
   nullifier_domain.in <== 1204609112206068373041; // "AMOEBA_V1" domain tag
-  component nullifier_hash = Poseidon2Hash11();
+  component nullifier_hash = Poseidon2Hash12();
   nullifier_hash.in[0] <== nullifier_domain.out;
   nullifier_hash.in[1] <== credential_secret;
   nullifier_hash.in[2] <== sender_lo;
@@ -70,6 +71,7 @@ template ComplianceCorridor() {
   nullifier_hash.in[8] <== recipient_hi;
   nullifier_hash.in[9] <== amount;
   nullifier_hash.in[10] <== corridor_id;
+  nullifier_hash.in[11] <== transfer_nonce;
   nullifier === nullifier_hash.out;
 
   // ── Check 3: Sanctions exclusion ──
