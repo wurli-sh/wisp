@@ -17,7 +17,7 @@ export function Hero() {
   return (
     <section className="relative flex min-h-[calc(100dvh-5.5rem)] items-center justify-center overflow-hidden bg-background py-16">
       <motion.div
-        className="pointer-events-none absolute bottom-0 left-1/2 z-0 h-[45%] w-full max-w-3xl -translate-x-1/2 px-4 sm:px-6"
+        className="pointer-events-none absolute bottom-0 left-1/2 z-0 h-[45%] w-full max-w-4xl -translate-x-1/2 px-4 sm:px-6"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.5, delay: 0.2 }}
