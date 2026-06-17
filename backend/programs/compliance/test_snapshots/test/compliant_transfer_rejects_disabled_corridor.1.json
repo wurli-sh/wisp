@@ -24,7 +24,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
                 },
                 {
-                  "bytes": "dd68f6f08689ffe475d153538d60460452fb060cac2ac66cfff6cc3a05ca9c6f"
+                  "bytes": "c127f452225fb4101464e2dc7e54ab3940ccf17197654dc1a0e95fef65c94875"
                 }
               ]
             }
@@ -91,6 +91,34 @@
     ],
     [],
     [],
+    [
+      [
+        "CAABCIRTIRKWM54ITGVLXTG5537RAMSUO2MLVXH657G2XCLHIURQDBJB",
+        {
+          "function": {
+            "contract_fn": {
+              "contract_address": "CD765XOMXOVJTCDXMZKUIMZCCEAACI2FM6E2XTPP73OLVGDWKQZBA5XV",
+              "function_name": "approve",
+              "args": [
+                {
+                  "address": "CAABCIRTIRKWM54ITGVLXTG5537RAMSUO2MLVXH657G2XCLHIURQDBJB"
+                },
+                {
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                },
+                {
+                  "i128": "10000000"
+                },
+                {
+                  "u32": 0
+                }
+              ]
+            }
+          },
+          "sub_invocations": []
+        }
+      ]
+    ],
     [
       [
         "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
@@ -206,7 +234,7 @@
               "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
               "key": {
                 "ledger_key_nonce": {
-                  "nonce": "4837995959683129791"
+                  "nonce": "2032731177588607455"
                 }
               },
               "durability": "temporary",
@@ -411,7 +439,7 @@
                               "symbol": "expected_vk_hash"
                             },
                             "val": {
-                              "bytes": "dd68f6f08689ffe475d153538d60460452fb060cac2ac66cfff6cc3a05ca9c6f"
+                              "bytes": "c127f452225fb4101464e2dc7e54ab3940ccf17197654dc1a0e95fef65c94875"
                             }
                           },
                           {
@@ -441,6 +469,56 @@
                     }
                   ]
                 }
+              }
+            }
+          },
+          "ext": "v0"
+        },
+        "live_until": 4095
+      },
+      {
+        "entry": {
+          "last_modified_ledger_seq": 0,
+          "data": {
+            "contract_data": {
+              "ext": "v0",
+              "contract": "CAABCIRTIRKWM54ITGVLXTG5537RAMSUO2MLVXH657G2XCLHIURQDBJB",
+              "key": {
+                "ledger_key_nonce": {
+                  "nonce": "4837995959683129791"
+                }
+              },
+              "durability": "temporary",
+              "val": "void"
+            }
+          },
+          "ext": "v0"
+        },
+        "live_until": 6311999
+      },
+      {
+        "entry": {
+          "last_modified_ledger_seq": 0,
+          "data": {
+            "contract_data": {
+              "ext": "v0",
+              "contract": "CD765XOMXOVJTCDXMZKUIMZCCEAACI2FM6E2XTPP73OLVGDWKQZBA5XV",
+              "key": {
+                "vec": [
+                  {
+                    "symbol": "Allowance"
+                  },
+                  {
+                    "address": "CAABCIRTIRKWM54ITGVLXTG5537RAMSUO2MLVXH657G2XCLHIURQDBJB"
+                  },
+                  {
+                    "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                  }
+                ]
+              },
+              "durability": "persistent",
+              "val": {
+                "i128": "10000000"
               }
             }
           },

@@ -421,7 +421,12 @@ impl Compliance {
         .publish(&env);
 
         let token = token::Client::new(&env, &args.asset);
-        token.transfer(&args.sender, &args.recipient, &args.amount);
+        token.transfer_from(
+            &env.current_contract_address(),
+            &args.sender,
+            &args.recipient,
+            &args.amount,
+        );
 
         Ok(())
     }
@@ -461,4 +466,6 @@ impl Compliance {
 }
 
 #[cfg(test)]
+mod test_sac;
+
 mod test;

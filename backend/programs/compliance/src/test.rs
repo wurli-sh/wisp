@@ -17,13 +17,13 @@ use soroban_sdk::{
     Address, Bytes, BytesN, Env, IntoVal, Vec, U256,
 };
 
+use crate::test_sac::{TestSac, TestSacClient};
 use crate::{
     public_inputs::{
         address_to_field_limbs, bytes16_to_fr, public_inputs_match, rebuild_expected_public_inputs,
     },
     Compliance, ComplianceClient, CompliantTransferArgs, Proof,
 };
-use mock_sac::{MockSac, MockSacClient};
 use verifier::{
     Groth16Verifier, Groth16VerifierClient as ExternalGroth16VerifierClient, Proof as ExternalProof,
 };
@@ -127,6 +127,10 @@ fn fr_from_decimal(env: &Env, s: &str) -> Fr {
 
 fn field_decimal_to_bytes32(env: &Env, decimal: &str) -> BytesN<32> {
     let fr = fr_from_decimal(env, decimal);
+    fr_to_bytes32(env, &fr)
+}
+
+fn fr_to_bytes32(env: &Env, fr: &Fr) -> BytesN<32> {
     let mut arr = [0u8; 32];
     fr.to_u256().to_be_bytes().copy_into_slice(&mut arr);
     BytesN::from_array(env, &arr)
@@ -194,6 +198,7 @@ fn split_address_bytes(bytes: &[u8; 32]) -> ([u8; 16], [u8; 16]) {
 struct ComplianceFixture {
     proof: Proof,
     public: Vec<Fr>,
+    public_decimal: std::vec::Vec<String>,
     input: FixtureInput,
     issuer: Address,
     sender: Address,
@@ -218,28 +223,32 @@ fn setup_compliance_fixture(fund_sender: bool) -> (Env, Address, ComplianceFixtu
     let (raw_proof, public, fixture) = load_fixture();
     let proof = proof_from_snarkjs(&env, &raw_proof);
     let signals = public_signals(&env, &public);
+    env.ledger()
+        .set_timestamp(public[12].parse::<u64>().unwrap());
 
     let issuer = Address::generate(&env);
     compliance.register_issuer(
         &issuer,
-        &field_decimal_to_bytes32(&env, &fixture.merkle_root),
-        &field_decimal_to_bytes32(&env, &fixture.sanctions_root),
-        &field_decimal_to_bytes32(&env, &fixture.jurisdiction_root),
+        &field_decimal_to_bytes32(&env, &public[0]),
+        &field_decimal_to_bytes32(&env, &public[10]),
+        &field_decimal_to_bytes32(&env, &public[11]),
     );
     compliance.register_corridor(
         &fixture.corridor_id.parse().unwrap(),
-        &field_decimal_to_bytes32(&env, &fixture.source_jurisdiction_root),
-        &field_decimal_to_bytes32(&env, &fixture.dest_address_root),
-        &field_decimal_to_bytes32(&env, &fixture.corridor_config_hash),
+        &field_decimal_to_bytes32(&env, &public[15]),
+        &field_decimal_to_bytes32(&env, &public[16]),
+        &field_decimal_to_bytes32(&env, &public[14]),
     );
 
     let asset = contract_address(&env, DEMO_ASSET);
-    env.register_at(&asset, MockSac, ());
-    let sac = MockSacClient::new(&env, &asset);
+    env.register_at(&asset, TestSac, ());
+    let sac = TestSacClient::new(&env, &asset);
     let sender = contract_address(&env, DEMO_SENDER);
     let recipient = contract_address(&env, DEMO_RECIPIENT);
     if fund_sender {
-        sac.mint(&sender, &fixture.amount.parse::<i128>().unwrap());
+        let amount: i128 = public[9].parse().unwrap();
+        sac.mint(&sender, &amount);
+        sac.approve(&sender, &compliance_id, &amount, &0);
     }
 
     (
@@ -248,6 +257,7 @@ fn setup_compliance_fixture(fund_sender: bool) -> (Env, Address, ComplianceFixtu
         ComplianceFixture {
             proof,
             public: signals,
+            public_decimal: public,
             input: fixture,
             issuer,
             sender,
@@ -263,10 +273,10 @@ fn transfer_args(env: &Env, fixture: &ComplianceFixture) -> CompliantTransferArg
         asset: fixture.asset.clone(),
         sender: fixture.sender.clone(),
         recipient: fixture.recipient.clone(),
-        amount: fixture.input.amount.parse().unwrap(),
+        amount: fixture.public_decimal[9].parse().unwrap(),
         corridor_id: fixture.input.corridor_id.parse().unwrap(),
-        epoch: fixture.input.epoch.parse().unwrap(),
-        nullifier: field_decimal_to_bytes32(env, &fixture.input.nullifier),
+        epoch: fixture.public_decimal[6].parse().unwrap(),
+        nullifier: fr_to_bytes32(env, &fixture.public.get(1).unwrap()),
     }
 }
 
@@ -303,26 +313,29 @@ fn verifier_accepts_valid_fixture() {
 fn fixture_public_inputs_match_contract_binding() {
     let env = Env::default();
     let (_, public, fixture) = load_fixture();
+    env.ledger()
+        .set_timestamp(public[12].parse::<u64>().unwrap());
+    let signals = public_signals(&env, &public);
     let sender = contract_address(&env, DEMO_SENDER);
     let recipient = contract_address(&env, DEMO_RECIPIENT);
     let asset = contract_address(&env, DEMO_ASSET);
-    let nullifier = field_decimal_to_bytes32(&env, &fixture.nullifier);
+    let nullifier = fr_to_bytes32(&env, &signals.get(1).unwrap());
 
     let expected = rebuild_expected_public_inputs(
         &env,
-        &field_decimal_to_bytes32(&env, &fixture.merkle_root),
+        &field_decimal_to_bytes32(&env, &public[0]),
         &nullifier,
         &asset,
         &sender,
         &recipient,
-        fixture.amount.parse().unwrap(),
-        &field_decimal_to_bytes32(&env, &fixture.sanctions_root),
-        &field_decimal_to_bytes32(&env, &fixture.jurisdiction_root),
-        fixture.epoch.parse().unwrap(),
+        public[9].parse().unwrap(),
+        &field_decimal_to_bytes32(&env, &public[10]),
+        &field_decimal_to_bytes32(&env, &public[11]),
+        public[6].parse().unwrap(),
         fixture.corridor_id.parse().unwrap(),
-        &field_decimal_to_bytes32(&env, &fixture.corridor_config_hash),
-        &field_decimal_to_bytes32(&env, &fixture.source_jurisdiction_root),
-        &field_decimal_to_bytes32(&env, &fixture.dest_address_root),
+        &field_decimal_to_bytes32(&env, &public[14]),
+        &field_decimal_to_bytes32(&env, &public[15]),
+        &field_decimal_to_bytes32(&env, &public[16]),
     );
     let signals = public_signals(&env, &public);
     assert!(public_inputs_match(&expected, &signals));
@@ -363,7 +376,7 @@ fn compliant_transfer_moves_tokens_and_records_nullifier() {
     let (env, compliance_id, fixture) = setup_compliance_fixture(true);
     let compliance = ComplianceClient::new(&env, &compliance_id);
     let args = transfer_args(&env, &fixture);
-    let amount: i128 = fixture.input.amount.parse().unwrap();
+    let amount: i128 = fixture.public_decimal[9].parse().unwrap();
     let token = TokenClient::new(&env, &fixture.asset);
 
     assert_eq!(token.balance(&fixture.sender), amount);
@@ -408,9 +421,13 @@ fn failed_sac_transfer_does_not_burn_nullifier() {
         .is_err());
     assert!(!compliance.check_attestation(&args.nullifier));
 
-    let amount: i128 = fixture.input.amount.parse().unwrap();
+    let amount: i128 = fixture.public_decimal[9].parse().unwrap();
     let token = TokenClient::new(&env, &fixture.asset);
-    MockSacClient::new(&env, &fixture.asset).mint(&fixture.sender, &amount);
+    let sac = TestSacClient::new(&env, &fixture.asset);
+    sac.mint(&fixture.sender, &amount);
+    sac.approve(&fixture.sender, &compliance_id, &amount, &0);
+    env.ledger()
+        .set_timestamp(fixture.public_decimal[12].parse::<u64>().unwrap());
     compliance.compliant_transfer(&args, &fixture.proof, &fixture.public);
 
     assert!(compliance.check_attestation(&args.nullifier));
@@ -559,6 +576,8 @@ fn compliant_transfer_rejects_stale_merkle_root() {
     let (raw_proof, public, fixture) = load_fixture();
     let proof = proof_from_snarkjs(&env, &raw_proof);
     let signals = public_signals(&env, &public);
+    env.ledger()
+        .set_timestamp(public[12].parse::<u64>().unwrap());
 
     let issuer = Address::generate(&env);
     let wrong_root = BytesN::from_array(&env, &[0xAB; 32]);
@@ -576,18 +595,20 @@ fn compliant_transfer_rejects_stale_merkle_root() {
     );
 
     let asset = contract_address(&env, DEMO_ASSET);
-    env.register_at(&asset, MockSac, ());
-    MockSacClient::new(&env, &asset).mint(
-        &contract_address(&env, DEMO_SENDER),
-        &fixture.amount.parse::<i128>().unwrap(),
-    );
+    env.register_at(&asset, TestSac, ());
+    let sac = TestSacClient::new(&env, &asset);
+    let sender = contract_address(&env, DEMO_SENDER);
+    let amount: i128 = public[9].parse().unwrap();
+    sac.mint(&sender, &amount);
+    sac.approve(&sender, &compliance_id, &amount, &0);
 
     let fixture = ComplianceFixture {
         proof,
         public: signals,
+        public_decimal: public,
         input: fixture,
         issuer,
-        sender: contract_address(&env, DEMO_SENDER),
+        sender,
         recipient: contract_address(&env, DEMO_RECIPIENT),
         asset,
     };
@@ -783,4 +804,19 @@ fn compliant_transfer_rejects_disabled_corridor() {
     );
     let args = transfer_args(&env, &fixture);
     compliance.compliant_transfer(&args, &fixture.proof, &fixture.public);
+}
+
+#[test]
+#[should_panic(expected = "direct transfer blocked")]
+fn mock_sac_blocks_direct_transfer_when_router_enforced() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let asset = contract_address(&env, DEMO_ASSET);
+    env.register_at(&asset, TestSac, ());
+    let sac = TestSacClient::new(&env, &asset);
+    sac.set_enforce_router(&true);
+    let from = Address::generate(&env);
+    let to = Address::generate(&env);
+    sac.mint(&from, &1_000);
+    sac.transfer(&from, &to, &100);
 }
