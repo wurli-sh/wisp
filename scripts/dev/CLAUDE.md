@@ -18,10 +18,34 @@ Development and testnet verification scripts.
 | `audit-backend-paths.sh` | Fail if `backend/` Rust crates use stale `../../bindings` paths |
 | `serialize-compliance-proof.ts` | Convert snarkjs proof/public.json to Stellar CLI format |
 | `assert-public-inputs.ts` | Verify a proof package matches Phase 1 golden fixture |
+| `diff-public-inputs.ts` | Field-by-field diff of proven/package roots vs issuer + on-chain compliance state (diagnose `PublicInputMismatch` #13) |
 | `publish-roots-via-service.sh` | Publish issuer + corridor roots via issuer service API |
 | `gen-testnet-fixture.ts` | Generate testnet-specific proof fixture JSON |
 | `write-testnet-golden.ts` | Write golden serialized proof for testnet |
+| `check-circle-usdc-testnet.sh` | Circle USDC trustline + balance gate for demo settle |
+| `patch-corridor-circle-asset.sh` | PATCH corridor `asset_hex` to Circle SAC via issuer API |
 | `phase3-testnet-settle.ts` | SDK settle + double-publish checks on testnet |
 | `load-amoeba-env.ts` | Load `.amoeba/*.env` files into process env (superseded by `@amoeba/sdk` `env.ts`) |
 
 Dev `.ts` helpers run via `node --import tsx scripts/dev/<name>.ts` from repo root.
+
+### `diff-public-inputs.ts`
+
+Diagnose `Error(Contract, #13)` (`PublicInputMismatch`) by comparing the 17 Groth16 public inputs across:
+
+- **proven** — browser/snarkjs `publicSignals` (optional `--proven`)
+- **package** — roots embedded in the proof package (`--package` or `--fetch`)
+- **issuer** — freshly computed Merkle roots from issuer DB (`GET /v1/admin/roots/computed`)
+- **chain** — latest `IssuerRootUpdated` / `CorridorUpdated` events on the compliance contract
+
+```bash
+node --import tsx scripts/dev/diff-public-inputs.ts \
+  --proven /tmp/proven.json \
+  --fetch \
+  --sender GAN3SJKZ7GNHVYCFX7Y3XTDIPZJW6PHMRUL7UDAUHMQ7FIUPDKBFARBC \
+  --recipient GAYDCK6WLSO3CEOINAUXLPIK75V4Z65THQ77TBRQWSLIWEOMA4JMUEZJ \
+  --amount 10000000 \
+  --corridor-id 1
+```
+
+Requires issuer-service on `ISSUER_URL` (default `http://127.0.0.1:3000`) and `ISSUER_API_TOKEN` for the computed-roots admin endpoint. Exits `1` when `--proven` does not match the on-chain rebuild.

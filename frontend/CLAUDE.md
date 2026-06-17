@@ -35,6 +35,7 @@ Amoeba demo UI (`@amoeba/web`) — Vite 6 + React 19 + Tailwind 4.
 | `content/copy.ts` | All UI text content (single source of truth) |
 | `config/layout.ts` | Route and section registry |
 | `config/env.ts` | Environment config from `.env` |
+| `config/circle-testnet-usdc.json` | Circle USDC testnet asset config for compliance demo |
 
 ## Theme
 

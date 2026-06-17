@@ -15,7 +15,9 @@ Off-chain issuer backend service — manages identity trees, generates Merkle pr
 | GET | `/v1/dest-path/:corridor_id/:address` | None |
 | GET | `/v1/corridor/:id` | None |
 | POST | `/v1/credentials` | Bearer token |
-| POST | `/v1/roots/publish` | Bearer token |
+| POST | `/v1/admin/roots/publish` | Bearer token |
+| GET | `/v1/admin/roots/computed` | Bearer token (`?corridor_id=`) |
+| GET | `/v1/admin/roots/latest` | Bearer token |
 
 ## Env
 
@@ -53,3 +55,4 @@ Off-chain issuer backend service — manages identity trees, generates Merkle pr
 |------|---------|
 | `migrations/001_supabase_issuer.sql` | Supabase schema for issuer state persistence |
 | `migrations/002_mock_kyc_challenges.sql` | Mock KYC challenge table for demo |
+| `migrations/003_root_snapshots_compliance_contract.sql` | Root snapshots with compliance contract ID tracking |

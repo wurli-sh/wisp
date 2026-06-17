@@ -12,5 +12,8 @@ TypeScript implementation of Amoeba cryptographic primitives (`@amoeba/js`). Com
 | `protocol.ts` | Domain tags, corridor config hash, nullifier, address-to-limbs |
 | `strkey.ts` | Stellar StrKey decode (G/A/M addresses to raw bytes) |
 | `witness.ts` | `buildWitnessInput`, `proofPackageToWitnessInput`, demo fixture assembly |
+| `publicInputs.ts` | Public input field reconstruction and validation helpers |
 | `types.ts` | Shared TypeScript types (ProofPackage, PublicInputs, WitnessInput, etc.) |
+| `witness.test.ts` | Witness generation unit tests |
+| `publicInputs.test.ts` | Public input field computation tests |
 | `index.ts` | Unified re-exports |

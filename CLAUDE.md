@@ -22,13 +22,14 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 ## Architecture
 
 - **circuits/circom/** — BN254 Groth16 circuit with Poseidon2, 8 compliance checks, 17 public inputs
-- **backend/programs/** — Soroban smart contracts (verifier, compliance, mock-sac)
+- **backend/programs/** — Soroban smart contracts (verifier, compliance)
 - **backend/crates/** — Rust crates for off-chain crypto, types, and issuer service
 - **bindings/** — Canonical ABI, generated contract clients, shared JSON fixtures
 - **packages/amoeba-js/** — Shared JS crypto (`@amoeba/js`: Poseidon2, Merkle, field ops, nullifier, witness)
 - **sdk/** — TypeScript SDK (`@amoeba/sdk`) for proving, settling, and auditing compliant transfers
 - **scripts/** — deploy, dev, fixture, and ceremony tooling
 - **frontend/** — Vite demo UI (`@amoeba/web`: landing, `/demo`, `/compliance`)
+- **docs/** — Design notes, gap analyses, and planning documents
 
 ## Key Commands
 
@@ -46,7 +47,7 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 | `pnpm test:bindings` | Binding ABI + circuit-abi drift tests |
 | `pnpm test:witness` | `@amoeba/js` witness tests |
 | `pnpm test:sdk` | SDK unit tests |
-| `cargo test -p verifier -p compliance -p mock-sac` | Contract unit tests |
+| `cargo test -p verifier -p compliance` | Contract unit tests |
 | `cargo test -p amoeba-crypto -p amoeba-types -p issuer-service` | Backend crate tests |
 | `./scripts/dev/demo-e2e.sh` | Full local E2E pipeline |
 | `./scripts/dev/demo-phase2.sh` | Full Phase 2 pipeline (bindings + issuer) |

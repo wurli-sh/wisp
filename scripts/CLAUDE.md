@@ -6,6 +6,6 @@ Deploy, dev, and ceremony tooling for the Amoeba compliance pipeline.
 
 | Directory | Purpose |
 |-----------|---------|
-| `deploy/` | Stellar contract deployment scripts (verifier, compliance, SAC, publish-roots, mock-sac, ceremony-mainnet gate) |
+| `deploy/` | Stellar contract deployment scripts (verifier, compliance, SAC, publish-roots, ceremony-mainnet gate) |
 | `dev/` | E2E pipeline, Phase 2/3 dev pipelines, testnet gate checks, proof serialization, bootstrap |
 | `fixtures/` | Testnet proof/input fixtures |

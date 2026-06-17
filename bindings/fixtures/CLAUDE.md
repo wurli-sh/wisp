@@ -13,3 +13,4 @@ Shared JSON fixtures used across the Amoeba stack (circuit scripts, bindings tes
 | `addresses.json` | StrKey encoded addresses for accounts |
 | `public-inputs.valid.json` | Golden 17-field public inputs for a valid proof |
 | `public-inputs.testnet.json` | Testnet-specific public inputs |
+| `circle-testnet-usdc.json` | Circle testnet USDC asset config (SAC ID, decimals, contract) |
