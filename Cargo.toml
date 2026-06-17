@@ -3,7 +3,6 @@ resolver = "2"
 members = [
     "backend/programs/verifier",
     "backend/programs/compliance",
-    "backend/programs/mock-sac",
     "backend/crates/amoeba-crypto",
     "backend/crates/amoeba-types",
     "backend/crates/issuer-service",

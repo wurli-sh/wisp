@@ -17,5 +17,4 @@ ark-bn254 = "0.6"
 ark-ff = "0.6"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-mock-sac = { path = "../mock-sac" }
 verifier = { path = "../verifier" }
