@@ -59,14 +59,14 @@ export function Hero() {
           </motion.h1>
 
           <motion.p
-            className="mt-6 max-w-xl text-pretty text-base text-muted-foreground sm:text-lg"
+            className="mt-6 max-w-xl text-pretty text-base text-white sm:text-lg"
             variants={fadeInUp}
           >
             {COPY.hero.sub}
           </motion.p>
 
           <motion.p
-            className="mt-4 text-sm font-medium text-primary"
+            className="mt-4 text-sm font-medium text-white"
             variants={fadeInUp}
           >
             {COPY.paradoxAct.closer}
