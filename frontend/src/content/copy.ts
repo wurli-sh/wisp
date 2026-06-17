@@ -6,8 +6,8 @@ export interface HeroCta {
 export const COPY = {
   hero: {
     eyebrow: "ZK-COMPLIANCE FOR CROSS-BORDER STELLAR STABLECOINS",
-    headlineLead: "Prove every transfer.",
-    headlineAccent: "Keep personal info private.",
+    headlineLead: "Prove every transfer. Keep personal info",
+    headlineAccent: "private.",
     sub: "Cross-border corridor compliance on Stellar. Customer credentials stay off-chain.",
     ctas: {
       primary: { label: "See a live proof →", href: "/demo" },

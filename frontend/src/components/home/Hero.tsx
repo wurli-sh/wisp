@@ -53,7 +53,7 @@ export function Hero() {
             variants={fadeInUp}
           >
             {COPY.hero.headlineLead}{" "}
-            <HighlightedText variant="primary" from="bottom" delay={0.12}>
+            <HighlightedText variant="primary" from="bottom" delay={0.12} className="whitespace-nowrap">
               {COPY.hero.headlineAccent}
             </HighlightedText>
           </motion.h1>
