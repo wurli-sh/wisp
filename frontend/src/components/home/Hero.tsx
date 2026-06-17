@@ -17,10 +17,10 @@ export function Hero() {
   return (
     <section className="relative flex min-h-[calc(100dvh-5.5rem)] items-center justify-center overflow-hidden bg-background py-16">
       <motion.div
-        className="pointer-events-none absolute bottom-0 left-1/2 z-0 h-[45%] w-full max-w-4xl -translate-x-1/2 px-4 sm:px-6"
+        className="pointer-events-none absolute bottom-0 left-1/2 z-0 h-[20%] w-full max-w-4xl -translate-x-1/2 px-4 sm:px-6"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 0.4 }}
-        transition={{ duration: 1.5, delay: 0.2 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 2, delay: 0.1 }}
       >
         <Dithering
           style={{ height: "100%", width: "100%" }}
@@ -57,6 +57,20 @@ export function Hero() {
               {COPY.hero.headlineAccent}
             </HighlightedText>
           </motion.h1>
+
+          <motion.p
+            className="mt-6 max-w-xl text-pretty text-base text-muted-foreground sm:text-lg"
+            variants={fadeInUp}
+          >
+            Cross-border corridor compliance on Stellar. Customer credentials stay off-chain.
+          </motion.p>
+
+          <motion.p
+            className="mt-4 text-sm font-medium text-primary"
+            variants={fadeInUp}
+          >
+            Compliance evidence and customer privacy — one rail.
+          </motion.p>
 
           <motion.div
             className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4"
