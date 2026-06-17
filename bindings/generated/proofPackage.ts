@@ -44,6 +44,7 @@ export interface MerklePaths {
 export interface WitnessPrivate {
   demo_unsafe: boolean;
   credential_secret: string;
+  transfer_nonce?: string;
   jurisdiction: string;
   credential_expiry: string;
   sanctions_leaf_value: string;
@@ -61,6 +62,7 @@ export interface ProofPackage {
 export interface DemoTransferFixture {
   demo_only: boolean;
   credential_secret: string;
+  transfer_nonce?: string;
   corridor_id: number;
   sender_hex: string;
   recipient_hex: string;

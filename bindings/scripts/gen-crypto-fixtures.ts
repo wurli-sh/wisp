@@ -23,6 +23,7 @@ const demo = JSON.parse(
   recipient_hex: string;
   asset_hex: string;
   credential_secret: string;
+  transfer_nonce?: string;
   jurisdiction: string;
   epoch: string;
   amount: string;
@@ -33,6 +34,7 @@ const sender = Buffer.from(demo.sender_hex, "hex");
 const recipient = Buffer.from(demo.recipient_hex, "hex");
 const asset = Buffer.from(demo.asset_hex, "hex");
 const credentialSecret = BigInt(demo.credential_secret);
+const transferNonce = BigInt(demo.transfer_nonce ?? "0");
 const jurisdiction = BigInt(demo.jurisdiction);
 const epoch = BigInt(demo.epoch);
 const amount = BigInt(demo.amount);
@@ -65,6 +67,7 @@ const nullifier = computeNullifier({
   recipientHi: recipientLimbs.hi,
   amount,
   corridorId,
+  transferNonce,
 });
 
 const corridorConfigHash = computeCorridorConfigHash({
