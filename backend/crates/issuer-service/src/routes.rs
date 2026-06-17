@@ -39,7 +39,8 @@ pub fn router(cfg: Config, state: AppState) -> Router {
         .route("/v1/fixtures/demo-transfer", post(create_demo_transfer))
         .route("/v1/mock-kyc/challenge", post(mock_kyc_challenge))
         .route("/v1/mock-kyc/submit", post(mock_kyc_submit))
-        .route("/v1/mock-kyc/status/{wallet}", get(mock_kyc_status));
+        .route("/v1/mock-kyc/status/{wallet}", get(mock_kyc_status))
+        .route("/auth", get(sep10_auth));
 
     let protected = Router::new()
         .route("/v1/admin/users", get(list_users))
@@ -52,6 +53,7 @@ pub fn router(cfg: Config, state: AppState) -> Router {
         )
         .route("/v1/admin/roots/publish", post(publish_roots_handler))
         .route("/v1/admin/roots/latest", get(latest_root))
+        .route("/v1/admin/roots/computed", get(computed_roots))
         .layer(axum::middleware::from_fn(require_token));
 
     Router::new()
@@ -74,11 +76,12 @@ async fn demo_transfer(State(state): State<AppState>) -> Result<Json<ProofPackag
 }
 
 async fn create_demo_transfer(
+    axum::Extension(cfg): axum::Extension<Config>,
     State(state): State<AppState>,
     Json(req): Json<DemoTransferRequest>,
 ) -> Result<Json<ProofPackage>, (StatusCode, String)> {
     let (_, proof_package) = state
-        .create_demo_transfer(&req)
+        .create_demo_transfer(&cfg, &req)
         .await
         .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
     Ok(Json(proof_package))
@@ -120,11 +123,36 @@ async fn mock_kyc_submit(
 }
 
 async fn mock_kyc_status(
+    axum::Extension(cfg): axum::Extension<Config>,
     State(state): State<AppState>,
     Path(wallet): Path<String>,
+    Query(query): Query<MockKycStatusQuery>,
 ) -> Result<Json<crate::mock_kyc::MockKycStatusResponse>, (StatusCode, String)> {
     state
-        .mock_kyc_status(&wallet)
+        .mock_kyc_status(&cfg, &wallet, query.corridor_id, query.recipient.as_deref())
+        .await
+        .map(Json)
+        .map_err(|err| mock_kyc_error_status(&err, StatusCode::BAD_REQUEST))
+}
+
+#[derive(Deserialize)]
+struct MockKycStatusQuery {
+    corridor_id: Option<u32>,
+    recipient: Option<String>,
+}
+
+#[derive(Deserialize)]
+struct Sep10AuthQuery {
+    account: String,
+}
+
+async fn sep10_auth(
+    axum::Extension(cfg): axum::Extension<Config>,
+    State(state): State<AppState>,
+    Query(query): Query<Sep10AuthQuery>,
+) -> Result<Json<crate::mock_kyc::MockKycChallengeResponse>, (StatusCode, String)> {
+    state
+        .create_mock_kyc_challenge(&cfg, &query.account)
         .await
         .map(Json)
         .map_err(|err| mock_kyc_error_status(&err, StatusCode::BAD_REQUEST))
@@ -311,6 +339,27 @@ async fn latest_root(
         .ok_or(StatusCode::NOT_FOUND)
 }
 
+#[derive(Deserialize)]
+struct ComputedRootsQuery {
+    corridor_id: u32,
+}
+
+async fn computed_roots(
+    State(state): State<AppState>,
+    Query(query): Query<ComputedRootsQuery>,
+) -> Result<Json<Value>, (StatusCode, String)> {
+    let roots = state
+        .computed_roots_for_corridor(query.corridor_id)
+        .await
+        .map_err(|err| (StatusCode::BAD_REQUEST, err))?;
+    let snapshot = state.latest_root_snapshot(Some(query.corridor_id)).await;
+    Ok(Json(json!({
+        "corridor_id": query.corridor_id,
+        "computed_roots": roots,
+        "latest_root_snapshot": snapshot,
+    })))
+}
+
 async fn provider_webhook(
     axum::Extension(cfg): axum::Extension<Config>,
     State(state): State<AppState>,
@@ -449,6 +498,48 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn computed_roots_requires_auth() {
+        let app = test_app().await;
+        let res = app
+            .oneshot(
+                Request::get("/v1/admin/roots/computed?corridor_id=1")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn computed_roots_returns_merkle_fields() {
+        let mut cfg = Config::from_env();
+        cfg.api_token = Some("test-token".into());
+        cfg.webhook_secrets = vec![("persona".into(), "shh".into())];
+        cfg.fixtures_dir =
+            concat!(env!("CARGO_MANIFEST_DIR"), "/../../../bindings/fixtures").into();
+        let state = AppState::load(&cfg).await;
+        seed_demo_user(&state).await;
+        let app = router(cfg, state);
+        let res = app
+            .oneshot(
+                Request::get("/v1/admin/roots/computed?corridor_id=1")
+                    .header("authorization", "Bearer test-token")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: Value = serde_json::from_slice(&body).unwrap();
+        assert!(json.get("computed_roots").is_some());
+        assert!(json["computed_roots"].get("merkle_root").is_some());
     }
 
     #[tokio::test]

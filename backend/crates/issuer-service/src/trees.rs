@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryFrom;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use rand::random;
 use amoeba_crypto::{
     address_to_limbs, compute_corridor_config_hash, compute_nullifier, compute_zero_hashes,
     fr_to_canonical_decimal, hash2, mod_u128, mod_u64, poseidon2_hash1, poseidon2_hash2,
@@ -16,9 +17,7 @@ use amoeba_types::{
 use ark_bn254::Fr;
 use serde_json::{json, Value};
 
-use crate::state::{
-    CorridorDestinationRecord, CorridorRecord, IssuerCredentialRecord, IssuerUser,
-};
+use crate::state::{CorridorDestinationRecord, CorridorRecord, IssuerCredentialRecord, IssuerUser};
 
 pub struct NormalizedProviderEvent {
     pub provider: String,
@@ -83,7 +82,8 @@ pub fn current_epoch() -> u64 {
 }
 
 fn country_code(users: &DemoUsersFixture, country: &str) -> Result<u32, String> {
-    users.users
+    users
+        .users
         .iter()
         .find(|u| u.jurisdiction.eq_ignore_ascii_case(country))
         .map(|u| u.jurisdiction_code)
@@ -123,13 +123,19 @@ pub fn build_dynamic_demo_fixture(
         .find(|c| c.id == req.corridor_id && c.enabled)
         .ok_or_else(|| format!("unknown enabled corridor id: {}", req.corridor_id))?;
 
-    if !corridor.source_country.eq_ignore_ascii_case(&req.source_country) {
+    if !corridor
+        .source_country
+        .eq_ignore_ascii_case(&req.source_country)
+    {
         return Err(format!(
             "source country {} does not match corridor {}",
             req.source_country, corridor.name
         ));
     }
-    if !corridor.dest_country.eq_ignore_ascii_case(&req.dest_country) {
+    if !corridor
+        .dest_country
+        .eq_ignore_ascii_case(&req.dest_country)
+    {
         return Err(format!(
             "destination country {} does not match corridor {}",
             req.dest_country, corridor.name
@@ -150,6 +156,7 @@ pub fn build_dynamic_demo_fixture(
     Ok(DemoTransferFixture {
         demo_only: true,
         credential_secret: template.credential_secret.clone(),
+        transfer_nonce: random::<u128>().to_string(),
         corridor_id: req.corridor_id,
         sender_hex: payload_to_hex(&sender),
         recipient_hex: payload_to_hex(&recipient),
@@ -196,7 +203,10 @@ pub fn normalize_provider_payload(
         .get("sanctions_clear")
         .and_then(Value::as_bool)
         .unwrap_or(true);
-    let enabled = payload.get("enabled").and_then(Value::as_bool).unwrap_or(true);
+    let enabled = payload
+        .get("enabled")
+        .and_then(Value::as_bool)
+        .unwrap_or(true);
     let credential_secret = payload
         .get("credential_secret")
         .and_then(|value| match value {
@@ -248,11 +258,7 @@ pub fn build_canonical_proof_package(
     let asset_limbs = address_to_limbs(&asset_bytes);
 
     let sender_leaf = poseidon2_hash2(sender_limbs.lo, sender_limbs.hi);
-    let active_users: Vec<_> = users
-        .iter()
-        .filter(|user| user.enabled)
-        .cloned()
-        .collect();
+    let active_users: Vec<_> = users.iter().filter(|user| user.enabled).cloned().collect();
     let mut membership_leaves = active_users
         .iter()
         .map(|user| {
@@ -266,7 +272,10 @@ pub fn build_canonical_proof_package(
         .position(|(wallet, _)| wallet == &sender.wallet)
         .ok_or_else(|| "sender missing from membership set".to_string())?;
     let membership_tree = build_merkle_tree(
-        &membership_leaves.iter().map(|(_, leaf)| *leaf).collect::<Vec<_>>(),
+        &membership_leaves
+            .iter()
+            .map(|(_, leaf)| *leaf)
+            .collect::<Vec<_>>(),
         sender_index,
     );
     debug_assert_eq!(membership_leaves[sender_index].1, sender_leaf);
@@ -323,6 +332,7 @@ pub fn build_canonical_proof_package(
         .credential_secret
         .parse()
         .map_err(|_| "invalid credential secret".to_string())?;
+    let transfer_nonce = random::<u128>();
     let nullifier = compute_nullifier(
         mod_u128(credential_secret),
         sender_limbs.lo,
@@ -334,6 +344,7 @@ pub fn build_canonical_proof_package(
         recipient_limbs.hi,
         mod_u64(u64::try_from(parsed_amount).map_err(|_| "amount overflow".to_string())?),
         mod_u64(corridor.id as u64),
+        mod_u128(transfer_nonce),
     );
 
     let corridor_config_hash = compute_corridor_config_hash(
@@ -414,7 +425,11 @@ pub fn build_canonical_proof_package(
         paths: MerklePaths {
             membership: membership_tree.path,
             membership_indices: membership_tree.path_indices,
-            sanctions: sanctions.path.iter().map(|fr| fr_to_canonical_decimal(*fr)).collect(),
+            sanctions: sanctions
+                .path
+                .iter()
+                .map(|fr| fr_to_canonical_decimal(*fr))
+                .collect(),
             sanctions_indices: sanctions.path_indices,
             jurisdiction: jurisdiction_tree.path,
             jurisdiction_indices: jurisdiction_tree.path_indices,
@@ -424,8 +439,8 @@ pub fn build_canonical_proof_package(
             dest_address_indices: destination_tree.path_indices,
         },
         demo: Some(DemoPackageMetadata {
-            sender_strkey: None,
-            recipient_strkey: None,
+            sender_strkey: crate::mock_kyc::wallet_strkey_from_hex(&sender.wallet).ok(),
+            recipient_strkey: crate::mock_kyc::wallet_strkey_from_hex(&destination.address).ok(),
             asset_strkey: None,
             issuer_strkey: corridor.issuer_strkey.clone(),
             source_country: Some(corridor.source_country.clone()),
@@ -434,6 +449,7 @@ pub fn build_canonical_proof_package(
         witness_private: Some(WitnessPrivate {
             demo_unsafe: false,
             credential_secret: credential.credential_secret.clone(),
+            transfer_nonce: transfer_nonce.to_string(),
             jurisdiction: sender.jurisdiction_code.to_string(),
             credential_expiry: sender.credential_expiry.to_string(),
             sanctions_leaf_value: "0".into(),
@@ -471,7 +487,11 @@ fn build_merkle_tree(leaves: &[Fr], target_index: usize) -> MerkleTreeResult {
         let mut next = Vec::with_capacity(level.len().div_ceil(2));
         for pair in level.chunks(2) {
             let left = pair[0];
-            let right = if pair.len() == 2 { pair[1] } else { zeros[depth] };
+            let right = if pair.len() == 2 {
+                pair[1]
+            } else {
+                zeros[depth]
+            };
             next.push(hash2(left, right));
         }
         level = next;

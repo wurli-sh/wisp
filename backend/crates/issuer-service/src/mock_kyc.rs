@@ -15,8 +15,6 @@ use crate::trees::{payload_to_hex, strkey_to_payload};
 
 pub const MOCK_CREDENTIAL_SECRET: &str = "424242";
 pub const CHALLENGE_TTL_SECS: u64 = 300;
-pub const AUTH_DATA_NAME: &str = "amoeba auth";
-const MOCK_MIN_AGE_YEARS: u32 = 18;
 const MOCK_JURISDICTION: &str = "US";
 const MOCK_JURISDICTION_CODE: u32 = 840;
 
@@ -47,10 +45,10 @@ pub struct MockKycChallengeResponse {
 pub struct MockKycSubmitRequest {
     pub challenge_id: String,
     pub signed_challenge_xdr: String,
-    pub name: String,
-    pub country: String,
-    pub dob: String,
-    pub sanctions_clear: bool,
+    #[serde(default)]
+    pub corridor_id: Option<u32>,
+    #[serde(default)]
+    pub recipient: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -61,11 +59,30 @@ pub enum MockKycSubmitStatus {
     AlreadyApproved,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum MockKycRootsStatus {
+    Missing,
+    Publishing,
+    Active,
+    Failed,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MockKycSubmitResponse {
     pub status: MockKycSubmitStatus,
+    pub kyc_status: MockKycLifecycleStatus,
+    pub eligible_for_proof: bool,
+    pub missing: Vec<MockKycMissing>,
+    pub roots_status: MockKycRootsStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub roots_message: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rejection_reason: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub publish_warning: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -84,6 +101,7 @@ pub enum MockKycMissing {
     Destination,
     RootsPublished,
     Corridor,
+    SenderCorridor,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -92,8 +110,13 @@ pub struct MockKycStatusResponse {
     pub kyc_status: MockKycLifecycleStatus,
     pub eligible_for_proof: bool,
     pub missing: Vec<MockKycMissing>,
+    pub roots_status: MockKycRootsStatus,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub roots_message: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rejection_reason: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub publish_warning: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -145,16 +168,22 @@ pub fn wallet_strkey_from_hex(wallet_hex: &str) -> Result<String, String> {
     Ok(StrKeyPublicKey(payload).to_string())
 }
 
+pub fn auth_data_name(web_auth_domain: &str) -> String {
+    format!("{} auth", web_auth_domain.trim())
+}
+
 pub fn build_challenge(
     wallet_strkey: &str,
     _network_passphrase: &str,
+    web_auth_domain: &str,
+    seq_num: Option<i64>,
 ) -> Result<(String, String, String, i64), String> {
     let _wallet_hex = validate_wallet_strkey(wallet_strkey)?;
     let pubkey = parse_strkey_pubkey(wallet_strkey)?;
     let nonce = random_nonce();
     let expires_at = now_unix() + CHALLENGE_TTL_SECS as i64;
+    let data_name = string64(&auth_data_name(web_auth_domain))?;
 
-    let data_name = string64(AUTH_DATA_NAME)?;
     let data_value = data_value_from_str(&nonce)?;
 
     let operation = Operation {
@@ -168,7 +197,7 @@ pub fn build_challenge(
     let transaction = Transaction {
         source_account: MuxedAccount::Ed25519(Uint256(pubkey)),
         fee: 100,
-        seq_num: SequenceNumber(0),
+        seq_num: SequenceNumber(seq_num.unwrap_or(0)),
         cond: Preconditions::Time(TimeBounds {
             min_time: TimePoint(0),
             max_time: TimePoint(expires_at as u64),
@@ -197,6 +226,7 @@ pub fn verify_signed_challenge(
     expected_wallet_strkey: &str,
     expected_nonce: &str,
     network_passphrase: &str,
+    web_auth_domain: &str,
     expires_at: i64,
 ) -> Result<(), String> {
     if now_unix() > expires_at {
@@ -222,7 +252,7 @@ pub fn verify_signed_challenge(
     }
 
     let (data_name, nonce) = extract_manage_data_nonce(&tx)?;
-    if data_name != AUTH_DATA_NAME {
+    if data_name != auth_data_name(web_auth_domain) {
         return Err("invalid challenge operation name".into());
     }
     if nonce != expected_nonce {
@@ -256,23 +286,35 @@ pub fn verify_signed_challenge(
     Err("no valid signature".into())
 }
 
-pub fn evaluate_mock_kyc_form(
-    country: &str,
-    dob: &str,
-    sanctions_clear: bool,
-) -> Result<(), String> {
-    if !sanctions_clear {
-        return Err("sanctions declaration must be clear".into());
+pub fn signed_challenge_matches_stored(signed_xdr: &str, stored_xdr: &str) -> Result<(), String> {
+    let signed_env = TransactionEnvelope::from_xdr_base64(signed_xdr.trim(), Limits::none())
+        .map_err(|e| format!("invalid signed challenge xdr: {e}"))?;
+    let stored_env = TransactionEnvelope::from_xdr_base64(stored_xdr.trim(), Limits::none())
+        .map_err(|e| format!("invalid stored challenge xdr: {e}"))?;
+
+    let (signed_tx, _) = match signed_env {
+        TransactionEnvelope::Tx(v1) => (v1.tx, v1.signatures),
+        _ => return Err("unsupported signed transaction envelope type".into()),
+    };
+    let (stored_tx, _) = match stored_env {
+        TransactionEnvelope::Tx(v1) => (v1.tx, v1.signatures),
+        _ => return Err("unsupported stored transaction envelope type".into()),
+    };
+
+    if transactions_match(&signed_tx, &stored_tx) {
+        Ok(())
+    } else {
+        Err("signed transaction does not match issued challenge".into())
     }
-    if !country.trim().eq_ignore_ascii_case(MOCK_JURISDICTION) {
-        return Err(format!(
-            "only {MOCK_JURISDICTION} is supported for demo mock KYC"
-        ));
-    }
-    if age_from_dob(dob)? < MOCK_MIN_AGE_YEARS {
-        return Err(format!("must be at least {MOCK_MIN_AGE_YEARS} years old"));
-    }
-    Ok(())
+}
+
+fn transactions_match(a: &Transaction, b: &Transaction) -> bool {
+    a.source_account == b.source_account
+        && a.fee == b.fee
+        && a.seq_num == b.seq_num
+        && a.cond == b.cond
+        && a.memo == b.memo
+        && a.operations == b.operations
 }
 
 pub fn mock_credential_expiry() -> u64 {
@@ -281,6 +323,24 @@ pub fn mock_credential_expiry() -> u64 {
 
 pub fn mock_jurisdiction() -> (&'static str, u32) {
     (MOCK_JURISDICTION, MOCK_JURISDICTION_CODE)
+}
+
+pub async fn horizon_account_sequence(horizon_url: &str, account: &str) -> Option<i64> {
+    let url = format!(
+        "{}/accounts/{}",
+        horizon_url.trim_end_matches('/'),
+        account.trim()
+    );
+    let output = tokio::process::Command::new("curl")
+        .args(["-sf", &url])
+        .output()
+        .await
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let json: serde_json::Value = serde_json::from_slice(&output.stdout).ok()?;
+    json.get("sequence")?.as_str()?.parse().ok()
 }
 
 fn random_nonce() -> String {
@@ -352,91 +412,18 @@ fn data_value_from_str(value: &str) -> Result<DataValue, String> {
     DataValue::try_from(value.as_bytes().to_vec()).map_err(|e| format!("data value: {e}"))
 }
 
-fn age_from_dob(dob: &str) -> Result<u32, String> {
-    let trimmed = dob.trim();
-    let mut parts = trimmed.split('-');
-    let year: i32 = parts
-        .next()
-        .ok_or_else(|| "invalid date of birth".to_string())?
-        .parse()
-        .map_err(|_| "invalid date of birth".to_string())?;
-    let month: u32 = parts
-        .next()
-        .ok_or_else(|| "invalid date of birth".to_string())?
-        .parse()
-        .map_err(|_| "invalid date of birth".to_string())?;
-    let day: u32 = parts
-        .next()
-        .ok_or_else(|| "invalid date of birth".to_string())?
-        .parse()
-        .map_err(|_| "invalid date of birth".to_string())?;
-    if parts.next().is_some() {
-        return Err("invalid date of birth".into());
-    }
-
-    let today = chrono_like_today();
-    let mut age = today.year - year;
-    if (today.month, today.day) < (month as i32, day as i32) {
-        age -= 1;
-    }
-    if age < 0 {
-        return Err("invalid date of birth".into());
-    }
-    Ok(age as u32)
-}
-
-struct Today {
-    year: i32,
-    month: i32,
-    day: i32,
-}
-
-fn chrono_like_today() -> Today {
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("clock before epoch");
-    let days = now.as_secs() / 86_400;
-    civil_from_days(days as i64)
-}
-
-// Howard Hinnant's algorithms (public domain) — UTC civil date from unix days.
-fn civil_from_days(days: i64) -> Today {
-    let z = days + 719_468;
-    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
-    let doe = z - era * 146_097;
-    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
-    let y = yoe + era * 400;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = mp + if mp < 10 { 3 } else { -9 };
-    let year = y + if m <= 2 { 1 } else { 0 };
-    Today {
-        year: year as i32,
-        month: m as i32,
-        day: d as i32,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn evaluate_form_rejects_non_us() {
-        let err = evaluate_mock_kyc_form("MX", "1990-01-15", true).unwrap_err();
-        assert!(err.contains("US"));
-    }
-
-    #[test]
-    fn evaluate_form_rejects_underage() {
-        let err = evaluate_mock_kyc_form("US", "2020-01-15", true).unwrap_err();
-        assert!(err.contains("18"));
-    }
-
-    #[test]
     fn validate_wallet_rejects_garbage() {
         assert!(validate_wallet_strkey("not-a-wallet").is_err());
+    }
+
+    #[test]
+    fn auth_data_name_uses_domain() {
+        assert_eq!(auth_data_name("demo.amoeba.dev"), "demo.amoeba.dev auth");
     }
 
     #[test]
@@ -465,5 +452,17 @@ mod tests {
             classify_mock_kyc_resubmit(Some("mock"), false, false, Some("rejected"), false),
             MockKycResubmitAction::Continue
         );
+    }
+
+    #[test]
+    fn signed_challenge_rejects_mismatched_stored_xdr() {
+        let wallet = "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF";
+        let network = "Test SDF Network ; September 2015";
+        let (_, challenge_a, _, _) =
+            build_challenge(wallet, network, "localhost", Some(1)).expect("challenge a");
+        let (_, challenge_b, _, _) =
+            build_challenge(wallet, network, "localhost", Some(2)).expect("challenge b");
+        assert!(signed_challenge_matches_stored(&challenge_a, &challenge_b).is_err());
+        assert!(signed_challenge_matches_stored(&challenge_a, &challenge_a).is_ok());
     }
 }

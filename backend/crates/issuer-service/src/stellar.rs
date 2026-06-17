@@ -7,6 +7,38 @@ use amoeba_types::Roots;
 
 use crate::config::Config;
 
+fn network_alias(cfg: &Config) -> &'static str {
+    if cfg.network_passphrase.contains("Test SDF") {
+        "testnet"
+    } else {
+        "local"
+    }
+}
+
+fn stellar_command(cfg: &Config) -> Command {
+    let mut cmd = Command::new("stellar");
+    cmd.env("STELLAR_NETWORK_PASSPHRASE", &cfg.network_passphrase)
+        .env("STELLAR_RPC_URL", &cfg.rpc_url);
+    cmd
+}
+
+fn push_invoke_prefix(args: &mut Vec<String>, cfg: &Config, compliance: &str, source: &str) {
+    args.extend([
+        "contract".into(),
+        "invoke".into(),
+        "--id".into(),
+        compliance.to_string(),
+        "--source-account".into(),
+        source.to_string(),
+        "--network".into(),
+        network_alias(cfg).into(),
+        "--network-passphrase".into(),
+        cfg.network_passphrase.clone(),
+        "--rpc-url".into(),
+        cfg.rpc_url.clone(),
+    ]);
+}
+
 pub fn field_decimal_to_hex(decimal: &str) -> Result<String, String> {
     let fr = fr_from_decimal(decimal);
     let bytes = fr.into_bigint().to_bytes_be();
@@ -35,33 +67,22 @@ pub fn publish_roots(cfg: &Config, roots: &Roots, corridor_id: u32) -> Result<St
     let dest = field_decimal_to_hex(&roots.dest_address_root)?;
     let corridor_hash = field_decimal_to_hex(&roots.corridor_config_hash)?;
 
-    let network = if cfg.network_passphrase.contains("Test SDF") {
-        "testnet"
-    } else {
-        "local"
-    };
-
-    let register_issuer = Command::new("stellar")
-        .args([
-            "contract",
-            "invoke",
-            "--id",
-            compliance,
-            "--source-account",
-            &source,
-            "--network",
-            network,
-            "--",
-            "register_issuer",
-            "--issuer",
-            issuer,
-            "--merkle_root",
-            &merkle,
-            "--sanctions_root",
-            &sanctions,
-            "--jurisdiction_root",
-            &jurisdiction,
-        ])
+    let mut register_issuer_args = Vec::new();
+    push_invoke_prefix(&mut register_issuer_args, cfg, compliance, &source);
+    register_issuer_args.extend([
+        "--".into(),
+        "register_issuer".into(),
+        "--issuer".into(),
+        issuer.clone(),
+        "--merkle_root".into(),
+        merkle.clone(),
+        "--sanctions_root".into(),
+        sanctions.clone(),
+        "--jurisdiction_root".into(),
+        jurisdiction.clone(),
+    ]);
+    let register_issuer = stellar_command(cfg)
+        .args(&register_issuer_args)
         .output()
         .map_err(|e| format!("stellar invoke failed: {e}"))?;
 
@@ -78,29 +99,24 @@ pub fn publish_roots(cfg: &Config, roots: &Roots, corridor_id: u32) -> Result<St
                 "ISSUER_PUBLIC_KEY required when issuer signs update_issuer_root".to_string()
             }
         })?;
-        let update = Command::new("stellar")
-            .args([
-                "contract",
-                "invoke",
-                "--id",
-                compliance,
-                "--source-account",
-                &source,
-                "--network",
-                network,
-                "--",
-                "update_issuer_root",
-                "--issuer",
-                issuer,
-                "--merkle_root",
-                &merkle,
-                "--sanctions_root",
-                &sanctions,
-                "--jurisdiction_root",
-                &jurisdiction,
-                "--auth",
-                &auth,
-            ])
+        let mut update_args = Vec::new();
+        push_invoke_prefix(&mut update_args, cfg, compliance, &source);
+        update_args.extend([
+            "--".into(),
+            "update_issuer_root".into(),
+            "--issuer".into(),
+            issuer.clone(),
+            "--merkle_root".into(),
+            merkle.clone(),
+            "--sanctions_root".into(),
+            sanctions.clone(),
+            "--jurisdiction_root".into(),
+            jurisdiction.clone(),
+            "--auth".into(),
+            auth,
+        ]);
+        let update = stellar_command(cfg)
+            .args(&update_args)
             .output()
             .map_err(|e| format!("stellar invoke failed: {e}"))?;
         if !update.status.success() {
@@ -111,27 +127,22 @@ pub fn publish_roots(cfg: &Config, roots: &Roots, corridor_id: u32) -> Result<St
         }
     }
 
-    let register_corridor = Command::new("stellar")
-        .args([
-            "contract",
-            "invoke",
-            "--id",
-            compliance,
-            "--source-account",
-            &source,
-            "--network",
-            network,
-            "--",
-            "register_corridor",
-            "--corridor_id",
-            &corridor_id.to_string(),
-            "--source_jurisdiction_root",
-            &source_j,
-            "--dest_address_root",
-            &dest,
-            "--corridor_config_hash",
-            &corridor_hash,
-        ])
+    let mut register_corridor_args = Vec::new();
+    push_invoke_prefix(&mut register_corridor_args, cfg, compliance, &source);
+    register_corridor_args.extend([
+        "--".into(),
+        "register_corridor".into(),
+        "--corridor_id".into(),
+        corridor_id.to_string(),
+        "--source_jurisdiction_root".into(),
+        source_j.clone(),
+        "--dest_address_root".into(),
+        dest.clone(),
+        "--corridor_config_hash".into(),
+        corridor_hash.clone(),
+    ]);
+    let register_corridor = stellar_command(cfg)
+        .args(&register_corridor_args)
         .output()
         .map_err(|e| format!("stellar invoke failed: {e}"))?;
 
@@ -140,29 +151,24 @@ pub fn publish_roots(cfg: &Config, roots: &Roots, corridor_id: u32) -> Result<St
         if !stderr.contains("AlreadyExists") && !stderr.contains("already") {
             return Err(format!("register_corridor failed: {stderr}"));
         }
-        let update = Command::new("stellar")
-            .args([
-                "contract",
-                "invoke",
-                "--id",
-                compliance,
-                "--source-account",
-                &source,
-                "--network",
-                network,
-                "--",
-                "update_corridor",
-                "--corridor_id",
-                &corridor_id.to_string(),
-                "--source_jurisdiction_root",
-                &source_j,
-                "--dest_address_root",
-                &dest,
-                "--corridor_config_hash",
-                &corridor_hash,
-                "--enabled",
-                "true",
-            ])
+        let mut update_corridor_args = Vec::new();
+        push_invoke_prefix(&mut update_corridor_args, cfg, compliance, &source);
+        update_corridor_args.extend([
+            "--".into(),
+            "update_corridor".into(),
+            "--corridor_id".into(),
+            corridor_id.to_string(),
+            "--source_jurisdiction_root".into(),
+            source_j,
+            "--dest_address_root".into(),
+            dest,
+            "--corridor_config_hash".into(),
+            corridor_hash,
+            "--enabled".into(),
+            "true".into(),
+        ]);
+        let update = stellar_command(cfg)
+            .args(&update_corridor_args)
             .output()
             .map_err(|e| format!("stellar invoke failed: {e}"))?;
         if !update.status.success() {

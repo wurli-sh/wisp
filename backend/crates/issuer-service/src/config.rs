@@ -24,6 +24,9 @@ pub struct Config {
     pub publish_source_account: Option<String>,
     pub fixtures_dir: String,
     pub fixture_profile: String,
+    pub web_auth_domain: String,
+    pub horizon_url: String,
+    pub kyc_mode: String,
 }
 
 impl Config {
@@ -46,6 +49,7 @@ impl Config {
             rpc_url: env::var("STELLAR_RPC_URL")
                 .unwrap_or_else(|_| "https://soroban-testnet.stellar.org".into()),
             network_passphrase: env::var("NETWORK_PASSPHRASE")
+                .or_else(|_| env::var("STELLAR_NETWORK_PASSPHRASE"))
                 .unwrap_or_else(|_| "Test SDF Network ; September 2015".into()),
             compliance_id: env::var("COMPLIANCE_CONTRACT_ID")
                 .ok()
@@ -63,6 +67,10 @@ impl Config {
                 concat!(env!("CARGO_MANIFEST_DIR"), "/../../../bindings/fixtures").into()
             }),
             fixture_profile: env::var("AMOEBA_FIXTURE_PROFILE").unwrap_or_else(|_| "local".into()),
+            web_auth_domain: env::var("WEB_AUTH_DOMAIN").unwrap_or_else(|_| "localhost".into()),
+            horizon_url: env::var("HORIZON_URL")
+                .unwrap_or_else(|_| "https://horizon-testnet.stellar.org".into()),
+            kyc_mode: env::var("KYC_MODE").unwrap_or_else(|_| "sep10".into()),
         }
     }
 
@@ -161,6 +169,9 @@ mod tests {
             publish_source_account: None,
             fixtures_dir: String::new(),
             fixture_profile: "local".into(),
+            web_auth_domain: "localhost".into(),
+            horizon_url: "https://horizon-testnet.stellar.org".into(),
+            kyc_mode: "sep10".into(),
         }
     }
 

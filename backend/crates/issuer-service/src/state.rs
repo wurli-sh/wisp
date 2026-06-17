@@ -14,11 +14,12 @@ use tokio_postgres::{Client, NoTls, Row};
 
 use crate::config::Config;
 use crate::mock_kyc::{
-    build_challenge, classify_mock_kyc_resubmit, evaluate_mock_kyc_form, mock_credential_expiry,
-    mock_jurisdiction, validate_wallet_strkey, verify_signed_challenge, MockKycChallengeRecord,
+    build_challenge, classify_mock_kyc_resubmit, horizon_account_sequence, mock_credential_expiry,
+    mock_jurisdiction, signed_challenge_matches_stored, validate_wallet_strkey,
+    verify_signed_challenge, MockKycChallengeRecord,
     MockKycChallengeResponse, MockKycLifecycleStatus, MockKycMissing, MockKycResubmitAction,
-    MockKycStatusResponse, MockKycSubmitRequest, MockKycSubmitResponse, MockKycSubmitStatus,
-    MOCK_CREDENTIAL_SECRET,
+    MockKycRootsStatus, MockKycStatusResponse, MockKycSubmitRequest, MockKycSubmitResponse,
+    MockKycSubmitStatus, MOCK_CREDENTIAL_SECRET,
 };
 use crate::trees::{
     build_canonical_proof_package, build_dynamic_demo_fixture, corridor_options,
@@ -80,6 +81,7 @@ pub struct RootSnapshotRecord {
     pub corridor_config_hash: String,
     pub publish_status: String,
     pub publish_message: Option<String>,
+    pub compliance_contract_id: Option<String>,
     pub created_at: i64,
     pub activated_at: Option<i64>,
 }
@@ -156,11 +158,11 @@ pub(crate) enum Repository {
     Postgres(PostgresStore),
 }
 
-struct PostgresStore {
+pub(crate) struct PostgresStore {
     client: Client,
 }
 
-struct MemoryStore {
+pub(crate) struct MemoryStore {
     next_user_id: i64,
     next_credential_id: i64,
     next_destination_id: i64,
@@ -217,6 +219,7 @@ impl AppState {
         };
 
         state.seed_from_fixtures(cfg).await;
+        state.invalidate_stale_root_snapshots(cfg).await;
         if let Some(req) = state.bootstrap_request(cfg).await {
             let _ = state.create_proof_package(&req).await.map(|pkg| {
                 *state.cache.write().expect("lock") = Some(pkg);
@@ -329,6 +332,13 @@ impl AppState {
         self.repo.latest_root_snapshot(corridor_id).await
     }
 
+    pub async fn computed_roots_for_corridor(
+        &self,
+        corridor_id: u32,
+    ) -> Result<Roots, String> {
+        self.compute_roots_for_corridor(corridor_id).await
+    }
+
     pub async fn store_webhook(
         &self,
         provider: &str,
@@ -350,15 +360,19 @@ impl AppState {
 
     pub async fn create_demo_transfer(
         &self,
+        cfg: &Config,
         req: &DemoTransferRequest,
     ) -> Result<(DemoTransferFixture, ProofPackage), String> {
         let users_fixture = self.repo.export_demo_fixture().await;
-        let fixture = build_dynamic_demo_fixture(
-            req,
-            &users_fixture,
-            &load_demo_transfer_fixture_template(),
-        )?;
-        let proof = self
+        let file_fixture = load_demo_transfer(cfg);
+        let fallback_template = load_demo_transfer_fixture_template();
+        let template = file_fixture.as_ref().unwrap_or(&fallback_template);
+        let fixture = build_dynamic_demo_fixture(req, &users_fixture, template)?;
+        self.repo
+            .ensure_corridor_destination(fixture.corridor_id, &fixture.recipient_hex)
+            .await;
+        self.ensure_roots_published(cfg, fixture.corridor_id).await?;
+        let mut proof = self
             .create_proof_package(&ProofPackageRequest {
                 sender_wallet: fixture.sender_hex.clone(),
                 recipient_wallet: fixture.recipient_hex.clone(),
@@ -366,7 +380,68 @@ impl AppState {
                 corridor_id: fixture.corridor_id,
             })
             .await?;
+        patch_proof_demo_strkeys(&mut proof, &fixture);
         Ok((fixture, proof))
+    }
+
+    fn roots_match(snapshot: &RootSnapshotRecord, roots: &Roots) -> bool {
+        snapshot.merkle_root == roots.merkle_root
+            && snapshot.sanctions_root == roots.sanctions_root
+            && snapshot.jurisdiction_root == roots.jurisdiction_root
+            && snapshot.source_jurisdiction_root == roots.source_jurisdiction_root
+            && snapshot.dest_address_root == roots.dest_address_root
+            && snapshot.corridor_config_hash == roots.corridor_config_hash
+    }
+
+    fn snapshot_matches_compliance(
+        snapshot: &RootSnapshotRecord,
+        compliance_id: Option<&str>,
+    ) -> bool {
+        snapshot.compliance_contract_id.as_deref() == compliance_id
+    }
+
+    pub async fn invalidate_stale_root_snapshots(&self, cfg: &Config) {
+        let Some(current) = cfg.compliance_id.as_ref() else {
+            return;
+        };
+        if let Err(err) = self
+            .repo
+            .supersede_root_snapshots_for_other_compliance(current)
+            .await
+        {
+            tracing::warn!("failed to supersede stale root snapshots: {err}");
+        }
+    }
+
+    pub async fn ensure_roots_published(&self, cfg: &Config, corridor_id: u32) -> Result<(), String> {
+        let computed = self.compute_roots_for_corridor(corridor_id).await?;
+        if let Some(snapshot) = self.latest_root_snapshot(Some(corridor_id)).await {
+            if snapshot.publish_status == "active"
+                && Self::roots_match(&snapshot, &computed)
+                && Self::snapshot_matches_compliance(
+                    &snapshot,
+                    cfg.compliance_id.as_deref(),
+                )
+            {
+                return Ok(());
+            }
+        }
+        let results = self
+            .publish_roots(
+                cfg,
+                PublishRootsRequest {
+                    corridor_id: Some(corridor_id),
+                },
+            )
+            .await?;
+        if results.iter().any(|result| result.status == "active") {
+            Ok(())
+        } else {
+            Err(results
+                .first()
+                .and_then(|result| result.message.clone())
+                .unwrap_or_else(|| "roots publish failed".into()))
+        }
     }
 
     pub async fn create_proof_package(
@@ -387,6 +462,15 @@ impl AppState {
             .find_active_credential(sender.id)
             .await
             .ok_or_else(|| "active credential not found".to_string())?;
+
+        let corridors = self.repo.list_corridors().await;
+        let eligible = sender_corridor_eligibility(&sender, &corridors);
+        if !eligible.contains(&req.corridor_id) {
+            return Err(format!(
+                "sender jurisdiction {} is not eligible for corridor {}",
+                sender.jurisdiction, req.corridor_id
+            ));
+        }
 
         let corridor = self
             .repo
@@ -448,7 +532,11 @@ impl AppState {
             match crate::stellar::publish_roots(cfg, &roots, corridor_id) {
                 Ok(msg) => {
                     self.repo
-                        .activate_root_snapshot(snapshot.id, msg.clone())
+                        .activate_root_snapshot(
+                            snapshot.id,
+                            msg.clone(),
+                            cfg.compliance_id.clone(),
+                        )
                         .await?;
                     results.push(PublishResult {
                         snapshot_id: snapshot.id,
@@ -484,8 +572,15 @@ impl AppState {
             .throttle_mock_kyc_wallet(&wallet_hex, 2)
             .await?;
 
-        let (challenge_id, challenge_xdr, nonce, expires_at) =
-            build_challenge(wallet_strkey, &cfg.network_passphrase)?;
+        let (challenge_id, challenge_xdr, nonce, expires_at) = {
+            let seq = horizon_account_sequence(&cfg.horizon_url, wallet_strkey).await;
+            build_challenge(
+                wallet_strkey,
+                &cfg.network_passphrase,
+                &cfg.web_auth_domain,
+                seq,
+            )?
+        };
 
         self.repo
             .insert_mock_kyc_challenge(MockKycChallengeRecord {
@@ -526,12 +621,13 @@ impl AppState {
             &challenge.wallet_strkey,
             &challenge.nonce,
             &cfg.network_passphrase,
+            &cfg.web_auth_domain,
             challenge.expires_at,
         )?;
-
-        self.repo
-            .consume_mock_kyc_challenge(&challenge.id)
-            .await?;
+        signed_challenge_matches_stored(
+            &req.signed_challenge_xdr,
+            &challenge.challenge_xdr,
+        )?;
 
         let existing = self.repo.find_user_by_wallet(&challenge.wallet_hex).await?;
         let credential = if let Some(user) = &existing {
@@ -553,24 +649,43 @@ impl AppState {
         ) {
             MockKycResubmitAction::Revoked => return Err("wallet revoked".into()),
             MockKycResubmitAction::AlreadyApproved => {
+                let status = self
+                    .mock_kyc_status(
+                        cfg,
+                        &challenge.wallet_strkey,
+                        req.corridor_id,
+                        req.recipient.as_deref(),
+                    )
+                    .await?;
                 return Ok(MockKycSubmitResponse {
                     status: MockKycSubmitStatus::AlreadyApproved,
+                    kyc_status: status.kyc_status,
+                    eligible_for_proof: status.eligible_for_proof,
+                    missing: status.missing,
+                    roots_status: status.roots_status,
+                    roots_message: status.roots_message,
+                    rejection_reason: status.rejection_reason,
                     reason: None,
+                    publish_warning: status.publish_warning,
                 });
             }
             MockKycResubmitAction::Continue => {}
         }
 
-        let approval = evaluate_mock_kyc_form(&req.country, &req.dob, req.sanctions_clear);
         let submitted_at = now_unix();
+        let (jurisdiction, jurisdiction_code) = mock_jurisdiction();
+        let corridors = self.list_admin_corridors().await;
+        let eligible = derive_corridor_eligibility(jurisdiction, &corridors);
         let metadata = json!({
             "wallet_strkey": challenge.wallet_strkey,
-            "full_name": req.name,
-            "country": req.country,
-            "date_of_birth": req.dob,
-            "sanctions_declaration": req.sanctions_clear,
-            "corridor_eligibility": [1],
+            "kyc_mode": cfg.kyc_mode,
+            "jurisdiction": jurisdiction,
+            "country_numeric": jurisdiction_code,
+            "sanctions_clear": true,
+            "corridor_eligibility": eligible,
             "submitted_at": submitted_at,
+            "kyc_status": "approved",
+            "approved_at": submitted_at,
         });
 
         let _ = self
@@ -580,62 +695,11 @@ impl AppState {
                 json!({
                     "challenge_id": challenge.id,
                     "wallet": challenge.wallet_strkey,
-                    "name": req.name,
-                    "country": req.country,
-                    "dob": req.dob,
-                    "sanctions_clear": req.sanctions_clear,
-                    "approval_ok": approval.is_ok(),
+                    "kyc_mode": cfg.kyc_mode,
+                    "approval_ok": true,
                 }),
             )
             .await?;
-
-        if let Err(reason) = approval {
-            let (jurisdiction, jurisdiction_code) = mock_jurisdiction();
-            let mut rejected_meta = metadata.clone();
-            rejected_meta
-                .as_object_mut()
-                .expect("metadata object")
-                .insert("kyc_status".into(), json!("rejected"));
-            rejected_meta
-                .as_object_mut()
-                .expect("metadata object")
-                .insert("rejected_at".into(), json!(submitted_at));
-            rejected_meta
-                .as_object_mut()
-                .expect("metadata object")
-                .insert("rejection_reason".into(), json!(reason.clone()));
-
-            self.repo
-                .upsert_mock_kyc_user(
-                    &challenge.wallet_hex,
-                    jurisdiction,
-                    jurisdiction_code,
-                    mock_credential_expiry(),
-                    false,
-                    false,
-                    "mock",
-                    &challenge.id,
-                    rejected_meta,
-                    false,
-                )
-                .await?;
-
-            return Ok(MockKycSubmitResponse {
-                status: MockKycSubmitStatus::Rejected,
-                reason: Some(reason),
-            });
-        }
-
-        let (jurisdiction, jurisdiction_code) = mock_jurisdiction();
-        let mut approved_meta = metadata;
-        approved_meta
-            .as_object_mut()
-            .expect("metadata object")
-            .insert("kyc_status".into(), json!("approved"));
-        approved_meta
-            .as_object_mut()
-            .expect("metadata object")
-            .insert("approved_at".into(), json!(submitted_at));
 
         self.repo
             .upsert_mock_kyc_user(
@@ -647,28 +711,100 @@ impl AppState {
                 true,
                 "mock",
                 &challenge.id,
-                approved_meta,
+                metadata,
                 true,
             )
             .await?;
 
+        self.repo
+            .consume_mock_kyc_challenge(&challenge.id)
+            .await?;
+
+        let state = self.clone();
+        let publish_cfg = cfg.clone();
+        let publish_eligible = eligible.clone();
+        tokio::spawn(async move {
+            if let Err(err) = state
+                .ensure_roots_published_for_corridors(&publish_cfg, &publish_eligible)
+                .await
+            {
+                tracing::warn!("auto publish roots after mock KYC failed: {err}");
+            }
+        });
+
+        let mut status = self
+            .mock_kyc_status(
+                cfg,
+                &challenge.wallet_strkey,
+                req.corridor_id,
+                req.recipient.as_deref(),
+            )
+            .await?;
+        if status.kyc_status == MockKycLifecycleStatus::Approved
+            && req
+                .corridor_id
+                .is_some_and(|corridor_id| eligible.contains(&corridor_id))
+            && status.roots_status != MockKycRootsStatus::Active
+        {
+            status.roots_status = MockKycRootsStatus::Publishing;
+            status.roots_message = Some("Issuer is publishing roots for the selected corridor.".into());
+            if !status.missing.contains(&MockKycMissing::RootsPublished) {
+                status.missing.push(MockKycMissing::RootsPublished);
+            }
+            status.eligible_for_proof = false;
+        }
+
         Ok(MockKycSubmitResponse {
             status: MockKycSubmitStatus::Approved,
+            kyc_status: status.kyc_status,
+            eligible_for_proof: status.eligible_for_proof,
+            missing: status.missing,
+            roots_status: status.roots_status,
+            roots_message: status.roots_message,
+            rejection_reason: status.rejection_reason,
             reason: None,
+            publish_warning: status.publish_warning,
         })
+    }
+
+    async fn ensure_roots_published_for_corridors(
+        &self,
+        cfg: &Config,
+        corridor_ids: &[u32],
+    ) -> Result<(), String> {
+        let mut last_err = None;
+        for corridor_id in corridor_ids {
+            if let Err(err) = self.ensure_roots_published(cfg, *corridor_id).await {
+                last_err = Some(err);
+            }
+        }
+        if let Some(err) = last_err {
+            Err(err)
+        } else if corridor_ids.is_empty() {
+            Err("no eligible corridors to publish".into())
+        } else {
+            Ok(())
+        }
     }
 
     pub async fn mock_kyc_status(
         &self,
+        _cfg: &Config,
         wallet_strkey: &str,
+        corridor_id: Option<u32>,
+        recipient_strkey: Option<&str>,
     ) -> Result<MockKycStatusResponse, String> {
         let wallet_hex = validate_wallet_strkey(wallet_strkey)?;
         let wallet = wallet_strkey.trim().to_string();
         let mut missing = Vec::new();
 
         let corridors = self.list_admin_corridors().await;
-        let enabled_corridor = corridors.iter().find(|c| c.enabled).cloned();
-        if enabled_corridor.is_none() {
+        let target_corridor = if let Some(id) = corridor_id {
+            corridors.iter().find(|c| c.id == id).cloned()
+        } else {
+            corridors.iter().find(|c| c.enabled).cloned()
+        };
+        if target_corridor.is_none() {
             missing.push(MockKycMissing::Corridor);
         }
 
@@ -700,23 +836,34 @@ impl AppState {
 
         if kyc_status != MockKycLifecycleStatus::Approved {
             missing.push(MockKycMissing::Kyc);
-        }
-
-        if let Some(corridor) = &enabled_corridor {
-            let destinations = self.repo.list_enabled_destinations(corridor.id).await;
-            if destinations.is_empty() {
-                missing.push(MockKycMissing::Destination);
+        } else if let (Some(corridor), Some(sender)) = (&target_corridor, &user) {
+            let eligible = sender_corridor_eligibility(sender, &corridors);
+            if !eligible.contains(&corridor.id) {
+                missing.push(MockKycMissing::SenderCorridor);
             }
         }
 
-        let has_active_root = if let Some(corridor) = &enabled_corridor {
-            self.latest_root_snapshot(Some(corridor.id))
-                .await
-                .is_some_and(|snapshot| snapshot.publish_status == "active")
+        if let Some(corridor) = &target_corridor {
+            let destinations = self.repo.list_enabled_destinations(corridor.id).await;
+            if destinations.is_empty() {
+                missing.push(MockKycMissing::Destination);
+            } else if let Some(recipient) = recipient_strkey {
+                let recipient_hex = validate_wallet_strkey(recipient)?;
+                if !destinations
+                    .iter()
+                    .any(|item| item.address == recipient_hex)
+                {
+                    missing.push(MockKycMissing::Destination);
+                }
+            }
+        }
+
+        let (roots_status, roots_message) = if let Some(corridor) = &target_corridor {
+            Self::derive_roots_status(self.latest_root_snapshot(Some(corridor.id)).await.as_ref())
         } else {
-            false
+            (MockKycRootsStatus::Missing, None)
         };
-        if !has_active_root {
+        if !matches!(roots_status, MockKycRootsStatus::Active) {
             missing.push(MockKycMissing::RootsPublished);
         }
 
@@ -727,13 +874,38 @@ impl AppState {
                 .map(str::to_string)
         });
 
+        let publish_warning = None;
+
         Ok(MockKycStatusResponse {
             wallet,
             kyc_status,
             eligible_for_proof: missing.is_empty(),
             missing,
+            roots_status,
+            roots_message,
             rejection_reason,
+            publish_warning,
         })
+    }
+
+    fn derive_roots_status(
+        snapshot: Option<&RootSnapshotRecord>,
+    ) -> (MockKycRootsStatus, Option<String>) {
+        match snapshot {
+            Some(snapshot) if snapshot.publish_status == "active" => (
+                MockKycRootsStatus::Active,
+                snapshot.publish_message.clone(),
+            ),
+            Some(snapshot) if snapshot.publish_status == "pending" => (
+                MockKycRootsStatus::Publishing,
+                snapshot.publish_message.clone(),
+            ),
+            Some(snapshot) if snapshot.publish_status == "failed" => (
+                MockKycRootsStatus::Failed,
+                snapshot.publish_message.clone(),
+            ),
+            _ => (MockKycRootsStatus::Missing, None),
+        }
     }
 
     async fn compute_roots_for_corridor(&self, corridor_id: u32) -> Result<Roots, String> {
@@ -1127,6 +1299,7 @@ impl Repository {
                     corridor_config_hash: roots.corridor_config_hash.clone(),
                     publish_status: "pending".into(),
                     publish_message: None,
+                    compliance_contract_id: None,
                     created_at: now_unix(),
                     activated_at: None,
                 };
@@ -1137,7 +1310,12 @@ impl Repository {
         }
     }
 
-    async fn activate_root_snapshot(&self, id: i64, message: String) -> Result<(), String> {
+    async fn activate_root_snapshot(
+        &self,
+        id: i64,
+        message: String,
+        compliance_contract_id: Option<String>,
+    ) -> Result<(), String> {
         match self {
             Self::Memory(store) => {
                 let mut store = store.write().expect("lock");
@@ -1149,6 +1327,7 @@ impl Repository {
                         .ok_or_else(|| format!("unknown snapshot id: {id}"))?;
                     snapshot.publish_status = "active".into();
                     snapshot.publish_message = Some(message);
+                    snapshot.compliance_contract_id = compliance_contract_id;
                     snapshot.activated_at = Some(now_unix());
                     snapshot.corridor_id
                 };
@@ -1162,7 +1341,36 @@ impl Repository {
                 }
                 Ok(())
             }
-            Self::Postgres(store) => store.activate_root_snapshot(id, message).await,
+            Self::Postgres(store) => {
+                store
+                    .activate_root_snapshot(id, message, compliance_contract_id)
+                    .await
+            }
+        }
+    }
+
+    async fn supersede_root_snapshots_for_other_compliance(
+        &self,
+        compliance_contract_id: &str,
+    ) -> Result<(), String> {
+        match self {
+            Self::Memory(store) => {
+                let mut store = store.write().expect("lock");
+                for snapshot in &mut store.root_snapshots {
+                    if snapshot.publish_status == "active"
+                        && snapshot.compliance_contract_id.as_deref()
+                            != Some(compliance_contract_id)
+                    {
+                        snapshot.publish_status = "superseded".into();
+                    }
+                }
+                Ok(())
+            }
+            Self::Postgres(store) => {
+                store
+                    .supersede_root_snapshots_for_other_compliance(compliance_contract_id)
+                    .await
+            }
         }
     }
 
@@ -1916,7 +2124,8 @@ impl PostgresStore {
                  ) values ($1,$2,$3,$4,$5,$6,$7,'pending',$8)
                  returning id, corridor_id, merkle_root, sanctions_root, jurisdiction_root,
                            source_jurisdiction_root, dest_address_root, corridor_config_hash,
-                           publish_status, publish_message, created_at, activated_at",
+                           publish_status, publish_message, compliance_contract_id, created_at,
+                           activated_at",
                 &[
                     &(corridor_id as i32),
                     &roots.merkle_root,
@@ -1933,15 +2142,21 @@ impl PostgresStore {
         Ok(parse_snapshot_row(row))
     }
 
-    async fn activate_root_snapshot(&self, id: i64, message: String) -> Result<(), String> {
+    async fn activate_root_snapshot(
+        &self,
+        id: i64,
+        message: String,
+        compliance_contract_id: Option<String>,
+    ) -> Result<(), String> {
         let corridor_row = self
             .client
             .query_one(
                 "update root_snapshots
-                 set publish_status = 'active', publish_message = $2, activated_at = $3
+                 set publish_status = 'active', publish_message = $2, activated_at = $3,
+                     compliance_contract_id = $4
                  where id = $1
                  returning corridor_id",
-                &[&id, &message, &now_unix()],
+                &[&id, &message, &now_unix(), &compliance_contract_id],
             )
             .await
             .map_err(|err| err.to_string())?;
@@ -1952,6 +2167,24 @@ impl PostgresStore {
                  set publish_status = 'superseded'
                  where corridor_id = $1 and id <> $2 and publish_status = 'active'",
                 &[&corridor_id, &id],
+            )
+            .await
+            .map_err(|err| err.to_string())?;
+        Ok(())
+    }
+
+    async fn supersede_root_snapshots_for_other_compliance(
+        &self,
+        compliance_contract_id: &str,
+    ) -> Result<(), String> {
+        self.client
+            .execute(
+                "update root_snapshots
+                 set publish_status = 'superseded'
+                 where publish_status = 'active'
+                   and (compliance_contract_id is null
+                        or compliance_contract_id <> $1)",
+                &[&compliance_contract_id],
             )
             .await
             .map_err(|err| err.to_string())?;
@@ -1980,7 +2213,8 @@ impl PostgresStore {
                 .query_opt(
                     "select id, corridor_id, merkle_root, sanctions_root, jurisdiction_root,
                             source_jurisdiction_root, dest_address_root, corridor_config_hash,
-                            publish_status, publish_message, created_at, activated_at
+                            publish_status, publish_message, compliance_contract_id, created_at,
+                            activated_at
                      from root_snapshots
                      where corridor_id = $1
                      order by id desc
@@ -1993,7 +2227,8 @@ impl PostgresStore {
                 .query_opt(
                     "select id, corridor_id, merkle_root, sanctions_root, jurisdiction_root,
                             source_jurisdiction_root, dest_address_root, corridor_config_hash,
-                            publish_status, publish_message, created_at, activated_at
+                            publish_status, publish_message, compliance_contract_id, created_at,
+                            activated_at
                      from root_snapshots
                      order by id desc
                      limit 1",
@@ -2123,16 +2358,6 @@ impl PostgresStore {
             .await
             .map_err(|err| err.to_string())?;
         Ok(())
-    }
-
-    async fn get_mock_kyc_challenge(
-        &self,
-        wallet_hex: &str,
-        challenge_id: &str,
-    ) -> Result<Option<crate::mock_kyc::MockKycChallengeRecord>, String> {
-        self.get_mock_kyc_challenge_by_id(challenge_id)
-            .await
-            .map(|record| record.filter(|item| item.wallet_hex == wallet_hex))
     }
 
     async fn get_mock_kyc_challenge_by_id(
@@ -2353,8 +2578,36 @@ fn parse_snapshot_row(row: Row) -> RootSnapshotRecord {
         corridor_config_hash: row.get(7),
         publish_status: row.get(8),
         publish_message: row.get(9),
-        created_at: row.get(10),
-        activated_at: row.get(11),
+        compliance_contract_id: row.get(10),
+        created_at: row.get(11),
+        activated_at: row.get(12),
+    }
+}
+
+fn patch_proof_demo_strkeys(proof: &mut ProofPackage, fixture: &DemoTransferFixture) {
+    use amoeba_types::DemoPackageMetadata;
+    let demo = proof.demo.get_or_insert_with(|| DemoPackageMetadata {
+        sender_strkey: None,
+        recipient_strkey: None,
+        asset_strkey: None,
+        issuer_strkey: fixture.issuer_strkey.clone(),
+        source_country: fixture.source_country.clone(),
+        dest_country: fixture.dest_country.clone(),
+    });
+    demo.sender_strkey = fixture
+        .sender_strkey
+        .clone()
+        .or_else(|| demo.sender_strkey.clone());
+    demo.recipient_strkey = fixture
+        .recipient_strkey
+        .clone()
+        .or_else(|| demo.recipient_strkey.clone());
+    demo.asset_strkey = fixture
+        .asset_strkey
+        .clone()
+        .or_else(|| demo.asset_strkey.clone());
+    if demo.issuer_strkey.is_none() {
+        demo.issuer_strkey = fixture.issuer_strkey.clone();
     }
 }
 
@@ -2375,6 +2628,7 @@ fn load_demo_transfer_fixture_template() -> DemoTransferFixture {
     DemoTransferFixture {
         demo_only: false,
         credential_secret: "424242".into(),
+        transfer_nonce: "0".into(),
         corridor_id: 1,
         sender_hex: "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301".into(),
         recipient_hex: "102132435465768798a9babbdcedfe0f0f1e2d3c4b5a69788796a5b4c3d2e1f0".into(),
@@ -2408,6 +2662,20 @@ fn corridor_eligibility(metadata: &Value) -> Vec<u32> {
                 .collect()
         })
         .unwrap_or_default()
+}
+
+fn derive_corridor_eligibility(jurisdiction: &str, corridors: &[CorridorRecord]) -> Vec<u32> {
+    corridors
+        .iter()
+        .filter(|corridor| {
+            corridor.enabled && corridor.source_country.eq_ignore_ascii_case(jurisdiction)
+        })
+        .map(|corridor| corridor.id)
+        .collect()
+}
+
+fn sender_corridor_eligibility(sender: &IssuerUser, corridors: &[CorridorRecord]) -> Vec<u32> {
+    derive_corridor_eligibility(&sender.jurisdiction, corridors)
 }
 
 fn hash_to_u64(s: &str) -> u64 {
@@ -2449,7 +2717,75 @@ mod tests {
             publish_source_account: None,
             fixtures_dir: concat!(env!("CARGO_MANIFEST_DIR"), "/../../../bindings/fixtures").into(),
             fixture_profile: "local".into(),
+            web_auth_domain: "localhost".into(),
+            horizon_url: "https://horizon-testnet.stellar.org".into(),
+            kyc_mode: "sep10".into(),
         }
+    }
+
+    #[test]
+    fn snapshot_matches_compliance_rejects_legacy_snapshots() {
+        let snapshot = RootSnapshotRecord {
+            id: 1,
+            corridor_id: 1,
+            merkle_root: "1".into(),
+            sanctions_root: "2".into(),
+            jurisdiction_root: "3".into(),
+            source_jurisdiction_root: "4".into(),
+            dest_address_root: "5".into(),
+            corridor_config_hash: "6".into(),
+            publish_status: "active".into(),
+            publish_message: None,
+            compliance_contract_id: None,
+            created_at: 0,
+            activated_at: Some(0),
+        };
+        assert!(!AppState::snapshot_matches_compliance(
+            &snapshot,
+            Some("NEW_CONTRACT"),
+        ));
+        assert!(AppState::snapshot_matches_compliance(&snapshot, None));
+        let mut current = snapshot.clone();
+        current.compliance_contract_id = Some("NEW_CONTRACT".into());
+        assert!(AppState::snapshot_matches_compliance(
+            &current,
+            Some("NEW_CONTRACT"),
+        ));
+    }
+
+    #[tokio::test]
+    async fn invalidate_stale_root_snapshots_supersedes_legacy_active() {
+        let mut cfg = test_cfg();
+        cfg.compliance_id = Some("NEW_CONTRACT".into());
+        let state = AppState::load(&cfg).await;
+        {
+            let Repository::Memory(store) = state.repo.as_ref() else {
+                panic!("expected memory store");
+            };
+            let mut store = store.write().expect("lock");
+            store.next_snapshot_id = 1;
+            store.root_snapshots.push(RootSnapshotRecord {
+                id: 1,
+                corridor_id: 1,
+                merkle_root: "1".into(),
+                sanctions_root: "2".into(),
+                jurisdiction_root: "3".into(),
+                source_jurisdiction_root: "4".into(),
+                dest_address_root: "5".into(),
+                corridor_config_hash: "6".into(),
+                publish_status: "active".into(),
+                publish_message: None,
+                compliance_contract_id: None,
+                created_at: 0,
+                activated_at: Some(0),
+            });
+        }
+        state.invalidate_stale_root_snapshots(&cfg).await;
+        let Repository::Memory(store) = state.repo.as_ref() else {
+            panic!("expected memory store");
+        };
+        let store = store.read().expect("lock");
+        assert_eq!(store.root_snapshots[0].publish_status, "superseded");
     }
 
     #[tokio::test]
@@ -2476,6 +2812,28 @@ mod tests {
         let proof = state.create_proof_package(&req).await.expect("proof");
         assert_eq!(proof.transfer.corridor_id, 1);
         assert_eq!(proof.transfer.sender, req.sender_wallet);
+    }
+
+    #[tokio::test]
+    async fn sender_corridor_eligibility_ignores_metadata_override() {
+        let cfg = test_cfg();
+        let state = AppState::load(&cfg).await;
+        let corridors = state.list_admin_corridors().await;
+        let user = IssuerUser {
+            id: 1,
+            wallet: "aa".repeat(32),
+            jurisdiction: "US".into(),
+            jurisdiction_code: 840,
+            credential_expiry: 2_000_000_000,
+            sanctions_clear: true,
+            enabled: true,
+            provider: Some("mock".into()),
+            provider_ref: None,
+            metadata: json!({ "corridor_eligibility": [99] }),
+        };
+        let eligible = sender_corridor_eligibility(&user, &corridors);
+        assert!(eligible.contains(&1));
+        assert!(!eligible.contains(&99));
     }
 
     #[tokio::test]
