@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { Dithering } from "@paper-design/shaders-react";
 import { COPY } from "@/content/copy";
 import { HighlightedText } from "@/components/spell/highlighted-text";
 import { Button } from "@/components/ui/Button";
@@ -15,8 +16,22 @@ const TRUST_CHIPS = ["Stellar testnet", "Groth16 BN254", "8 checks · 1 proof"] 
 export function Hero() {
   return (
     <section className="relative flex min-h-[calc(100dvh-5.5rem)] items-center justify-center overflow-hidden bg-background py-16">
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 flex justify-center px-4 sm:px-6">
-      </div>
+      <motion.div
+        className="pointer-events-none absolute bottom-0 left-0 right-0 z-0 h-[45%]"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.5, delay: 0.2 }}
+      >
+        <Dithering
+          style={{ height: "100%", width: "100%" }}
+          colorBack="#000066"
+          colorFront="#FFFFFF"
+          shape="simplex"
+          type="4x4"
+          scale={0.5}
+          speed={0.02}
+        />
+      </motion.div>
 
       <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center px-4 text-center sm:px-6">
         <motion.div
