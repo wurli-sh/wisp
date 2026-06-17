@@ -4,7 +4,7 @@ import {
   poseidon2Hash1,
   poseidon2Hash2,
   poseidon2Hash10,
-  poseidon2Hash11,
+  poseidon2Hash12,
 } from "./poseidon2.js";
 
 export const NULLIFIER_DOMAIN_TAG = 1204609112206068373041n;
@@ -55,6 +55,7 @@ export function computeNullifier({
   recipientHi,
   amount,
   corridorId,
+  transferNonce,
 }: {
   credentialSecret: bigint | FieldElement;
   senderLo: FieldElement;
@@ -66,9 +67,10 @@ export function computeNullifier({
   recipientHi: FieldElement;
   amount: bigint | FieldElement;
   corridorId: bigint | FieldElement;
+  transferNonce: bigint | FieldElement;
 }): FieldElement {
   const nullifierDomain = poseidon2Hash1(mod(NULLIFIER_DOMAIN_TAG));
-  return poseidon2Hash11([
+  return poseidon2Hash12([
     nullifierDomain,
     mod(credentialSecret),
     mod(senderLo),
@@ -80,6 +82,7 @@ export function computeNullifier({
     mod(recipientHi),
     mod(amount),
     mod(corridorId),
+    mod(transferNonce),
   ]);
 }
 

@@ -27,6 +27,7 @@ export const EPOCH_LEN_SECS = 86400;
 export function demoFromFixture(fixture: DemoFixture): DemoParams {
   return {
     credential_secret: BigInt(fixture.credential_secret),
+    transfer_nonce: BigInt(fixture.transfer_nonce ?? 0),
     sender: Buffer.from(fixture.sender_hex, "hex"),
     recipient: Buffer.from(fixture.recipient_hex, "hex"),
     asset: Buffer.from(fixture.asset_hex, "hex"),
@@ -73,7 +74,7 @@ export function buildWitnessInput(
   const corridorId = d.corridor_id ?? corridorIdDefault;
 
   const nullifier = computeNullifier({
-    credentialSecret: d.credential_secret,
+      credentialSecret: d.credential_secret,
     senderLo: senderLimbs.lo,
     senderHi: senderLimbs.hi,
     assetLo: assetLimbs.lo,
@@ -81,9 +82,10 @@ export function buildWitnessInput(
     epoch: d.epoch,
     recipientLo: recipientLimbs.lo,
     recipientHi: recipientLimbs.hi,
-    amount: d.amount,
-    corridorId,
-  });
+      amount: d.amount,
+      corridorId,
+      transferNonce: d.transfer_nonce,
+    });
 
   const corridorConfigHash = computeCorridorConfigHash({
     corridorId,
@@ -110,6 +112,7 @@ export function buildWitnessInput(
     source_jurisdiction_root: fieldToJson(sourceJurisdictionRoot),
     dest_address_root: fieldToJson(destAddressRoot),
     credential_secret: fieldToJson(d.credential_secret),
+    transfer_nonce: fieldToJson(d.transfer_nonce),
     path: fieldsToJson(membershipPath.path),
     path_indices: membershipPath.pathIndices,
     jurisdiction: fieldToJson(d.jurisdiction),
@@ -167,6 +170,7 @@ export function proofPackageToWitnessInput(pkg: ProofPackage): WitnessInput {
     ),
     dest_address_root: pick("dest_address_root", pkg.roots?.dest_address_root),
     credential_secret: String(wp.credential_secret),
+    transfer_nonce: String(wp.transfer_nonce ?? 0),
     path: pkg.paths.membership,
     path_indices: pkg.paths.membership_indices,
     jurisdiction: String(wp.jurisdiction),

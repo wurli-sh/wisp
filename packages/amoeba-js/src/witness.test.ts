@@ -81,6 +81,7 @@ const pkg = {
   witness_private: {
     demo_unsafe: true,
     credential_secret: demoTransfer.credential_secret,
+    transfer_nonce: demoTransfer.transfer_nonce ?? "0",
     jurisdiction: demoTransfer.jurisdiction,
     credential_expiry: demoTransfer.credential_expiry,
     sanctions_leaf_value: "0",

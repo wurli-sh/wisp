@@ -19,7 +19,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/witness.test.ts"
+    "test": "node --import tsx --test src/witness.test.ts src/publicInputs.test.ts"
   },
   "dependencies": {
     "ffjavascript": "^0.3.1"

@@ -194,4 +194,34 @@ export function poseidon2Hash11(inputs: FieldElement[]): FieldElement {
   return p4[0];
 }
 
+export function poseidon2Hash12(inputs: FieldElement[]): FieldElement {
+  const iv = mod(12n * TWO_POW_64);
+  const p0 = poseidon2Permutation([mod(0), mod(0), mod(0), iv]);
+  const p1 = poseidon2Permutation([
+    F.add(p0[0], mod(inputs[0])),
+    F.add(p0[1], mod(inputs[1])),
+    F.add(p0[2], mod(inputs[2])),
+    p0[3],
+  ]);
+  const p2 = poseidon2Permutation([
+    F.add(p1[0], mod(inputs[3])),
+    F.add(p1[1], mod(inputs[4])),
+    F.add(p1[2], mod(inputs[5])),
+    p1[3],
+  ]);
+  const p3 = poseidon2Permutation([
+    F.add(p2[0], mod(inputs[6])),
+    F.add(p2[1], mod(inputs[7])),
+    F.add(p2[2], mod(inputs[8])),
+    p2[3],
+  ]);
+  const p4 = poseidon2Permutation([
+    F.add(p3[0], mod(inputs[9])),
+    F.add(p3[1], mod(inputs[10])),
+    F.add(p3[2], mod(inputs[11])),
+    p3[3],
+  ]);
+  return p4[0];
+}
+
 export { toString } from "./field.js";

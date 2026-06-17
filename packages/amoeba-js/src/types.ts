@@ -2,6 +2,7 @@ export type FieldElement = unknown;
 
 export interface DemoFixture {
   credential_secret: string | number;
+  transfer_nonce?: string | number;
   sender_hex: string;
   recipient_hex: string;
   asset_hex: string;
@@ -14,6 +15,7 @@ export interface DemoFixture {
 
 export interface DemoParams {
   credential_secret: bigint;
+  transfer_nonce: bigint;
   sender: Buffer;
   recipient: Buffer;
   asset: Buffer;
@@ -66,6 +68,7 @@ export interface ProofPackage {
   witness_private?: {
     demo_unsafe?: boolean;
     credential_secret: string | number;
+    transfer_nonce?: string | number;
     jurisdiction: string | number;
     credential_expiry: string | number;
     sanctions_leaf_value?: string;
