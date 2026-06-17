@@ -24,7 +24,8 @@ interface DemoTransferPanelProps {
   auditLedger: number | null;
   busy: string | null;
   validationError: string | null;
-  kycApproved: boolean;
+  walletVerified: boolean;
+  proofReady: boolean;
   kycBlockReason?: string | null;
   onAmountChange: (value: string) => void;
   onRecipientChange: (value: string) => void;
@@ -34,6 +35,8 @@ interface DemoTransferPanelProps {
   onConnect: () => void;
   onFetchPackage: () => void;
   onGenerateProof: () => void;
+  onApproveSac: () => void;
+  sacApproved: boolean;
   onSubmit: () => void;
   onViewAudit: () => void;
   onTryInvalid: () => void;
@@ -93,7 +96,7 @@ function DetailStat({
   className?: string;
 }) {
   return (
-    <div className={cn("flex min-h-[4.5rem] flex-col justify-between gap-2 border border-white/8 bg-black/20 p-4", className)}>
+    <div className={cn("flex min-h-[4.5rem] flex-col justify-between gap-2 border border-white/5 bg-black/20 p-4", className)}>
       <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">{label}</span>
       <span className="truncate font-medium text-white/85">{children}</span>
     </div>
@@ -101,7 +104,7 @@ function DetailStat({
 }
 
 const fieldClass =
-  "min-h-12 border border-white/12 bg-black/30 px-4 text-sm font-medium text-white outline-none transition-colors placeholder:text-white/25 focus-visible:border-primary-bright focus-visible:ring-2 focus-visible:ring-primary-bright/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0c1a]";
+  "min-h-12 border border-white/6 bg-black/30 px-4 text-sm font-medium text-white outline-none transition-colors placeholder:text-white/25 focus-visible:border-primary-bright/40 focus-visible:ring-2 focus-visible:ring-primary-bright/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0c1a]";
 
 const labelClass = "text-[10px] font-bold uppercase tracking-widest text-white/50";
 
@@ -127,7 +130,8 @@ export function DemoTransferPanel({
   auditLedger,
   busy,
   validationError,
-  kycApproved,
+  walletVerified,
+  proofReady,
   kycBlockReason,
   onAmountChange,
   onRecipientChange,
@@ -137,6 +141,8 @@ export function DemoTransferPanel({
   onConnect,
   onFetchPackage,
   onGenerateProof,
+  onApproveSac,
+  sacApproved,
   onSubmit,
   onViewAudit,
   onTryInvalid,
@@ -174,10 +180,17 @@ export function DemoTransferPanel({
       return { label: transfer.connectWallet, onClick: onConnect, disabled: isConnecting };
     }
     if (!hasPackage) {
+      if (!proofReady) {
+        return {
+          label: walletVerified ? "Publishing issuer roots…" : transfer.fetchPackage,
+          onClick: onFetchPackage,
+          disabled: true,
+        };
+      }
       return {
         label: busy === "fetch" ? "Fetching…" : transfer.fetchPackage,
         onClick: onFetchPackage,
-        disabled: isLoading || !kycApproved,
+        disabled: isLoading,
       };
     }
     if (!hasProof) {
@@ -187,16 +200,18 @@ export function DemoTransferPanel({
         disabled: isLoading,
       };
     }
+    if (!sacApproved) {
+      return {
+        label: busy === "approve" ? "Approving…" : actions.approveSac,
+        onClick: onApproveSac,
+        disabled: isLoading,
+      };
+    }
     if (!txHash) {
       return {
-        label:
-          busy === "fetch"
-            ? "Refreshing…"
-            : busy === "settle"
-              ? "Submitting…"
-              : transfer.refreshPackage,
-        onClick: onFetchPackage,
-        disabled: isLoading || !kycApproved,
+        label: busy === "settle" ? "Submitting…" : actions.submit,
+        onClick: onSubmit,
+        disabled: isLoading || !hasProof || !hasPackage || !sacApproved,
       };
     }
     if (!auditLedger) {
@@ -209,10 +224,6 @@ export function DemoTransferPanel({
     return { label: "Transfer complete", onClick: () => {}, disabled: true };
   };
 
-  const submitAction = {
-    label: busy === "settle" ? "Submitting…" : actions.submit,
-    disabled: isLoading || !hasProof || !hasPackage || Boolean(txHash),
-  };
   const primary = primaryAction();
   const canSwapCountries =
     Boolean(sourceCountry && destCountry && sourceCountry !== destCountry) && !isLoading;
@@ -234,17 +245,17 @@ export function DemoTransferPanel({
         <div className="h-0.5 bg-linear-to-r from-primary via-primary-bright to-primary" />
 
         <div className="relative flex flex-col">
-          <div className="flex items-center gap-2 border-b border-white/10 px-6 py-5">
+          <div className="flex items-center gap-2 border-b border-white/5 px-6 py-5">
             <Wallet size={18} className="text-primary-bright" />
             <span className="text-lg font-bold text-white">{transfer.title}</span>
           </div>
 
-          <div className="grid lg:grid-cols-2 lg:divide-x lg:divide-white/10">
+          <div className="grid lg:grid-cols-2 lg:divide-x lg:divide-white/5">
             <form
               className="flex flex-col gap-6 px-6 py-7"
               onSubmit={(event) => {
                 event.preventDefault();
-                if (!submitAction.disabled) onSubmit();
+                if (!primary.disabled) primary.onClick();
               }}
             >
               <SectionTitle>Transfer details</SectionTitle>
@@ -316,24 +327,37 @@ export function DemoTransferPanel({
                   disabled={isLoading}
                   className={cn(fieldClass, "tabular-nums")}
                 />
+                <span className="text-[10px] leading-snug text-white/35">{transfer.usdcFundingHint}</span>
               </label>
 
-              {validationError && (
-                <p className="border border-destructive/30 bg-destructive/10 px-4 py-3 text-xs text-destructive">
-                  {validationError}
-                </p>
+              <motion.button
+                type="submit"
+                className="pill-gradient flex min-h-12 max-w-xs cursor-pointer items-center justify-center gap-2 bg-primary-bright px-6 py-3 text-sm font-bold text-white shadow-blue-pill outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0c1a] disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={primary.disabled}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              >
+                {(isConnecting || isLoading) && <Loader2 size={16} className="animate-spin" />}
+                {primary.label}
+              </motion.button>
+
+              {!primary.disabled && validationError && (
+                <p className="text-xs leading-snug text-amber-300/90">{validationError}</p>
+              )}
+              {primary.disabled && kycBlockReason && (
+                <p className="text-xs leading-snug text-white/45">{kycBlockReason}</p>
               )}
             </form>
 
-            <div className="flex flex-col gap-6 border-t border-white/10 px-6 py-7 lg:border-t-0">
+            <div className="flex flex-col gap-6 border-t border-white/5 px-6 py-7 lg:border-t-0">
               <SectionTitle>Preview</SectionTitle>
 
-              <div className="flex flex-col gap-4 border border-white/10 bg-white/4 p-5">
+              <div className="flex flex-col gap-4 border border-white/5 bg-white/4 p-5">
                 <div className="flex h-7 justify-center overflow-hidden">
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.span
                       key={corridorLabel}
-                      className="bg-white/5 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white/60 ring-1 ring-white/10"
+                      className="bg-white/5 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white/60 ring-1 ring-white/5"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
@@ -355,7 +379,7 @@ export function DemoTransferPanel({
                     >
                       {previewAmount(amount)}
                     </p>
-                    <span className="mt-2 inline-block bg-primary-bright/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-primary-bright ring-1 ring-primary-bright/30">
+                    <span className="mt-2 inline-block bg-primary-bright/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-primary-bright ring-1 ring-primary-bright/15">
                       {transfer.asset}
                     </span>
                   </div>
@@ -436,45 +460,12 @@ export function DemoTransferPanel({
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 border-t border-white/10 bg-black/20 px-6 py-6">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <motion.button
-                type="button"
-                className="pill-gradient flex min-h-12 cursor-pointer items-center justify-center gap-2 bg-primary-bright px-6 py-3 text-sm font-bold text-white shadow-blue-pill outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0c1a] disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={primary.onClick}
-                disabled={primary.disabled}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              >
-                {(isConnecting || isLoading) && <Loader2 size={16} className="animate-spin" />}
-                {primary.label}
-              </motion.button>
-
-              <motion.button
-                type="button"
-                className="flex min-h-12 cursor-pointer items-center justify-center gap-2 border border-white/12 bg-white/5 px-6 py-3 text-sm font-bold text-white outline-none transition-opacity hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0c1a] disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={onSubmit}
-                disabled={submitAction.disabled}
-                whileTap={{ scale: 0.99 }}
-                transition={{ type: "spring", stiffness: 400, damping: 24 }}
-              >
-                {busy === "settle" && <Loader2 size={16} className="animate-spin" />}
-                {submitAction.label}
-              </motion.button>
-            </div>
-
-            {!primary.disabled && validationError && (
-              <p className="text-xs leading-snug text-amber-300/90">{validationError}</p>
-            )}
-            {primary.disabled && kycBlockReason && (
-              <p className="text-xs leading-snug text-white/45">{kycBlockReason}</p>
-            )}
-
+          <div className="flex flex-col gap-4 border-t border-white/5 bg-black/20 px-6 py-6">
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 variant="danger"
                 size="sm"
-                className="border-red-500/20 bg-red-500/10 text-red-300 hover:bg-red-500/15"
+                className="!border !border-red-500/10 bg-red-500/10 text-red-300 hover:bg-red-500/15"
                 disabled={isLoading || !hasProof}
                 onClick={onTryInvalid}
               >
@@ -483,7 +474,7 @@ export function DemoTransferPanel({
               <Button
                 variant="outline"
                 size="sm"
-                className="border-white/15 bg-white/5 text-white/70 shadow-none hover:bg-white/10"
+                className="!border !border-white/8 bg-white/5 text-white/70 shadow-none hover:bg-white/10"
                 disabled={isLoading || !canReplay}
                 onClick={onTryReplay}
               >

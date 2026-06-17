@@ -7,8 +7,9 @@ const MILESTONES = [
   { label: "Setup", end: 4 },
   { label: "Package", end: 5 },
   { label: "Proof", end: 7 },
-  { label: "Settle", end: 9 },
-  { label: "Audit", end: 10 },
+  { label: "Approve", end: 8 },
+  { label: "Settle", end: 10 },
+  { label: "Audit", end: 11 },
 ] as const;
 
 interface DemoProgressSidebarProps {

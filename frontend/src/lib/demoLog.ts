@@ -85,7 +85,7 @@ export function configCheckpoint(): Record<string, unknown> {
 const CONTRACT_HINTS: [RegExp, string][] = [
   [
     /Error\(Contract,\s*#9\)/,
-    "DuplicateNullifier — this nullifier is already on-chain. Change inputs or fetch a fresh package so sender, recipient, amount, and epoch produce a new nullifier.",
+    "DuplicateNullifier — this nullifier is already on-chain. Change the amount (even by 0.000001 USDC), fetch a new proof package, reprove, then submit.",
   ],
   [
     /Error\(Contract,\s*#16\)/,
@@ -97,22 +97,34 @@ const CONTRACT_HINTS: [RegExp, string][] = [
   ],
   [
     /Error\(Contract,\s*#8\)/,
-    "StaleIssuerRoot — publish roots: curl -X POST -H 'Authorization: Bearer demo-token' http://localhost:3000/v1/roots/publish",
+    "StaleIssuerRoot — publish roots: curl -X POST -H 'Authorization: Bearer demo-token' -H 'Content-Type: application/json' http://localhost:3000/v1/admin/roots/publish -d '{}'",
+  ],
+  [
+    /insufficient allowance/i,
+    "SAC allowance missing — approve Circle USDC for the compliance contract before settling.",
+  ],
+  [
+    /trustline entry is missing/i,
+    "Circle USDC trustline missing — in Freighter add USDC with issuer GBBD47… (circle.com), then fund from faucet.circle.com (Stellar Testnet).",
+  ],
+  [
+    /op_underfunded|insufficient balance/i,
+    "Insufficient Circle USDC — add the circle.com USDC asset in Freighter and fund the wallet (faucet.circle.com → Stellar Testnet).",
   ],
   [
     /Error\(Contract,\s*#14\)/,
-    "InvalidProof — proof bytes failed verification (tampered or wrong circuit).",
+    "InvalidProof — proof failed on-chain verification. Usually stale circuit artifacts or the testnet verifier was not redeployed after a circuit change. Run ensure-testnet-vk, refetch the proof package, reprove, then submit.",
   ],
   [
     /Error\(Contract,\s*#13\)/,
-    "PublicInputMismatch — proof public inputs do not match on-chain state / fixture.",
+    "PublicInputMismatch — proof public inputs do not match on-chain state. Roots may be stale after a compliance redeploy: republish via issuer (POST /v1/admin/roots/publish), then refetch the proof package, reprove, and ensure Freighter is the KYC-approved sender.",
   ],
 ];
 
 const ISSUER_HINTS: [RegExp, string][] = [
   [
     /approved sender not found/i,
-    "Complete mock KYC for your connected Freighter wallet — the issuer only builds packages for KYC-approved senders.",
+    "Complete SEP-10 wallet verification for your connected Freighter wallet — the issuer only builds packages for verified senders.",
   ],
   [
     /recipient not approved for corridor/i,

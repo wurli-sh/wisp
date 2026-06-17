@@ -1,3 +1,4 @@
+import type { MockKycStatusResponse, MockKycSubmitResponse } from "@amoeba/sdk";
 import { COPY } from "@/content/copy";
 
 export function kycMissingLabel(item: string): string {
@@ -11,20 +12,39 @@ export function kycMissingLabel(item: string): string {
       return missing.roots;
     case "corridor":
       return missing.corridor;
+    case "sender_corridor":
+      return missing.sender_corridor;
     default:
       return item;
   }
 }
 
-export interface KycFormValues {
-  name: string;
-  dob: string;
-  sanctionsClear: boolean;
+export function normalizeKycStatus(
+  status: MockKycStatusResponse | MockKycSubmitResponse,
+): MockKycStatusResponse {
+  return {
+    wallet: "wallet" in status ? status.wallet : "",
+    kyc_status: status.kyc_status,
+    eligible_for_proof: status.eligible_for_proof,
+    missing: status.missing,
+    roots_status: status.roots_status,
+    roots_message: status.roots_message,
+    rejection_reason: status.rejection_reason,
+    publish_warning: status.publish_warning,
+  };
 }
 
-export function validateKycForm(values: KycFormValues): string | null {
-  if (!values.name.trim()) return COPY.demo.kyc.nameRequired;
-  if (!values.dob) return COPY.demo.kyc.dobRequired;
-  if (!values.sanctionsClear) return COPY.demo.kyc.sanctionsRequired;
-  return null;
+export function kycRootsLabel(status: MockKycStatusResponse | null): string | null {
+  if (!status) return null;
+  if (status.roots_message) return status.roots_message;
+  switch (status.roots_status) {
+    case "publishing":
+      return "Issuer is publishing roots for the selected corridor.";
+    case "failed":
+      return "Issuer root publication failed. Retry after the operator fixes the corridor.";
+    case "missing":
+      return COPY.demo.kyc.missing.roots;
+    default:
+      return null;
+  }
 }

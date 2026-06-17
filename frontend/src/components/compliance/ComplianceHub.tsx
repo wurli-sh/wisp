@@ -9,16 +9,20 @@ import { Tabs } from "@/components/ui/Tabs";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 
-const CORRIDORS = [
-  {
-    id: 1,
-    name: "US-MX",
-    enabled: true,
-    source_jurisdiction_root: "published via issuer",
-    dest_address_root: "published via issuer",
-    config_hash: "3326516550954763686359727686701117193470825508192979130172170637867331195228",
-  },
-] as const;
+import circleUsdc from "@/config/circle-testnet-usdc.json";
+
+const CORRIDOR_USDC_SAC = circleUsdc.sac_contract_id;
+const CORRIDOR_USDC_ISSUER = circleUsdc.usdc_issuer;
+
+interface CorridorView {
+  id: number;
+  name: string;
+  enabled: boolean;
+  source_country: string;
+  dest_country: string;
+  asset_hex?: string;
+  latest_root_snapshot?: { publish_status?: string } | null;
+}
 
 function shorten(value: string, head = 6, tail = 4): string {
   if (value.length <= head + tail + 3) return value;
@@ -40,6 +44,34 @@ export function ComplianceHub({
 }: ComplianceHubProps) {
   const client = useAmoebaClient();
 
+  const [corridors, setCorridors] = useState<CorridorView[]>([]);
+  const [loadingCorridors, setLoadingCorridors] = useState(false);
+
+  const loadCorridors = useCallback(async () => {
+    setLoadingCorridors(true);
+    try {
+      const list = await client.issuer.listCorridors();
+      const details = await Promise.all(
+        list.map(async (corridor) => {
+          const detail = await client.issuer.getCorridor(corridor.id);
+          return {
+            id: corridor.id,
+            name: corridor.name,
+            enabled: corridor.enabled,
+            source_country: corridor.source_country,
+            dest_country: corridor.dest_country,
+            asset_hex: detail.asset_hex,
+            latest_root_snapshot: detail.latest_root_snapshot as CorridorView["latest_root_snapshot"],
+          };
+        }),
+      );
+      setCorridors(details);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to load corridors");
+    } finally {
+      setLoadingCorridors(false);
+    }
+  }, [client]);
   const [events, setEvents] = useState<ProofSettledEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [txQuery, setTxQuery] = useState(initialTx);
@@ -62,6 +94,10 @@ export function ComplianceHub({
   useEffect(() => {
     if (tab === "proofs") void loadEvents();
   }, [tab, loadEvents]);
+
+  useEffect(() => {
+    if (tab === "corridors") void loadCorridors();
+  }, [tab, loadCorridors]);
 
   useEffect(() => {
     if (!initialNullifier && !initialTx) return;
@@ -280,7 +316,13 @@ export function ComplianceHub({
           </p>
 
           <div className="mt-6 grid gap-4">
-            {CORRIDORS.map((corridor) => (
+            {loadingCorridors && (
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 size={14} className="animate-spin" />
+                Loading corridors…
+              </p>
+            )}
+            {corridors.map((corridor) => (
               <article
                 key={corridor.id}
                 className="border border-border bg-card p-5 shadow-soft"
@@ -297,20 +339,26 @@ export function ComplianceHub({
                     <dd>{corridor.id}</dd>
                   </div>
                   <div>
-                    <dt className="text-[10px] uppercase text-muted-foreground">Config hash</dt>
-                    <dd className="text-xs break-all">{corridor.config_hash}</dd>
+                    <dt className="text-[10px] uppercase text-muted-foreground">Route</dt>
+                    <dd>
+                      {corridor.source_country} → {corridor.dest_country}
+                    </dd>
                   </div>
                   <div>
-                    <dt className="text-[10px] uppercase text-muted-foreground">
-                      Source jurisdiction root
-                    </dt>
-                    <dd className="text-sm">{corridor.source_jurisdiction_root}</dd>
+                    <dt className="text-[10px] uppercase text-muted-foreground">Asset (USDC SAC)</dt>
+                    <dd className="text-xs break-all">{CORRIDOR_USDC_SAC}</dd>
                   </div>
                   <div>
-                    <dt className="text-[10px] uppercase text-muted-foreground">
-                      Destination address root
-                    </dt>
-                    <dd className="text-sm">{corridor.dest_address_root}</dd>
+                    <dt className="text-[10px] uppercase text-muted-foreground">Circle issuer</dt>
+                    <dd className="text-xs break-all">{CORRIDOR_USDC_ISSUER}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-[10px] uppercase text-muted-foreground">Roots published</dt>
+                    <dd>
+                      {corridor.latest_root_snapshot?.publish_status === "active"
+                        ? "Active"
+                        : "Pending"}
+                    </dd>
                   </div>
                 </dl>
               </article>

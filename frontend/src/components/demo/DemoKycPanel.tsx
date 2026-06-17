@@ -4,7 +4,7 @@ import { COPY } from "@/content/copy";
 import { useWallet } from "@/hooks/useWallet";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { kycMissingLabel } from "@/lib/kyc";
+import { kycMissingLabel, kycRootsLabel } from "@/lib/kyc";
 
 interface DemoKycPanelProps {
   status: MockKycStatusResponse | null;
@@ -33,7 +33,9 @@ export function DemoKycPanel({ status, skipped, onReopen }: DemoKycPanelProps) {
           .join(" ")
       : approved
         ? status.missing.length > 0
-          ? status.missing.map(kycMissingLabel).join(" · ")
+          ? status.missing
+              .map((item) => (item === "roots_published" ? kycRootsLabel(status) : kycMissingLabel(item)) ?? item)
+              .join(" · ")
           : COPY.demo.kyc.approvedHint
         : COPY.demo.kyc.subtitle;
 

@@ -6,30 +6,30 @@ import {
   Key,
   Loader2,
   MapPin,
-  Shield,
   ShieldCheck,
   Sparkles,
   X,
 } from "lucide-react";
+import { toast } from "sonner";
 import type { MockKycStatusResponse } from "@amoeba/sdk";
 import { COPY } from "@/content/copy";
 import { useAmoebaClient } from "@/hooks/useAmoebaClient";
 import { useWallet } from "@/hooks/useWallet";
 import { TextShimmer } from "@/components/ui/TextShimmer";
 import { Button } from "@/components/ui/Button";
-import { validateKycForm } from "@/lib/kyc";
 import { buttonTap, modalContent, modalOverlay } from "@/lib/animations";
-import { cn } from "@/lib/cn";
+import { normalizeKycStatus } from "@/lib/kyc";
 
-type Step = "welcome" | "details" | "signing" | "done";
+type Step = "welcome" | "signing" | "done";
+type SubmitPhase = "challenge" | "submit";
 
 const STEPS: { key: Step; label: string }[] = [
   { key: "welcome", label: COPY.demo.kyc.wizard.steps.setup },
-  { key: "details", label: COPY.demo.kyc.wizard.steps.identity },
   { key: "signing", label: COPY.demo.kyc.wizard.steps.verify },
 ];
 
-const FEATURE_ICONS = [Key, Shield, MapPin] as const;
+const FEATURE_ICONS = [Key, ShieldCheck, MapPin] as const;
+const SUBMIT_TIMEOUT_MS = 15_000;
 
 interface KycOnboardingModalProps {
   open: boolean;
@@ -38,6 +38,8 @@ interface KycOnboardingModalProps {
   onActivating?: () => void;
   onStatusChange?: (status: MockKycStatusResponse | null) => void;
   kycStatus?: MockKycStatusResponse | null;
+  corridorId?: number;
+  recipient?: string;
 }
 
 export function KycOnboardingModal({
@@ -47,80 +49,141 @@ export function KycOnboardingModal({
   onActivating,
   onStatusChange,
   kycStatus,
+  corridorId,
+  recipient,
 }: KycOnboardingModalProps) {
   const client = useAmoebaClient();
   const { address, walletSigner } = useWallet();
 
   const [step, setStep] = useState<Step>("welcome");
-  const [name, setName] = useState("");
-  const [dob, setDob] = useState("");
-  const [sanctionsClear, setSanctionsClear] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [phase, setPhase] = useState<SubmitPhase>("challenge");
   const [error, setError] = useState("");
   const signingStarted = useRef(false);
+  const autoCompleteTimeout = useRef<number | null>(null);
 
   const rejected = kycStatus?.kyc_status === "rejected";
 
   useEffect(() => {
     if (!open) {
       signingStarted.current = false;
+      if (autoCompleteTimeout.current) {
+        window.clearTimeout(autoCompleteTimeout.current);
+        autoCompleteTimeout.current = null;
+      }
       return;
     }
     setError("");
-    setStep(rejected ? "details" : "welcome");
+    setPhase("challenge");
+    setStep(rejected ? "signing" : "welcome");
   }, [open, rejected]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !busy) {
+        onSkip();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [busy, onSkip, open]);
 
   const refreshStatus = useCallback(async () => {
     if (!address) {
       onStatusChange?.(null);
       return null;
     }
-    const next = await client.issuer.getMockKycStatus(address);
+    const next = await client.issuer.getMockKycStatus(address, {
+      corridor_id: corridorId,
+      recipient: recipient?.trim() || undefined,
+    });
     onStatusChange?.(next);
     return next;
-  }, [address, client, onStatusChange]);
+  }, [address, client, corridorId, onStatusChange, recipient]);
+
+  const completeFlow = useCallback(() => {
+    setStep("done");
+    autoCompleteTimeout.current = window.setTimeout(() => {
+      onComplete();
+    }, 900);
+  }, [onComplete]);
 
   const runSignAndSubmit = useCallback(async () => {
     if (!address || !walletSigner) {
       setError(COPY.demo.kyc.connectFirst);
-      setStep("details");
+      setStep("welcome");
       return;
     }
 
     setBusy(true);
+    setPhase("challenge");
     setError("");
     try {
       const challenge = await client.issuer.requestMockKycChallenge(address);
+      setPhase("submit");
       const signed = await walletSigner.signTransaction(challenge.challenge_xdr);
-      const response = await client.issuer.submitMockKyc({
-        challenge_id: challenge.challenge_id,
-        signed_challenge_xdr: signed.signedTxXdr,
-        name: name.trim(),
-        country: "US",
-        dob,
-        sanctions_clear: sanctionsClear,
-      });
-      await refreshStatus();
+      const response = await Promise.race([
+        client.issuer.submitMockKyc({
+          challenge_id: challenge.challenge_id,
+          signed_challenge_xdr: signed.signedTxXdr,
+          corridor_id: corridorId,
+          recipient: recipient?.trim() || undefined,
+        }),
+        new Promise<never>((_, reject) =>
+          window.setTimeout(
+            () => reject(new Error("Verification timed out while waiting for the issuer.")),
+            SUBMIT_TIMEOUT_MS,
+          ),
+        ),
+      ]);
+      const immediate = {
+        ...normalizeKycStatus(response),
+        wallet: address,
+      };
+      onStatusChange?.(immediate);
+      if (response.publish_warning) {
+        toast.warning(response.publish_warning);
+      }
       if (response.status === "rejected") {
         setError(response.reason ?? COPY.demo.kyc.rejectedHint);
-        setStep("details");
+        setStep("welcome");
         signingStarted.current = false;
         return;
       }
-      setTimeout(() => setStep("done"), 500);
+      if (immediate.kyc_status === "approved") {
+        completeFlow();
+        return;
+      }
+      const next = await refreshStatus();
+      if (next?.kyc_status === "approved") {
+        completeFlow();
+        return;
+      }
+      setError("Wallet verification finished, but issuer setup is still catching up. Retry in a moment.");
+      setStep("welcome");
+      signingStarted.current = false;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      const next = await refreshStatus().catch(() => null);
+      if (next?.kyc_status === "approved") {
+        if (next.publish_warning) {
+          toast.warning(next.publish_warning);
+        }
+        completeFlow();
+        return;
+      }
       const friendly =
         msg.includes("User declined") || msg.includes("denied")
           ? "Signature rejected. Try again."
           : msg;
       setError(friendly);
-      setStep("details");
+      setStep("welcome");
       signingStarted.current = false;
     } finally {
       setBusy(false);
     }
-  }, [address, client, dob, name, refreshStatus, sanctionsClear, walletSigner]);
+  }, [address, client, refreshStatus, walletSigner]);
 
   useEffect(() => {
     if (step !== "signing" || signingStarted.current) return;
@@ -129,16 +192,6 @@ export function KycOnboardingModal({
   }, [step, runSignAndSubmit]);
 
   const handleStart = () => {
-    setError("");
-    setStep("details");
-  };
-
-  const handleContinue = () => {
-    const validationError = validateKycForm({ name, dob, sanctionsClear });
-    if (validationError) {
-      setError(validationError);
-      return;
-    }
     setError("");
     onActivating?.();
     setStep("signing");
@@ -180,7 +233,7 @@ export function KycOnboardingModal({
           </button>
 
           {step !== "done" && (
-            <div className="flex items-center gap-2 px-6 pt-5 pb-1">
+            <div className="mx-auto flex w-full max-w-[320px] items-center gap-2 px-10 pt-5 pb-1">
               {STEPS.map((s, i) => (
                 <div key={s.key} className="h-[3px] flex-1 overflow-hidden bg-muted">
                   <motion.div
@@ -220,13 +273,16 @@ export function KycOnboardingModal({
                     </div>
                   </div>
 
-                  <p className="mb-5 text-sm leading-relaxed text-muted-foreground">
+                  <p className="mb-3 text-sm leading-relaxed text-muted-foreground">
                     {COPY.demo.kyc.wizard.intro}
+                  </p>
+                  <p className="mb-5 border-2 border-border bg-card px-3 py-2 text-xs text-muted-foreground">
+                    {COPY.demo.kyc.wizard.demoPolicy}
                   </p>
 
                   <div className="mb-5 space-y-3 border-2 border-border bg-card p-4">
                     {COPY.demo.kyc.wizard.features.map((feature, index) => {
-                      const Icon = FEATURE_ICONS[index] ?? Shield;
+                      const Icon = FEATURE_ICONS[index] ?? ShieldCheck;
                       return (
                         <div key={feature.label} className="flex items-center gap-3">
                           <div className="flex size-8 shrink-0 items-center justify-center bg-primary-soft">
@@ -266,89 +322,6 @@ export function KycOnboardingModal({
                 </motion.div>
               )}
 
-              {step === "details" && (
-                <motion.div
-                  key="details"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <div className="mb-5 flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center bg-primary-soft">
-                      <Shield size={16} className="text-primary-bright" />
-                    </div>
-                    <div>
-                      <h3 className="leading-tight font-bold text-primary">Identity details</h3>
-                      <p className="text-xs text-muted-foreground">
-                        Demo KYC — not stored on-chain
-                      </p>
-                    </div>
-                  </div>
-
-                  {rejected && (
-                    <div className="mb-3 space-y-1 border-2 border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
-                      <p>{COPY.demo.kyc.wizard.rejectedBanner}</p>
-                      {kycStatus?.rejection_reason && (
-                        <p className="font-medium text-foreground">{kycStatus.rejection_reason}</p>
-                      )}
-                      <p className="text-muted-foreground">{COPY.demo.kyc.wizard.rejectedRequirements}</p>
-                    </div>
-                  )}
-
-                  <div className="mb-4 grid gap-3">
-                    <label className="flex flex-col gap-1 text-xs">
-                      <span className="font-medium text-muted-foreground">{COPY.demo.kyc.name}</span>
-                      <input
-                        className="border-2 border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary-bright"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder={COPY.demo.kyc.namePlaceholder}
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-xs">
-                      <span className="font-medium text-muted-foreground">{COPY.demo.kyc.country}</span>
-                      <input
-                        className="border-2 border-border bg-muted px-3 py-2 text-sm text-muted-foreground"
-                        value="US"
-                        readOnly
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-xs">
-                      <span className="font-medium text-muted-foreground">{COPY.demo.kyc.dob}</span>
-                      <input
-                        type="date"
-                        className="border-2 border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary-bright"
-                        value={dob}
-                        onChange={(e) => setDob(e.target.value)}
-                      />
-                    </label>
-                    <label className={cn("flex items-start gap-2 text-xs")}>
-                      <input
-                        type="checkbox"
-                        className="mt-0.5"
-                        checked={sanctionsClear}
-                        onChange={(e) => setSanctionsClear(e.target.checked)}
-                      />
-                      <span>{COPY.demo.kyc.sanctions}</span>
-                    </label>
-                  </div>
-
-                  {error && (
-                    <div className="mb-3 flex items-center gap-2 border-2 border-destructive/20 bg-destructive/10 px-3 py-2 text-destructive">
-                      <AlertTriangle size={13} />
-                      <span className="text-xs">{error}</span>
-                    </div>
-                  )}
-
-                  <motion.div whileTap={buttonTap}>
-                    <Button className="w-full" onClick={handleContinue} disabled={busy}>
-                      {COPY.demo.kyc.wizard.continue}
-                    </Button>
-                  </motion.div>
-                </motion.div>
-              )}
-
               {step === "signing" && (
                 <motion.div
                   key="signing"
@@ -371,9 +344,15 @@ export function KycOnboardingModal({
                     </motion.div>
                   </div>
                   <TextShimmer className="text-base font-semibold text-muted-foreground" active>
-                    {busy ? COPY.demo.kyc.wizard.signing : COPY.demo.kyc.wizard.submitting}
+                    {phase === "challenge"
+                      ? COPY.demo.kyc.wizard.signing
+                      : COPY.demo.kyc.wizard.submitting}
                   </TextShimmer>
-                  <p className="mt-2 text-sm text-muted-foreground">{COPY.demo.kyc.wizard.signingHint}</p>
+                  <p className="mt-2 text-center text-sm text-muted-foreground">
+                    {phase === "challenge"
+                      ? COPY.demo.kyc.wizard.signingHint
+                      : "Signature received. Waiting for issuer confirmation."}
+                  </p>
                   {busy && <Loader2 className="mt-4 h-5 w-5 animate-spin text-primary" />}
                 </motion.div>
               )}

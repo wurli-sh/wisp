@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { CorridorOption, DemoTransferRequest, ProofPackage } from "@amoeba/js";
 import type { MockKycStatusResponse, ProvenTransfer, AmoebaClient } from "@amoeba/sdk";
@@ -19,6 +19,7 @@ import {
   packageCheckpoint,
   provenCheckpoint,
 } from "@/lib/demoLog";
+import { kycMissingLabel, kycRootsLabel } from "@/lib/kyc";
 
 function stepIndex(flags: boolean[]): number {
   let count = 0;
@@ -56,6 +57,18 @@ function parseUsdcAmount(input: string): string | null {
   const [whole, frac = ""] = trimmed.split(".");
   const normalized = `${whole}${frac.padEnd(6, "0")}`.replace(/^0+(?=\d)/, "");
   return normalized.length > 0 ? normalized : "0";
+}
+
+function formatUsdcDisplay(micro: string): string {
+  const value = BigInt(micro);
+  const whole = value / 1_000_000n;
+  const frac = value % 1_000_000n;
+  const fracStr = frac.toString().padStart(6, "0").replace(/0+$/, "");
+  return fracStr.length > 0 ? `${whole}.${fracStr}` : whole.toString();
+}
+
+function bumpAmountMicro(micro: string): string {
+  return (BigInt(micro) + 1n).toString();
 }
 
 function defaultCountries(corridors: CorridorOption[]): {
@@ -115,31 +128,40 @@ export function DemoPage() {
   const [txHash, setTxHash] = useState<string | null>(null);
   const [nullifier, setNullifier] = useState<string | null>(null);
   const [auditLedger, setAuditLedger] = useState<number | null>(null);
+  const [approvedSac, setApprovedSac] = useState(false);
   const [simulated, setSimulated] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [kycStatus, setKycStatus] = useState<MockKycStatusResponse | null>(null);
+  const [kycStatusLoading, setKycStatusLoading] = useState(false);
   const [kycSkipped, setKycSkipped] = useState(false);
   const [kycActivating, setKycActivating] = useState(false);
+  const prevRootsStatusRef = useRef<MockKycStatusResponse["roots_status"] | null>(null);
 
   const kycApproved = kycStatus?.kyc_status === "approved";
+  const proofReady = kycStatus?.eligible_for_proof === true;
   const kycRevoked = kycStatus?.kyc_status === "revoked";
   const kycRejected = kycStatus?.kyc_status === "rejected";
   const kycBlockReason = useMemo(() => {
     if (!isConnected || !address) return null;
     if (kycStatus === null) return "Checking KYC status…";
-    if (!kycApproved) {
-      if (kycRejected) return "Mock KYC was rejected — retry from the banner above.";
-      if (kycSkipped) return "Mock KYC was skipped — complete it from the banner above.";
-      return "Complete mock KYC from the banner above to fetch a proof package.";
+    if (!proofReady) {
+      if (kycRejected) return "Wallet verification was rejected — retry from the banner above.";
+      if (kycSkipped) return "Complete wallet verification from the banner above.";
+      if (kycApproved && kycStatus?.missing.length) {
+        return kycStatus.missing
+          .map((item) => (item === "roots_published" ? kycRootsLabel(kycStatus) : kycMissingLabel(item)) ?? item)
+          .join(" ");
+      }
+      return "Complete SEP-10 wallet verification from the banner above to fetch a proof package.";
     }
     return null;
-  }, [address, isConnected, kycApproved, kycRejected, kycSkipped, kycStatus]);
+  }, [address, isConnected, kycApproved, kycRejected, kycSkipped, kycStatus, proofReady]);
 
   const showKycModal =
-    (isConnected && !kycApproved && !kycSkipped && !kycRevoked && !kycRejected) ||
-    (isConnected && kycRejected && !kycSkipped) ||
+    (isConnected && !kycStatusLoading && kycStatus !== null && !kycApproved && !kycSkipped && !kycRevoked && !kycRejected) ||
+    (isConnected && !kycStatusLoading && kycStatus !== null && kycRejected && !kycSkipped) ||
     (kycActivating && !kycSkipped);
 
   const selectedCorridor = useMemo(
@@ -162,12 +184,13 @@ export function DemoPage() {
       Boolean(parseUsdcAmount(amountInput) && parseUsdcAmount(amountInput) !== "0"),
       Boolean(pkg),
       Boolean(proven),
+      approvedSac,
       simulated,
       Boolean(txHash),
       Boolean(txHash),
       Boolean(auditLedger),
     ],
-    [address, amountInput, auditLedger, isConnected, kycApproved, pkg, proven, recipientInput, selectedCorridor, simulated, txHash],
+    [address, amountInput, approvedSac, auditLedger, isConnected, kycApproved, pkg, proven, recipientInput, selectedCorridor, simulated, txHash],
   );
 
   const activeStep = stepIndex(stepsDone);
@@ -214,20 +237,79 @@ export function DemoPage() {
   const refreshKycStatus = useCallback(async () => {
     if (!address) {
       setKycStatus(null);
+      setKycStatusLoading(false);
       return;
     }
+    setKycStatusLoading(true);
     try {
-      const next = await client.issuer.getMockKycStatus(address);
+      const next = await client.issuer.getMockKycStatus(address, {
+        corridor_id: selectedCorridor?.id,
+        recipient: recipientInput.trim() || undefined,
+      });
       setKycStatus(next);
+      if (next.publish_warning) {
+        toast.warning(next.publish_warning);
+      }
     } catch (e) {
       const msg = formatDemoError(e);
       demoLog("kyc.status.fail", { error: msg });
+    } finally {
+      setKycStatusLoading(false);
     }
-  }, [address, client]);
+  }, [address, client, recipientInput, selectedCorridor?.id]);
 
   useEffect(() => {
     void refreshKycStatus();
   }, [refreshKycStatus]);
+
+  useEffect(() => {
+    setKycStatus(null);
+    setKycStatusLoading(Boolean(address));
+  }, [address]);
+
+  useEffect(() => {
+    if (!isConnected || !address || !kycApproved || proofReady || kycStatus?.roots_status !== "publishing") {
+      return;
+    }
+    let cancelled = false;
+    let timeoutId: number | null = null;
+    let attempt = 0;
+
+    const schedule = () => {
+      if (cancelled) return;
+      const delay = document.hidden
+        ? 15_000
+        : Math.min(2500 * 2 ** Math.min(attempt, 2), 10_000);
+      timeoutId = window.setTimeout(async () => {
+        if (cancelled) return;
+        attempt += 1;
+        await refreshKycStatus();
+        schedule();
+      }, delay);
+    };
+
+    schedule();
+
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        attempt = 0;
+        if (timeoutId) {
+          window.clearTimeout(timeoutId);
+        }
+        void refreshKycStatus();
+        schedule();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      cancelled = true;
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [address, isConnected, kycApproved, kycStatus?.roots_status, proofReady, refreshKycStatus]);
 
   useEffect(() => {
     if (kycApproved) {
@@ -252,7 +334,31 @@ export function DemoPage() {
     setNullifier(null);
     setAuditLedger(null);
     setSimulated(false);
+    setApprovedSac(false);
   }, []);
+
+  useEffect(() => {
+    const prev = prevRootsStatusRef.current;
+    const next = kycStatus?.roots_status ?? null;
+    if (prev === "publishing" && next === "active") {
+      resetDerivedState();
+    }
+    prevRootsStatusRef.current = next;
+  }, [kycStatus?.roots_status, resetDerivedState]);
+
+  const prepareFreshTransfer = useCallback(() => {
+    const current = parseUsdcAmount(amountInput);
+    if (current) {
+      setAmountInput(formatUsdcDisplay(bumpAmountMicro(current)));
+    }
+    setPkg(null);
+    setProven(null);
+    setTxHash(null);
+    setNullifier(null);
+    setAuditLedger(null);
+    setSimulated(false);
+    setApprovedSac(false);
+  }, [amountInput]);
 
   const buildRequest = useCallback((): DemoTransferRequest | null => {
     if (!address) {
@@ -285,8 +391,8 @@ export function DemoPage() {
   }, [address, amountInput, recipientInput, selectedCorridor]);
 
   const fetchPackage = useCallback(async () => {
-    if (!kycApproved) {
-      setValidationError("Complete mock KYC before fetching a proof package.");
+    if (!proofReady) {
+      setValidationError("Complete wallet verification before fetching a proof package.");
       return;
     }
     const request = buildRequest();
@@ -303,6 +409,7 @@ export function DemoPage() {
       setNullifier(null);
       setAuditLedger(null);
       setSimulated(false);
+      setApprovedSac(false);
       toast.success("Proof package fetched");
     } catch (e) {
       const msg = formatDemoError(e);
@@ -312,15 +419,15 @@ export function DemoPage() {
     } finally {
       setBusy(null);
     }
-  }, [buildRequest, client, kycApproved]);
+  }, [buildRequest, client, proofReady]);
 
   const generateProof = useCallback(async () => {
     if (!isConnected) {
       toast.error("Connect Freighter first");
       return;
     }
-    if (!kycApproved) {
-      toast.error("Complete mock KYC before generating a proof");
+    if (!proofReady) {
+      toast.error("Complete wallet verification before generating a proof");
       return;
     }
     const request = buildRequest();
@@ -353,12 +460,39 @@ export function DemoPage() {
     } finally {
       setBusy(null);
     }
-  }, [buildRequest, client, isConnected, kycApproved, pkg]);
+  }, [buildRequest, client, isConnected, pkg, proofReady]);
+
+  const approveSac = useCallback(async () => {
+    if (!walletSigner || !pkg) {
+      toast.error("Fetch a proof package first");
+      return;
+    }
+    setBusy("approve");
+    setError(null);
+    demoLog("approve.start");
+    try {
+      const result = await client.approveSacForCompliance(pkg, walletSigner);
+      setApprovedSac(true);
+      demoLog("approve.ok", { tx_hash: result.hash });
+      toast.success("USDC allowance approved for compliance contract");
+    } catch (e) {
+      const msg = formatDemoError(e);
+      demoLog("approve.fail", { error: msg });
+      setError(msg);
+      toast.error(msg.split("\n")[0] ?? msg);
+    } finally {
+      setBusy(null);
+    }
+  }, [client, pkg, walletSigner]);
 
   const submitTransfer = useCallback(
     async (overrideProven?: ProvenTransfer) => {
       if (!walletSigner || !proven) {
         toast.error("Connect wallet and generate proof first");
+        return;
+      }
+      if (!approvedSac) {
+        toast.error("Approve USDC allowance for the compliance contract first");
         return;
       }
       const request = buildRequest();
@@ -376,6 +510,16 @@ export function DemoPage() {
         replay: Boolean(overrideProven),
       });
       try {
+        if (!overrideProven && address) {
+          const audit = await client.audit(toSettle.nullifier, address);
+          if (audit.attested) {
+            const msg = COPY.demo.transfer.duplicateNullifier;
+            prepareFreshTransfer();
+            setValidationError(msg);
+            toast.error(msg);
+            return;
+          }
+        }
         await client.simulateSettle(toSettle, activePkg, walletSigner.publicKey);
         demoLog("settle.simulate.ok");
         setSimulated(true);
@@ -392,14 +536,20 @@ export function DemoPage() {
         toast.success("Transfer submitted");
       } catch (e) {
         const msg = formatDemoError(e);
-        demoLog("settle.fail", { error: msg });
-        setError(msg);
-        toast.error(msg.split("\n")[0] ?? msg);
+        if (/Error\(Contract,\s*#9\)/.test(msg) && !overrideProven) {
+          prepareFreshTransfer();
+          setValidationError(COPY.demo.transfer.duplicateNullifier);
+          toast.error(COPY.demo.transfer.duplicateNullifier);
+        } else {
+          demoLog("settle.fail", { error: msg });
+          setError(msg);
+          toast.error(msg.split("\n")[0] ?? msg);
+        }
       } finally {
         setBusy(null);
       }
     },
-    [buildRequest, client, pkg, proven, walletSigner],
+    [approvedSac, buildRequest, client, pkg, prepareFreshTransfer, proven, walletSigner, address],
   );
 
   const viewAudit = useCallback(async () => {
@@ -454,6 +604,7 @@ export function DemoPage() {
       toast.error("Submit a valid transfer first");
       return;
     }
+    toast.message(COPY.demo.transfer.replayHint);
     await submitTransfer(lastProven);
   }, [lastProven, submitTransfer]);
 
@@ -491,9 +642,11 @@ export function DemoPage() {
       <KycOnboardingModal
         open={showKycModal}
         kycStatus={kycStatus}
+        corridorId={selectedCorridor?.id}
+        recipient={recipientInput}
         onStatusChange={setKycStatus}
         onComplete={() => {
-          setKycSkipped(true);
+          setKycSkipped(false);
           setKycActivating(false);
           void refreshKycStatus();
         }}
@@ -556,9 +709,12 @@ export function DemoPage() {
         }}
         onConnect={() => void connect()}
         onFetchPackage={() => void fetchPackage()}
-        kycApproved={kycApproved}
+        walletVerified={kycApproved}
+        proofReady={proofReady}
         kycBlockReason={kycBlockReason}
         onGenerateProof={() => void generateProof()}
+        onApproveSac={() => void approveSac()}
+        sacApproved={approvedSac}
         onSubmit={() => void submitTransfer()}
         onViewAudit={() => void viewAudit()}
         onTryInvalid={() => void tryInvalid()}
