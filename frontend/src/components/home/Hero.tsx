@@ -24,7 +24,7 @@ export function Hero() {
       >
         <Dithering
           style={{ height: "100%", width: "100%" }}
-          colorBack="#000066"
+          colorBack="#2525AA"
           colorFront="#FFFFFF"
           shape="simplex"
           type="4x4"
