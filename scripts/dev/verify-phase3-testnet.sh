@@ -35,13 +35,6 @@ source "${ROOT}/.amoeba/compliance.env"
 source "${ROOT}/.amoeba/testnet-demo.env"
 
 echo ""
-echo "0b. Publish issuer + corridor roots (testnet fixture)"
-export COMPLIANCE_ID
-export ISSUER="${ISSUER_PUBLIC_KEY}"
-FIXTURE="${ROOT}/circuits/circom/inputs/valid.testnet.json" \
-  "${ROOT}/scripts/deploy/publish-roots.sh"
-
-echo ""
 echo "1. Refresh testnet fixture epoch + reprove"
 node --import tsx "${ROOT}/scripts/dev/gen-testnet-fixture.ts"
 export AMOEBA_FIXTURE_PROFILE=testnet
@@ -49,6 +42,8 @@ node --import tsx "${ROOT}/circuits/circom/scripts/gen-fixture.ts"
 "${ROOT}/circuits/circom/scripts/prove.sh" \
   "${ROOT}/circuits/circom/inputs/valid.testnet.json"
 node --import tsx "${ROOT}/scripts/dev/write-testnet-golden.ts"
+"${ROOT}/circuits/circom/scripts/prove.sh" \
+  "${ROOT}/circuits/circom/inputs/valid.us-mx.json"
 
 echo ""
 echo "2. Start issuer-service (testnet profile)"
@@ -82,6 +77,10 @@ cleanup() {
 trap cleanup EXIT
 
 curl -sf "http://${ADDR}/health" | grep -q '"status":"ok"'
+
+echo ""
+echo "2b. Seed testnet user + publish dynamic roots"
+"${ROOT}/scripts/dev/publish-roots-testnet-via-issuer.sh"
 
 echo ""
 echo "3. Build JS packages"

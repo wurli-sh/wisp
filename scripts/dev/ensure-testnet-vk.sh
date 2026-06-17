@@ -5,6 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 NETWORK="${NETWORK:-testnet}"
 SOURCE="${SOURCE:-amoeba-admin}"
+NETWORK_PASSPHRASE="${NETWORK_PASSPHRASE:-Test SDF Network ; September 2015}"
+export STELLAR_NETWORK_PASSPHRASE="${STELLAR_NETWORK_PASSPHRASE:-$NETWORK_PASSPHRASE}"
 DEPLOY_DIR="${ROOT}/.amoeba"
 
 LOCAL_VK_HASH=$(python3 "${ROOT}/circuits/circom/scripts/compute-vk-hash.py" | tr -d '\n')
@@ -37,3 +39,13 @@ rm -f "${DEPLOY_DIR}/verifier.env" "${DEPLOY_DIR}/compliance.env"
 # shellcheck disable=SC1091
 source "${DEPLOY_DIR}/verifier.env"
 "${ROOT}/scripts/deploy/deploy-compliance.sh"
+
+echo ""
+echo "   Compliance redeployed — publish issuer roots before demo settle:"
+echo "   ./scripts/dev/publish-roots-testnet-via-issuer.sh"
+if curl -sf "http://127.0.0.1:3000/health" >/dev/null 2>&1; then
+  echo "   issuer detected — publishing dynamic roots now"
+  ISSUER_API_TOKEN="${ISSUER_API_TOKEN:-demo-token}" \
+    "${ROOT}/scripts/dev/publish-roots-testnet-via-issuer.sh" || \
+    echo "   WARN: automatic root publish failed; run publish-roots-testnet-via-issuer.sh manually"
+fi

@@ -42,7 +42,7 @@ echo "7. Circuit fixture checks"
 echo ""
 echo "8. Contract unit tests"
 cd "$ROOT"
-cargo test -p verifier -p compliance -p mock-sac
+cargo test -p verifier -p compliance
 
 echo ""
 echo "9. Build Soroban WASM"

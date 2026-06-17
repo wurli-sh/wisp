@@ -42,16 +42,33 @@ const senderStrkey = env.SENDER_PUBLIC_KEY ?? stellarAddress(senderId);
 const recipientStrkey = env.RECIPIENT_PUBLIC_KEY ?? stellarAddress(recipientId);
 const issuerStrkey = env.ISSUER_PUBLIC_KEY ?? stellarAddress(issuerId);
 
+const CIRCLE_JSON = path.join(ROOT, "bindings/fixtures/circle-testnet-usdc.json");
+
+function circleSacId(): string {
+  if (!fs.existsSync(CIRCLE_JSON)) {
+    console.error(`Missing ${CIRCLE_JSON} — run pin-circle-ids migration`);
+    process.exit(1);
+  }
+  const circle = JSON.parse(fs.readFileSync(CIRCLE_JSON, "utf8")) as {
+    sac_contract_id?: string;
+  };
+  if (!circle.sac_contract_id) {
+    console.error(`Missing sac_contract_id in ${CIRCLE_JSON}`);
+    process.exit(1);
+  }
+  return circle.sac_contract_id;
+}
+
 let assetStrkey = env.SAC_CONTRACT_ID ?? env.ASSET_ID;
 if (!assetStrkey) {
-  const sacEnv = path.join(ROOT, ".amoeba/sac.env");
-  if (fs.existsSync(sacEnv)) {
-    const sac = loadAmoebaEnv(ROOT);
-    assetStrkey = sac.SAC_CONTRACT_ID ?? sac.ASSET_ID;
-  }
+  const sac = loadAmoebaEnv(ROOT);
+  assetStrkey = sac.SAC_CONTRACT_ID ?? sac.ASSET_ID;
 }
+assetStrkey = assetStrkey ?? circleSacId();
 if (!assetStrkey) {
-  console.error("Set SAC_CONTRACT_ID / deploy mock-sac first, or run bootstrap-testnet-demo.sh");
+  console.error(
+    "Set SAC_CONTRACT_ID or run setup-circle-usdc-testnet.sh / bootstrap-testnet-demo.sh",
+  );
   process.exit(1);
 }
 
@@ -64,6 +81,7 @@ const epoch =
 const fixture = {
   demo_only: true,
   credential_secret: env.TESTNET_CREDENTIAL_SECRET ?? "424242",
+  transfer_nonce: env.TESTNET_TRANSFER_NONCE ?? "0",
   corridor_id: Number(env.CORRIDOR_ID ?? 1),
   sender_hex: payloadToHex(strKeyToPayload(senderStrkey)),
   recipient_hex: payloadToHex(strKeyToPayload(recipientStrkey)),

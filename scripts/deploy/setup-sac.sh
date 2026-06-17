@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Deploy mock SAC for compliant_transfer demos on testnet.
-exec "$(cd "$(dirname "$0")" && pwd)/deploy-mock-sac.sh" "$@"
+# Pin Circle testnet USDC SAC for compliant_transfer demos on testnet.
+exec "$(cd "$(dirname "$0")" && pwd)/setup-circle-usdc-testnet.sh" "$@"

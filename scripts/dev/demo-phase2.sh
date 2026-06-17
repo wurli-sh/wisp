@@ -61,7 +61,7 @@ curl -sf "http://${ADDR}/v1/fixtures/demo-transfer" | node --import tsx scripts/
 
 echo ""
 echo "8. Unauthorized publish rejected"
-code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "http://${ADDR}/v1/roots/publish")
+code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "http://${ADDR}/v1/admin/roots/publish")
 [[ "$code" == "401" ]]
 
 echo ""

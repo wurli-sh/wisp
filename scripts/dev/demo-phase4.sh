@@ -21,29 +21,37 @@ ZKEY_SRC="${ARTIFACTS}/compliance_corridor_final.zkey"
 WASM_DST="${PUBLIC_CIRCUITS}/compliance_corridor.wasm"
 ZKEY_DST="${PUBLIC_CIRCUITS}/compliance_corridor_final.zkey"
 
-if [[ ! -f "$WASM_DST" ]]; then
-  if [[ -f "$WASM_SRC" ]]; then
-    cp "$WASM_SRC" "$WASM_DST"
-    echo "  copied wasm"
-  else
-    echo "  WARN: wasm missing at $WASM_SRC — run pnpm setup:circuit first for browser prove"
+copy_if_newer() {
+  local src="$1"
+  local dst="$2"
+  local label="$3"
+  if [[ ! -f "$src" ]]; then
+    echo "  WARN: ${label} missing at $src — run pnpm setup:circuit first for browser prove"
+    return 0
   fi
+  if [[ ! -f "$dst" ]] || [[ "$src" -nt "$dst" ]]; then
+    cp "$src" "$dst"
+    echo "  copied ${label}"
+  else
+    echo "  ${label} up to date"
+  fi
+}
+
+copy_if_newer "$WASM_SRC" "$WASM_DST" "wasm"
+copy_if_newer "$ZKEY_SRC" "$ZKEY_DST" "zkey"
+
+CIRCLE_SRC="${ROOT}/bindings/fixtures/circle-testnet-usdc.json"
+CIRCLE_DST="${ROOT}/frontend/src/config/circle-testnet-usdc.json"
+if [[ -f "${CIRCLE_SRC}" ]]; then
+  cp "${CIRCLE_SRC}" "${CIRCLE_DST}"
+  echo "  synced circle-testnet-usdc.json"
 fi
 
-if [[ ! -f "$ZKEY_DST" ]]; then
-  if [[ -f "$ZKEY_SRC" ]]; then
-    cp "$ZKEY_SRC" "$ZKEY_DST"
-    echo "  copied zkey"
-  else
-    echo "  WARN: zkey missing at $ZKEY_SRC — run pnpm setup:circuit first for browser prove"
-  fi
-fi
-
-if [[ ! -f "${PUBLIC_FIXTURES}/demo-transfer-testnet.json" ]]; then
-  if [[ -f "${ROOT}/bindings/fixtures/demo-transfer-testnet.json" ]]; then
-    cp "${ROOT}/bindings/fixtures/demo-transfer-testnet.json" "${PUBLIC_FIXTURES}/"
-    echo "  copied demo-transfer-testnet fixture"
-  fi
+if [[ -f "${ROOT}/bindings/fixtures/demo-transfer-testnet.json" ]]; then
+  cp "${ROOT}/bindings/fixtures/demo-transfer-testnet.json" "${PUBLIC_FIXTURES}/"
+  echo "  synced demo-transfer-testnet fixture"
+elif [[ ! -f "${PUBLIC_FIXTURES}/demo-transfer-testnet.json" ]]; then
+  echo "  WARN: demo-transfer-testnet.json missing — run gen-testnet-fixture.ts"
 fi
 
 echo ""

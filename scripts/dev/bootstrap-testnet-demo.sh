@@ -36,11 +36,20 @@ done
 } > "${DEPLOY_DIR}/testnet-demo.env"
 
 echo ""
-echo "1. Deploy mock SAC (if needed)"
-if [[ ! -f "${DEPLOY_DIR}/sac.env" ]]; then
-  SENDER_IDENTITY=amoeba-sender "${ROOT}/scripts/deploy/deploy-mock-sac.sh"
+echo "1. Circle testnet USDC SAC"
+CIRCLE_SAC_ID="$(jq -r '.sac_contract_id' "${ROOT}/bindings/fixtures/circle-testnet-usdc.json")"
+CURRENT_SAC=""
+if [[ -f "${DEPLOY_DIR}/sac.env" ]]; then
+  # shellcheck disable=SC1091
+  source "${DEPLOY_DIR}/sac.env"
+  CURRENT_SAC="${SAC_CONTRACT_ID:-${ASSET_ID:-}}"
+fi
+if [[ -z "${CURRENT_SAC}" ]] || [[ "${CURRENT_SAC}" != "${CIRCLE_SAC_ID}" ]]; then
+  echo "   Setting up Circle USDC (current=${CURRENT_SAC:-none})"
+  SENDER_IDENTITY=amoeba-sender "${ROOT}/scripts/deploy/setup-circle-usdc-testnet.sh" --all-demo-accounts
 else
-  echo "   Using existing ${DEPLOY_DIR}/sac.env"
+  echo "   Using Circle SAC in ${DEPLOY_DIR}/sac.env"
+  "${ROOT}/scripts/deploy/ensure-circle-usdc-trustlines.sh" amoeba-sender amoeba-recipient
 fi
 # shellcheck disable=SC1091
 source "${DEPLOY_DIR}/sac.env"
@@ -67,6 +76,10 @@ node --import tsx "${ROOT}/circuits/circom/scripts/gen-fixture.ts"
 
 node --import tsx "${ROOT}/scripts/dev/write-testnet-golden.ts"
 
+echo "   Restoring local CI proof (valid.us-mx)"
+"${ROOT}/circuits/circom/scripts/prove.sh" \
+  "${ROOT}/circuits/circom/inputs/valid.us-mx.json"
+
 echo ""
 echo "5. Deploy contracts (align VK with embedded vk.rs)"
 "${ROOT}/scripts/dev/ensure-testnet-vk.sh"
@@ -76,11 +89,8 @@ source "${DEPLOY_DIR}/verifier.env"
 source "${DEPLOY_DIR}/compliance.env"
 
 echo ""
-echo "6. Publish roots from testnet fixture"
-export COMPLIANCE_ID
-export ISSUER="${ISSUER_PUBLIC_KEY}"
-FIXTURE="${ROOT}/circuits/circom/inputs/valid.testnet.json" \
-  "${ROOT}/scripts/deploy/publish-roots.sh"
+echo "6. Publish dynamic roots via issuer-service"
+"${ROOT}/scripts/dev/publish-roots-testnet-via-issuer.sh"
 
 echo ""
 echo "=== Bootstrap complete ==="

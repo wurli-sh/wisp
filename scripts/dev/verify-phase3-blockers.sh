@@ -27,7 +27,7 @@ AMOEBA_FIXTURE_PROFILE=local node --import tsx circuits/circom/scripts/gen-fixtu
 
 echo ""
 echo "4. Phase 1 contract + circuit tests"
-cargo test -p verifier -p compliance -p mock-sac
+cargo test -p verifier -p compliance
 NODE_MAJOR="$(node -p "Number(process.versions.node.split('.')[0])")"
 if [[ "${NODE_MAJOR}" -ge 25 ]]; then
   pnpm test:circuit
@@ -58,6 +58,7 @@ export AMOEBA_FIXTURE_PROFILE=testnet
 node --import tsx circuits/circom/scripts/gen-fixture.ts
 ./circuits/circom/scripts/prove.sh circuits/circom/inputs/valid.testnet.json
 node --import tsx scripts/dev/write-testnet-golden.ts
+./circuits/circom/scripts/prove.sh circuits/circom/inputs/valid.us-mx.json
 test -f bindings/fixtures/public-inputs.testnet.json
 
 echo ""
@@ -100,12 +101,12 @@ curl -sf "http://${ADDR}/health" | grep -q '"status":"ok"'
 
 code1=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
   -H "Authorization: Bearer ${ISSUER_API_TOKEN}" \
-  "http://${ADDR}/v1/roots/publish")
+  "http://${ADDR}/v1/admin/roots/publish")
 [[ "$code1" == "200" ]] || { echo "first publish failed: HTTP $code1"; exit 1; }
 
 code2=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
   -H "Authorization: Bearer ${ISSUER_API_TOKEN}" \
-  "http://${ADDR}/v1/roots/publish")
+  "http://${ADDR}/v1/admin/roots/publish")
 [[ "$code2" == "200" ]] || { echo "second publish failed (G1 auth?): HTTP $code2"; exit 1; }
 
 echo ""
