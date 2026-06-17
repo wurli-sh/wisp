@@ -540,7 +540,6 @@ version = "0.1.0"
 dependencies = [
  "ark-bn254 0.6.0",
  "ark-ff 0.6.0",
- "mock-sac",
  "serde",
  "serde_json",
  "soroban-sdk",
@@ -1538,13 +1537,6 @@ dependencies = [
  "libc",
  "wasi 0.11.1+wasi-snapshot-preview1",
  "windows-sys",
-]
-
-[[package]]
-name = "mock-sac"
-version = "0.1.0"
-dependencies = [
- "soroban-sdk",
 ]
 
 [[package]]

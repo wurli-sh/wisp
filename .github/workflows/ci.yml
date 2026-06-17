@@ -82,7 +82,7 @@ jobs:
           cargo clippy --workspace --all-targets -- -D warnings
 
       - name: Contract tests
-        run: cargo test -p verifier -p compliance -p mock-sac
+        run: cargo test -p verifier -p compliance
 
       - name: Circuit fixture checks
         run: ./circuits/circom/test/verify-fixtures.sh

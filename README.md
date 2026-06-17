@@ -98,7 +98,7 @@ Deployed contract IDs are written to `.amoeba/*.env` (current compliance verifie
 
 ### SAC bypass caveat
 
-Direct SAC transfers can bypass Amoeba unless issuer authorization is configured. The MVP demo proves a **compliant transfer rail**; production hardening uses issuer-controlled authorization settings.
+Direct SAC transfers can bypass Amoeba unless issuer authorization is configured. The demo uses **approve + `transfer_from`** via the compliance contract; Circle testnet USDC does not support on-chain router blocking.
 
 ### Mainnet ceremony gate
 
@@ -164,7 +164,7 @@ pnpm gen:crypto-fixtures
 | GET | `/health` |
 | GET | `/v1/fixtures/demo-transfer` |
 | GET | `/v1/merkle-path/:wallet` |
-| POST | `/v1/roots/publish` (Bearer token) |
+| POST | `/v1/admin/roots/publish` (Bearer token) |
 
 Publish roots via service (testnet):
 
@@ -195,7 +195,8 @@ AMOEBA_RUN_TESTNET_BLOCKERS=1 ./scripts/dev/verify-phase3-blockers.sh
 ### Testnet settlement
 
 ```bash
-./scripts/dev/bootstrap-testnet-demo.sh      # once: keys, mock SAC, fixture, prove, deploy
+./scripts/dev/bootstrap-testnet-demo.sh      # once: keys, Circle USDC SAC, fixture, prove, deploy
+./scripts/dev/check-circle-usdc-testnet.sh   # verify trustlines + sender USDC balance
 ./scripts/dev/verify-phase3-testnet.sh       # prove → settle → audit → replay rejection
 ```
 
@@ -207,6 +208,7 @@ import { AmoebaClient } from "@amoeba/sdk";
 const client = AmoebaClient.fromEnv();
 const pkg = await client.issuer.getDemoTransfer();
 const proven = await client.prove({ package: pkg });
+await client.approveSacForComplianceWithKeypair(pkg, senderSecret);
 await client.settleWithKeypair(proven, pkg, senderSecret);
 await client.audit(proven.nullifier, senderPublicKey);
 ```
