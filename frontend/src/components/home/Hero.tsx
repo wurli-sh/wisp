@@ -58,20 +58,6 @@ export function Hero() {
             </HighlightedText>
           </motion.h1>
 
-          <motion.p
-            className="mt-6 max-w-xl text-pretty text-base text-white sm:text-lg"
-            variants={fadeInUp}
-          >
-            {COPY.hero.sub}
-          </motion.p>
-
-          <motion.p
-            className="mt-4 text-sm font-medium text-white"
-            variants={fadeInUp}
-          >
-            {COPY.paradoxAct.closer}
-          </motion.p>
-
           <motion.div
             className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4"
             variants={fadeInUp}
