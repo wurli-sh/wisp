@@ -8,6 +8,7 @@ import { REPO_ROOT } from "../config.js";
 import type { ProvenTransfer } from "../prove/prover.js";
 import { sdkCheckpoint } from "../debug.js";
 import { fieldDecimalToBytes32, fieldDecimalToU256String } from "./encoding.js";
+import { approveSacAllowance, approveSacAllowanceWithKeypair } from "./sac-approve.js";
 
 interface DemoFixture {
   issuer_strkey?: string;
@@ -48,7 +49,7 @@ async function loadDemoFixture(cfg: AmoebaConfig): Promise<DemoFixture> {
   return JSON.parse(raw) as DemoFixture;
 }
 
-async function transferArgs(proven: ProvenTransfer, pkg: ProofPackage, cfg: AmoebaConfig) {
+async function resolveSettleParties(proven: ProvenTransfer | null, pkg: ProofPackage, cfg: AmoebaConfig) {
   const fixture = await loadDemoFixture(cfg);
   const pkgFixture = packageStrkeys(pkg);
   const issuer = cfg.issuerPublicKey ?? pkgFixture.issuer_strkey ?? fixture.issuer_strkey;
@@ -71,6 +72,16 @@ async function transferArgs(proven: ProvenTransfer, pkg: ProofPackage, cfg: Amoe
     amount: BigInt(String(pkg.transfer!.amount!)),
     corridor_id: Number(pkg.transfer!.corridor_id!),
     epoch: BigInt(String(pkg.transfer!.epoch)),
+    nullifier: proven
+      ? fieldDecimalToBytes32(proven.nullifier)
+      : Buffer.alloc(32),
+  };
+}
+
+async function transferArgs(proven: ProvenTransfer, pkg: ProofPackage, cfg: AmoebaConfig) {
+  const parties = await resolveSettleParties(proven, pkg, cfg);
+  return {
+    ...parties,
     nullifier: fieldDecimalToBytes32(proven.nullifier),
   };
 }
@@ -102,6 +113,24 @@ function publicInputsVector(proven: ProvenTransfer): bigint[] {
 export interface WalletSigner {
   publicKey: string;
   signTransaction: (xdr: string) => Promise<{ signedTxXdr: string }>;
+}
+
+export async function approveSacForCompliance(
+  pkg: ProofPackage,
+  cfg: AmoebaConfig,
+  wallet: WalletSigner,
+) {
+  const parties = await resolveSettleParties(null, pkg, cfg);
+  return approveSacAllowance(cfg, wallet, parties.asset, parties.amount);
+}
+
+export async function approveSacForComplianceWithKeypair(
+  pkg: ProofPackage,
+  cfg: AmoebaConfig,
+  secret: string,
+) {
+  const parties = await resolveSettleParties(null, pkg, cfg);
+  return approveSacAllowanceWithKeypair(cfg, secret, parties.asset, parties.amount);
 }
 
 export async function settleWithKeypair(

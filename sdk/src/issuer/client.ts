@@ -52,6 +52,12 @@ export class IssuerClient {
     return res.json() as Promise<CorridorOption[]>;
   }
 
+  async getCorridor(id: number): Promise<CorridorDetail> {
+    const res = await fetch(`${this.baseUrl}/v1/corridor/${id}`);
+    if (!res.ok) throw new Error(`issuer corridor: HTTP ${res.status}`);
+    return res.json() as Promise<CorridorDetail>;
+  }
+
   async getMerklePath(wallet: string): Promise<unknown> {
     const res = await fetch(`${this.baseUrl}/v1/merkle-path/${wallet}`);
     if (!res.ok) throw new Error(`issuer merkle-path: HTTP ${res.status}`);
@@ -84,9 +90,20 @@ export class IssuerClient {
     return res.json() as Promise<MockKycSubmitResponse>;
   }
 
-  async getMockKycStatus(wallet: string): Promise<MockKycStatusResponse> {
+  async getMockKycStatus(
+    wallet: string,
+    opts?: { corridor_id?: number; recipient?: string },
+  ): Promise<MockKycStatusResponse> {
+    const params = new URLSearchParams();
+    if (opts?.corridor_id != null) {
+      params.set("corridor_id", String(opts.corridor_id));
+    }
+    if (opts?.recipient) {
+      params.set("recipient", opts.recipient);
+    }
+    const query = params.toString();
     const res = await fetch(
-      `${this.baseUrl}/v1/mock-kyc/status/${encodeURIComponent(wallet)}`,
+      `${this.baseUrl}/v1/mock-kyc/status/${encodeURIComponent(wallet)}${query ? `?${query}` : ""}`,
     );
     if (!res.ok) {
       const text = await res.text();
@@ -94,6 +111,16 @@ export class IssuerClient {
     }
     return res.json() as Promise<MockKycStatusResponse>;
   }
+}
+
+export interface CorridorDetail {
+  corridor_id: number;
+  name: string;
+  source_country: string;
+  dest_country: string;
+  enabled: boolean;
+  asset_hex: string;
+  latest_root_snapshot?: unknown;
 }
 
 export interface MockKycChallengeResponse {
@@ -105,27 +132,36 @@ export interface MockKycChallengeResponse {
 export interface MockKycSubmitRequest {
   challenge_id: string;
   signed_challenge_xdr: string;
-  name: string;
-  country: string;
-  dob: string;
-  sanctions_clear: boolean;
+  corridor_id?: number;
+  recipient?: string;
 }
 
 export type MockKycSubmitStatus = "approved" | "rejected" | "already_approved";
+export type MockKycRootsStatus = "missing" | "publishing" | "active" | "failed";
 
 export interface MockKycSubmitResponse {
   status: MockKycSubmitStatus;
+  kyc_status: MockKycLifecycleStatus;
+  eligible_for_proof: boolean;
+  missing: MockKycMissing[];
+  roots_status: MockKycRootsStatus;
+  roots_message?: string;
+  rejection_reason?: string;
   reason?: string;
+  publish_warning?: string;
 }
 
 export type MockKycLifecycleStatus = "none" | "approved" | "rejected" | "revoked";
 
-export type MockKycMissing = "kyc" | "destination" | "roots_published" | "corridor";
+export type MockKycMissing = "kyc" | "destination" | "roots_published" | "corridor" | "sender_corridor";
 
 export interface MockKycStatusResponse {
   wallet: string;
   kyc_status: MockKycLifecycleStatus;
   eligible_for_proof: boolean;
   missing: MockKycMissing[];
+  roots_status: MockKycRootsStatus;
+  roots_message?: string;
   rejection_reason?: string;
+  publish_warning?: string;
 }

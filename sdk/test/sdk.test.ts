@@ -64,6 +64,7 @@ test("normalizeField matches assert-public-inputs", () => {
     witness_private: {
       demo_unsafe: true,
       credential_secret: pkg.credential_secret,
+      transfer_nonce: pkg.transfer_nonce ?? "0",
       jurisdiction: pkg.jurisdiction,
       credential_expiry: pkg.credential_expiry,
       sanctions_leaf_value: "0",

@@ -6,6 +6,8 @@ import {
   settleWithKeypair,
   settleWithWallet,
   simulateSettle,
+  approveSacForCompliance,
+  approveSacForComplianceWithKeypair,
   type WalletSigner,
 } from "./settle/compliant-transfer.js";
 import { auditNullifier } from "./audit/index.js";
@@ -15,6 +17,14 @@ import {
   listProofSettledEvents,
   type ProofSettledEvent,
 } from "./audit/events.js";
+import {
+  getLatestChainRoots,
+  getLatestCorridorRoots,
+  getLatestIssuerRoots,
+  type ChainCorridorRoots,
+  type ChainIssuerRoots,
+  type ChainRootsBundle,
+} from "./audit/roots.js";
 import { fieldDecimalToBytes32, normalizeField } from "./settle/encoding.js";
 import type { ProofPackage } from "@amoeba/js";
 
@@ -66,6 +76,14 @@ export class AmoebaClient {
     return settleWithWallet(proven, pkg, this.cfg, wallet);
   }
 
+  approveSacForCompliance(pkg: ProofPackage, wallet: WalletSigner) {
+    return approveSacForCompliance(pkg, this.cfg, wallet);
+  }
+
+  approveSacForComplianceWithKeypair(pkg: ProofPackage, secret: string) {
+    return approveSacForComplianceWithKeypair(pkg, this.cfg, secret);
+  }
+
   simulateSettle(proven: ProvenTransfer, pkg: ProofPackage, publicKey: string) {
     return simulateSettle(proven, pkg, this.cfg, publicKey);
   }
@@ -101,12 +119,20 @@ export { loadAmoebaEnv } from "./env.js";
 export { serializeSnarkjsProof } from "./prove/serialize.js";
 export { fieldDecimalToBytes32, normalizeField } from "./settle/encoding.js";
 export type { ProofSettledEvent };
+export type { ChainCorridorRoots, ChainIssuerRoots, ChainRootsBundle };
+export {
+  getLatestChainRoots,
+  getLatestCorridorRoots,
+  getLatestIssuerRoots,
+} from "./audit/roots.js";
 export type { WalletSigner } from "./settle/compliant-transfer.js";
+export { approveSacForCompliance, approveSacForComplianceWithKeypair } from "./settle/compliant-transfer.js";
 export type { ProvenTransfer } from "./prove/prover.js";
 export type {
   MockKycChallengeResponse,
   MockKycLifecycleStatus,
   MockKycMissing,
+  MockKycRootsStatus,
   MockKycStatusResponse,
   MockKycSubmitRequest,
   MockKycSubmitResponse,
