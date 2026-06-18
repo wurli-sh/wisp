@@ -50,10 +50,15 @@ export function ComplianceHub({
   const loadCorridors = useCallback(async () => {
     setLoadingCorridors(true);
     try {
-      const list = await client.issuer.listCorridors();
+      const listCorridors = client.issuer.listCorridors;
+      const getCorridor = client.issuer.getCorridor;
+      if (!listCorridors || !getCorridor) {
+        throw new Error("Issuer adapter does not support corridor listing");
+      }
+      const list = await listCorridors();
       const details = await Promise.all(
         list.map(async (corridor) => {
-          const detail = await client.issuer.getCorridor(corridor.id);
+          const detail = await getCorridor(corridor.id);
           return {
             id: corridor.id,
             name: corridor.name,

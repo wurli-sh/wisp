@@ -28,6 +28,7 @@ Amoeba demo UI (`@amoeba/web`) — Vite 6 + React 19 + Tailwind 4.
 | `components/ui/` | Badge, Button, DropdownPanel, Tabs, TextShimmer |
 | `components/spell/` | HighlightedText, TiltCard animated components |
 | `hooks/useAmoebaClient.ts` | SDK client integration |
+| `hooks/useDemoIssuerClient.ts` | Demo-specific issuer client hook |
 | `hooks/useWallet.ts` | Freighter wallet connection |
 | `lib/kyc.ts` | KYC flow state machine and types |
 | `lib/demoLog.ts` | Console-style step logging |

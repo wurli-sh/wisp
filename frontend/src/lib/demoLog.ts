@@ -123,7 +123,11 @@ const CONTRACT_HINTS: [RegExp, string][] = [
 
 const ISSUER_HINTS: [RegExp, string][] = [
   [
-    /approved sender not found/i,
+    /On-chain issuer\/corridor roots not found/i,
+    "Chain event scan missed issuer roots — restart ./scripts/dev/bru.sh (writes frontend/.env.local with VITE_VALIDATE_START_LEDGER) or set COMPLIANCE_DEPLOY_LEDGER in .env.",
+  ],
+  [
+    /Issuer .+ is not registered on-chain/i,
     "Complete SEP-10 wallet verification for your connected Freighter wallet — the issuer only builds packages for verified senders.",
   ],
   [

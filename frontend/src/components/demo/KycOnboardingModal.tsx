@@ -13,7 +13,7 @@ import {
 import { toast } from "sonner";
 import type { MockKycStatusResponse } from "@amoeba/sdk";
 import { COPY } from "@/content/copy";
-import { useAmoebaClient } from "@/hooks/useAmoebaClient";
+import { useDemoIssuerClient } from "@/hooks/useDemoIssuerClient";
 import { useWallet } from "@/hooks/useWallet";
 import { TextShimmer } from "@/components/ui/TextShimmer";
 import { Button } from "@/components/ui/Button";
@@ -52,7 +52,7 @@ export function KycOnboardingModal({
   corridorId,
   recipient,
 }: KycOnboardingModalProps) {
-  const client = useAmoebaClient();
+  const demoIssuer = useDemoIssuerClient();
   const { address, walletSigner } = useWallet();
 
   const [step, setStep] = useState<Step>("welcome");
@@ -94,13 +94,13 @@ export function KycOnboardingModal({
       onStatusChange?.(null);
       return null;
     }
-    const next = await client.issuer.getMockKycStatus(address, {
+    const next = await demoIssuer.getMockKycStatus(address, {
       corridor_id: corridorId,
       recipient: recipient?.trim() || undefined,
     });
     onStatusChange?.(next);
     return next;
-  }, [address, client, corridorId, onStatusChange, recipient]);
+  }, [address, demoIssuer, corridorId, onStatusChange, recipient]);
 
   const completeFlow = useCallback(() => {
     setStep("done");
@@ -120,11 +120,11 @@ export function KycOnboardingModal({
     setPhase("challenge");
     setError("");
     try {
-      const challenge = await client.issuer.requestMockKycChallenge(address);
+      const challenge = await demoIssuer.requestMockKycChallenge(address);
       setPhase("submit");
       const signed = await walletSigner.signTransaction(challenge.challenge_xdr);
       const response = await Promise.race([
-        client.issuer.submitMockKyc({
+        demoIssuer.submitMockKyc({
           challenge_id: challenge.challenge_id,
           signed_challenge_xdr: signed.signedTxXdr,
           corridor_id: corridorId,
@@ -183,7 +183,7 @@ export function KycOnboardingModal({
     } finally {
       setBusy(false);
     }
-  }, [address, client, refreshStatus, walletSigner]);
+  }, [address, completeFlow, corridorId, demoIssuer, onStatusChange, recipient, refreshStatus, walletSigner]);
 
   useEffect(() => {
     if (step !== "signing" || signingStarted.current) return;

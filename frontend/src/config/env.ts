@@ -7,6 +7,7 @@ export interface FrontendEnv {
   assetId?: string;
   issuerPublicKey?: string;
   issuerUrl: string;
+  validateStartLedger?: number;
   wasmUrl: string;
   zkeyUrl: string;
   demoFixtureUrl: string;
@@ -27,6 +28,11 @@ export const env: FrontendEnv = {
   assetId: read("VITE_SAC_CONTRACT_ID"),
   issuerPublicKey: read("VITE_ISSUER_PUBLIC_KEY"),
   issuerUrl: read("VITE_ISSUER_URL") ?? "/issuer",
+  validateStartLedger: read("VITE_VALIDATE_START_LEDGER")
+    ? Number(read("VITE_VALIDATE_START_LEDGER"))
+    : read("VITE_COMPLIANCE_DEPLOY_LEDGER")
+      ? Number(read("VITE_COMPLIANCE_DEPLOY_LEDGER"))
+      : undefined,
   wasmUrl: read("VITE_AMOEBA_WASM_URL") ?? "/circuits/compliance_corridor.wasm",
   zkeyUrl:
     read("VITE_AMOEBA_ZKEY_URL") ?? "/circuits/compliance_corridor_final.zkey",
@@ -44,6 +50,8 @@ export function getAmoebaConfigOverrides(): Record<string, string | undefined> {
     SAC_CONTRACT_ID: env.assetId,
     ISSUER_PUBLIC_KEY: env.issuerPublicKey,
     ISSUER_URL: env.issuerUrl,
+    VALIDATE_START_LEDGER:
+      env.validateStartLedger != null ? String(env.validateStartLedger) : undefined,
     AMOEBA_WASM_URL: env.wasmUrl,
     AMOEBA_ZKEY_URL: env.zkeyUrl,
     AMOEBA_DEMO_FIXTURE_URL: env.demoFixtureUrl,

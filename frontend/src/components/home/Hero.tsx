@@ -53,24 +53,10 @@ export function Hero() {
             variants={fadeInUp}
           >
             {COPY.hero.headlineLead}{" "}
-            <HighlightedText variant="primary" from="bottom" delay={0.12} className="whitespace-nowrap">
+            <HighlightedText variant="sky" from="bottom" delay={0.12} className="whitespace-nowrap">
               {COPY.hero.headlineAccent}
             </HighlightedText>
           </motion.h1>
-
-          <motion.p
-            className="mt-6 max-w-xl text-pretty text-base text-muted-foreground sm:text-lg"
-            variants={fadeInUp}
-          >
-            Cross-border corridor compliance on Stellar. Customer credentials stay off-chain.
-          </motion.p>
-
-          <motion.p
-            className="mt-4 text-sm font-medium text-primary"
-            variants={fadeInUp}
-          >
-            Compliance evidence and customer privacy — one rail.
-          </motion.p>
 
           <motion.div
             className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4"
@@ -78,7 +64,7 @@ export function Hero() {
           >
             <Link to={COPY.hero.ctas.primary.href}>
               <motion.div whileHover={buttonHover} whileTap={buttonTap}>
-                <Button size="lg" variant="secondary">
+                <Button size="lg" variant="primary">
                   {COPY.hero.ctas.primary.label}
                 </Button>
               </motion.div>

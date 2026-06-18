@@ -4,6 +4,8 @@ import type { CorridorOption, DemoTransferRequest, ProofPackage } from "@amoeba/
 import type { MockKycStatusResponse, ProvenTransfer, AmoebaClient } from "@amoeba/sdk";
 import { COPY } from "@/content/copy";
 import { useAmoebaClient } from "@/hooks/useAmoebaClient";
+import { useDemoIssuerClient } from "@/hooks/useDemoIssuerClient";
+import { env } from "@/config/env";
 import { useWallet } from "@/hooks/useWallet";
 import { DemoKycPanel } from "@/components/demo/DemoKycPanel";
 import { KycOnboardingModal } from "@/components/demo/KycOnboardingModal";
@@ -115,6 +117,7 @@ function reconcileCorridorSelection(
 
 export function DemoPage() {
   const client = useAmoebaClient();
+  const demoIssuer = useDemoIssuerClient();
   const { isConnected, isConnecting, connect, walletSigner, address } = useWallet();
 
   const [corridors, setCorridors] = useState<CorridorOption[]>([]);
@@ -213,7 +216,7 @@ export function DemoPage() {
   }, []);
 
   useEffect(() => {
-    void client.issuer
+    void demoIssuer
       .listCorridors()
       .then((next) => {
         setCorridors(next);
@@ -227,7 +230,7 @@ export function DemoPage() {
         demoLog("corridors.fail", { error: msg });
         setError(msg);
       });
-  }, [client]);
+  }, [demoIssuer]);
 
   useEffect(() => {
     if (!address) return;
@@ -242,7 +245,7 @@ export function DemoPage() {
     }
     setKycStatusLoading(true);
     try {
-      const next = await client.issuer.getMockKycStatus(address, {
+      const next = await demoIssuer.getMockKycStatus(address, {
         corridor_id: selectedCorridor?.id,
         recipient: recipientInput.trim() || undefined,
       });
@@ -256,7 +259,7 @@ export function DemoPage() {
     } finally {
       setKycStatusLoading(false);
     }
-  }, [address, client, recipientInput, selectedCorridor?.id]);
+  }, [address, demoIssuer, recipientInput, selectedCorridor?.id]);
 
   useEffect(() => {
     void refreshKycStatus();
@@ -390,6 +393,26 @@ export function DemoPage() {
     };
   }, [address, amountInput, recipientInput, selectedCorridor]);
 
+  const validateFetchedPackage = useCallback(
+    async (next: ProofPackage) => {
+      if (!env.issuerPublicKey) {
+        throw new Error("VITE_ISSUER_PUBLIC_KEY is not configured — cannot validate package roots");
+      }
+      if (!env.complianceId) {
+        throw new Error(
+          "VITE_COMPLIANCE_CONTRACT_ID is not configured — cannot validate package roots",
+        );
+      }
+      const corridorId = Number(next.transfer?.corridor_id ?? selectedCorridor?.id ?? 1);
+      await client.validatePackage(next, {
+        issuerPublicKey: env.issuerPublicKey,
+        corridorId,
+      });
+      demoLog("validate.ok", { corridor_id: corridorId });
+    },
+    [client, selectedCorridor?.id],
+  );
+
   const fetchPackage = useCallback(async () => {
     if (!proofReady) {
       setValidationError("Complete wallet verification before fetching a proof package.");
@@ -401,7 +424,8 @@ export function DemoPage() {
     setError(null);
     demoLog("fetch.start", { ...request });
     try {
-      const next = await client.issuer.createDemoTransfer(request);
+      const next = await demoIssuer.createDemoTransfer(request);
+      await validateFetchedPackage(next);
       demoLog("fetch.ok", packageCheckpoint(next));
       setPkg(next);
       setProven(null);
@@ -419,7 +443,7 @@ export function DemoPage() {
     } finally {
       setBusy(null);
     }
-  }, [buildRequest, client, proofReady]);
+  }, [buildRequest, demoIssuer, proofReady, validateFetchedPackage]);
 
   const generateProof = useCallback(async () => {
     if (!isConnected) {
@@ -436,9 +460,11 @@ export function DemoPage() {
     setError(null);
     demoLog("prove.start");
     try {
-      const packageToProve = pkg ?? (await client.issuer.createDemoTransfer(request));
+      const packageToProve = pkg ?? (await demoIssuer.createDemoTransfer(request));
       if (!pkg) setPkg(packageToProve);
       demoLog("prove.package", packageCheckpoint(packageToProve));
+
+      await validateFetchedPackage(packageToProve);
 
       const result = await client.prove({
         package: packageToProve,
@@ -460,7 +486,7 @@ export function DemoPage() {
     } finally {
       setBusy(null);
     }
-  }, [buildRequest, client, isConnected, pkg, proofReady]);
+  }, [buildRequest, client, demoIssuer, isConnected, pkg, proofReady, validateFetchedPackage]);
 
   const approveSac = useCallback(async () => {
     if (!walletSigner || !pkg) {
@@ -497,7 +523,7 @@ export function DemoPage() {
       }
       const request = buildRequest();
       if (!request) return;
-      const activePkg = pkg ?? (await client.issuer.createDemoTransfer(request));
+      const activePkg = pkg ?? (await demoIssuer.createDemoTransfer(request));
       if (!pkg) setPkg(activePkg);
 
       const toSettle = overrideProven ?? proven;
@@ -549,7 +575,7 @@ export function DemoPage() {
         setBusy(null);
       }
     },
-    [approvedSac, buildRequest, client, pkg, prepareFreshTransfer, proven, walletSigner, address],
+    [approvedSac, buildRequest, client, demoIssuer, pkg, prepareFreshTransfer, proven, walletSigner, address],
   );
 
   const viewAudit = useCallback(async () => {

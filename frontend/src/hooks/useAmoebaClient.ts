@@ -14,6 +14,7 @@ export function useAmoebaClient() {
         assetId: env.assetId,
         issuerPublicKey: env.issuerPublicKey,
         issuerUrl: env.issuerUrl,
+        validateStartLedger: env.validateStartLedger,
         artifactDir: "/circuits",
         zkeyPath: env.zkeyUrl,
         wasmPath: env.wasmUrl,
