@@ -30,6 +30,8 @@ export interface AmoebaConfig {
   /** JSON URL or inline demo strkeys for browser settle (no fs). */
   demoFixtureUrl?: string;
   demoStrkeys?: DemoStrkeys;
+  /** Event scan start ledger for validatePackage / chain root reads. */
+  validateStartLedger?: number;
 }
 
 export interface DemoStrkeys {
@@ -72,5 +74,10 @@ export function loadConfig(overrides: Record<string, string | undefined> = {}): 
     wasmUrl: env.AMOEBA_WASM_URL ?? env.VITE_AMOEBA_WASM_URL,
     zkeyUrl: env.AMOEBA_ZKEY_URL ?? env.VITE_AMOEBA_ZKEY_URL,
     demoFixtureUrl: env.AMOEBA_DEMO_FIXTURE_URL ?? env.VITE_AMOEBA_DEMO_FIXTURE_URL,
+    validateStartLedger: env.VALIDATE_START_LEDGER
+      ? Number(env.VALIDATE_START_LEDGER)
+      : env.COMPLIANCE_DEPLOY_LEDGER
+        ? Number(env.COMPLIANCE_DEPLOY_LEDGER)
+        : undefined,
   };
 }

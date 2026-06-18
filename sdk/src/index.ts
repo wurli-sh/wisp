@@ -1,5 +1,6 @@
 import { loadConfig, type AmoebaConfig } from "./config.js";
-import { IssuerClient } from "./issuer/client.js";
+import type { IssuerAdapter } from "./issuer/adapter.js";
+import { HttpIssuerAdapter } from "./issuer/http-adapter.js";
 import { proveFromPackageBrowser } from "./prove/browser.js";
 import { proveFromPackage, type ProvenTransfer } from "./prove/prover.js";
 import {
@@ -20,21 +21,38 @@ import {
 import {
   getLatestChainRoots,
   getLatestCorridorRoots,
+  getLatestIssuerRecord,
   getLatestIssuerRoots,
+  getLatestIssuerEnabled,
+  listIssuerRegistryEntries,
   type ChainCorridorRoots,
+  type ChainIssuerPage,
+  type ChainIssuerRecord,
   type ChainIssuerRoots,
   type ChainRootsBundle,
 } from "./audit/roots.js";
+import {
+  listIssuers,
+  resolveIssuer,
+  resolveIssuerFromUrl,
+  type ResolvedIssuer,
+} from "./issuer/resolve.js";
 import { fieldDecimalToBytes32, normalizeField } from "./settle/encoding.js";
 import type { ProofPackage } from "@amoeba/js";
+import {
+  validatePackage,
+  type ValidatePackageOptions,
+  type ValidatePackageResult,
+  MAX_ROOT_AGE_LEDGERS,
+} from "./validate/package.js";
 
 export class AmoebaClient {
   readonly cfg: AmoebaConfig;
-  readonly issuer: IssuerClient;
+  readonly issuer: IssuerAdapter;
 
-  constructor(cfg: AmoebaConfig) {
+  constructor(cfg: AmoebaConfig, issuer?: IssuerAdapter) {
     this.cfg = cfg;
-    this.issuer = new IssuerClient(cfg.issuerUrl);
+    this.issuer = issuer ?? new HttpIssuerAdapter(cfg.issuerUrl);
   }
 
   static fromEnv(overrides: Record<string, string | undefined> = {}): AmoebaClient {
@@ -49,7 +67,10 @@ export class AmoebaClient {
     wasmUrl?: string;
     zkeyUrl?: string;
   } = {}): Promise<ProvenTransfer> {
-    const pkg = input.package ?? (await this.issuer.getDemoTransfer());
+    if (!input.package) {
+      throw new Error("prove requires an explicit ProofPackage (fetch via IssuerAdapter first)");
+    }
+    const pkg = input.package;
     const cfg: AmoebaConfig = {
       ...this.cfg,
       ...(input.artifactDir ? { artifactDir: input.artifactDir } : {}),
@@ -66,6 +87,13 @@ export class AmoebaClient {
     }
 
     return proveFromPackage(pkg, cfg);
+  }
+
+  validatePackage(
+    pkg: ProofPackage,
+    opts: ValidatePackageOptions,
+  ): Promise<ValidatePackageResult> {
+    return validatePackage(pkg, this.cfg, opts);
   }
 
   settleWithKeypair(proven: ProvenTransfer, pkg: ProofPackage, secret: string) {
@@ -112,6 +140,18 @@ export class AmoebaClient {
   getProofSettledByNullifier(nullifierHex: string) {
     return getProofSettledByNullifier(this.cfg, nullifierHex);
   }
+
+  resolveIssuer(issuerPublicKey: string) {
+    return resolveIssuer(this.cfg, issuerPublicKey);
+  }
+
+  resolveIssuerFromUrl(url: string) {
+    return resolveIssuerFromUrl(this.cfg, url);
+  }
+
+  listIssuers(opts?: { cursor?: number; limit?: number; startLedger?: number }) {
+    return listIssuers(this.cfg, opts);
+  }
 }
 
 export { loadConfig } from "./config.js";
@@ -119,15 +159,38 @@ export { loadAmoebaEnv } from "./env.js";
 export { serializeSnarkjsProof } from "./prove/serialize.js";
 export { fieldDecimalToBytes32, normalizeField } from "./settle/encoding.js";
 export type { ProofSettledEvent };
-export type { ChainCorridorRoots, ChainIssuerRoots, ChainRootsBundle };
+export type { ChainCorridorRoots, ChainIssuerPage, ChainIssuerRecord, ChainIssuerRoots, ChainRootsBundle };
 export {
   getLatestChainRoots,
   getLatestCorridorRoots,
+  getLatestIssuerRecord,
   getLatestIssuerRoots,
+  getLatestIssuerEnabled,
+  listIssuerRegistryEntries,
 } from "./audit/roots.js";
 export type { WalletSigner } from "./settle/compliant-transfer.js";
 export { approveSacForCompliance, approveSacForComplianceWithKeypair } from "./settle/compliant-transfer.js";
 export type { ProvenTransfer } from "./prove/prover.js";
+export type { ResolvedIssuer } from "./issuer/resolve.js";
+export { resolveIssuer, resolveIssuerFromUrl, listIssuers } from "./issuer/resolve.js";
+export type { IssuerAdapter, IssuerWellKnown, CorridorDetail, ProofPackageRequest } from "./issuer/adapter.js";
+export { HttpIssuerAdapter, IssuerClient } from "./issuer/http-adapter.js";
+export {
+  validatePackage,
+  MAX_ROOT_AGE_LEDGERS,
+  type ValidatePackageOptions,
+  type ValidatePackageResult,
+} from "./validate/package.js";
+export { rootsMatch, issuerRootsMatch, corridorRootsMatch } from "./validate/roots-compare.js";
+export { validatePackageStructure } from "./validate/structure.js";
+export type { DemoStrkeys } from "./config.js";
+export {
+  CorridorDisabledForIssuerError,
+  CorridorMissingForIssuerError,
+  IssuerMetadataMismatchError,
+  IssuerNotRegisteredError,
+  IssuerRootsMissingError,
+} from "./errors.js";
 export type {
   MockKycChallengeResponse,
   MockKycLifecycleStatus,
@@ -137,5 +200,5 @@ export type {
   MockKycSubmitRequest,
   MockKycSubmitResponse,
   MockKycSubmitStatus,
-} from "./issuer/client.js";
-export type { DemoStrkeys } from "./config.js";
+} from "./issuer/demo-client.js";
+export { DemoIssuerClient } from "./issuer/demo-client.js";

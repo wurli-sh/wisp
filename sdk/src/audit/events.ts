@@ -1,6 +1,7 @@
 import { rpc, scValToNative, xdr } from "@stellar/stellar-sdk";
 import type { ProofSettledData } from "compliance";
 import type { AmoebaConfig } from "../config.js";
+import { resolveEventStartLedger } from "./ledger-window.js";
 
 export interface ProofSettledEvent {
   txHash: string;
@@ -55,8 +56,7 @@ async function pagedProofSettledEvents(
   if (!cfg.complianceId) throw new Error("COMPLIANCE_CONTRACT_ID not set");
 
   const server = new rpc.Server(cfg.rpcUrl);
-  const latest = await server.getLatestLedger();
-  const startLedger = opts.startLedger ?? Math.max(1, latest.sequence - 50_000);
+  const startLedger = await resolveEventStartLedger(server, cfg, opts.startLedger);
   const pageSize = Math.min(opts.limit ?? 100, 200);
   const maxPages = opts.maxPages ?? 10;
 
