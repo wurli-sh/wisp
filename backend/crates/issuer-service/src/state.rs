@@ -14,6 +14,7 @@ use tokio_postgres::{Client, NoTls, Row};
 
 use crate::config::Config;
 use crate::log_util::{short_key, short_root};
+use crate::memory_snapshot::{PersistedMemory, SnapshotLoad};
 use crate::mock_kyc::{
     build_challenge, classify_mock_kyc_resubmit, horizon_account_sequence, mock_credential_expiry,
     mock_jurisdiction, normalize_wallet_hex, signed_challenge_matches_stored, validate_wallet_strkey,
@@ -155,7 +156,7 @@ pub struct AppState {
 }
 
 pub(crate) enum Repository {
-    Memory(Arc<RwLock<MemoryStore>>),
+    Memory(PersistedMemory),
     Postgres(PostgresStore),
 }
 
@@ -163,40 +164,44 @@ pub(crate) struct PostgresStore {
     client: Client,
 }
 
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub(crate) struct MemoryStore {
-    next_user_id: i64,
-    next_credential_id: i64,
-    next_destination_id: i64,
-    next_snapshot_id: i64,
-    next_webhook_id: i64,
-    users: Vec<IssuerUser>,
-    credentials: Vec<IssuerCredentialRecord>,
-    corridors: Vec<CorridorRecord>,
-    destinations: Vec<CorridorDestinationRecord>,
-    root_snapshots: Vec<RootSnapshotRecord>,
-    webhook_events: Vec<WebhookEventRecord>,
-    mock_kyc_challenges: Vec<crate::mock_kyc::MockKycChallengeRecord>,
-    mock_kyc_last_request: HashMap<String, i64>,
+    pub(crate) next_user_id: i64,
+    pub(crate) next_credential_id: i64,
+    pub(crate) next_destination_id: i64,
+    pub(crate) next_snapshot_id: i64,
+    pub(crate) next_webhook_id: i64,
+    pub(crate) users: Vec<IssuerUser>,
+    pub(crate) credentials: Vec<IssuerCredentialRecord>,
+    pub(crate) corridors: Vec<CorridorRecord>,
+    pub(crate) destinations: Vec<CorridorDestinationRecord>,
+    pub(crate) root_snapshots: Vec<RootSnapshotRecord>,
+    pub(crate) webhook_events: Vec<WebhookEventRecord>,
+    pub(crate) mock_kyc_challenges: Vec<crate::mock_kyc::MockKycChallengeRecord>,
+    pub(crate) mock_kyc_last_request: HashMap<String, i64>,
 }
 
-impl Default for MemoryStore {
-    fn default() -> Self {
-        Self {
-            next_user_id: 0,
-            next_credential_id: 0,
-            next_destination_id: 0,
-            next_snapshot_id: 0,
-            next_webhook_id: 0,
-            users: Vec::new(),
-            credentials: Vec::new(),
-            corridors: Vec::new(),
-            destinations: Vec::new(),
-            root_snapshots: Vec::new(),
-            webhook_events: Vec::new(),
-            mock_kyc_challenges: Vec::new(),
-            mock_kyc_last_request: HashMap::new(),
-        }
-    }
+fn build_persisted_memory(cfg: &Config) -> PersistedMemory {
+    let store = match cfg.state_path.as_deref() {
+        Some(path) => match crate::memory_snapshot::try_load_memory_snapshot(path) {
+            SnapshotLoad::Loaded(store) => {
+                tracing::info!(
+                    path,
+                    users = store.users.len(),
+                    corridors = store.corridors.len(),
+                    "restored issuer memory snapshot"
+                );
+                store
+            }
+            SnapshotLoad::Missing => {
+                tracing::info!(path, "issuer memory snapshot not found; starting fresh");
+                MemoryStore::default()
+            }
+            SnapshotLoad::Corrupt => MemoryStore::default(),
+        },
+        None => MemoryStore::default(),
+    };
+    PersistedMemory::new(store, cfg.state_path.clone())
 }
 
 impl AppState {
@@ -205,12 +210,17 @@ impl AppState {
             match PostgresStore::connect(&db_url).await {
                 Ok(store) => Arc::new(Repository::Postgres(store)),
                 Err(err) => {
+                    if cfg.require_db {
+                        panic!("supabase postgres required but unavailable: {err}");
+                    }
                     tracing::warn!("supabase postgres unavailable, using memory store: {err}");
-                    Arc::new(Repository::Memory(Arc::new(RwLock::new(MemoryStore::default()))))
+                    Arc::new(Repository::Memory(build_persisted_memory(cfg)))
                 }
             }
+        } else if cfg.require_db {
+            panic!("supabase postgres required but SUPABASE_DB_URL/DATABASE_URL is unset");
         } else {
-            Arc::new(Repository::Memory(Arc::new(RwLock::new(MemoryStore::default()))))
+            Arc::new(Repository::Memory(build_persisted_memory(cfg)))
         };
 
         let state = Self {
@@ -219,25 +229,46 @@ impl AppState {
             bootstrap_corridor_id: Arc::new(RwLock::new(None)),
         };
 
-        let store = if cfg.supabase_db_url.is_some() {
-            "postgres"
-        } else {
-            "memory"
-        };
         tracing::info!(
-            store,
+            store = state.store_label(),
+            state_path = cfg.state_path.as_deref().unwrap_or("unset"),
             compliance = cfg.compliance_id.as_deref().unwrap_or("unset"),
             "issuer state loaded"
         );
 
         state.seed_from_fixtures(cfg).await;
         state.invalidate_stale_root_snapshots(cfg).await;
-        if let Some(req) = state.bootstrap_request(cfg).await {
-            let _ = state.create_proof_package(cfg, &req).await.map(|pkg| {
-                *state.cache.write().expect("lock") = Some(pkg);
-            });
-        }
+
+        let warmup = state.clone();
+        let warmup_cfg = cfg.clone();
+        tokio::spawn(async move {
+            if let Some(req) = warmup.bootstrap_request(&warmup_cfg).await {
+                if let Err(err) = warmup.create_proof_package(&warmup_cfg, &req).await {
+                    tracing::debug!(error = %err, "bootstrap proof package warmup skipped");
+                }
+            }
+        });
+
         state
+    }
+
+    pub fn flush_memory_snapshot(&self) {
+        if let Repository::Memory(memory) = self.repo.as_ref() {
+            memory.persist();
+        }
+    }
+
+    pub fn store_label(&self) -> &'static str {
+        self.repo.store_label()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn from_persisted_memory(memory: PersistedMemory) -> Self {
+        Self {
+            repo: Arc::new(Repository::Memory(memory)),
+            cache: Arc::new(RwLock::new(None)),
+            bootstrap_corridor_id: Arc::new(RwLock::new(None)),
+        }
     }
 
     pub async fn bootstrap_request(&self, cfg: &Config) -> Option<ProofPackageRequest> {
@@ -1066,16 +1097,24 @@ impl AppState {
 }
 
 impl Repository {
+    pub(crate) fn store_label(&self) -> &'static str {
+        match self {
+            Self::Postgres(_) => "postgres",
+            Self::Memory(memory) if memory.has_state_path() => "memory+persist",
+            Self::Memory(_) => "memory",
+        }
+    }
+
     async fn user_count(&self) -> usize {
         match self {
-            Self::Memory(store) => store.read().expect("lock").users.len(),
+            Self::Memory(memory) => memory.store.read().expect("lock").users.len(),
             Self::Postgres(store) => store.user_count().await.unwrap_or(0),
         }
     }
 
     async fn corridor_count(&self) -> usize {
         match self {
-            Self::Memory(store) => store.read().expect("lock").corridors.len(),
+            Self::Memory(memory) => memory.store.read().expect("lock").corridors.len(),
             Self::Postgres(store) => store.corridor_count().await.unwrap_or(0),
         }
     }
@@ -1086,11 +1125,14 @@ impl Repository {
         transfer: Option<&DemoTransferFixture>,
     ) {
         match self {
-            Self::Memory(store) => {
-                let mut store = store.write().expect("lock");
-                if !store.users.is_empty() || !store.corridors.is_empty() {
-                    return;
+            Self::Memory(memory) => {
+                {
+                    let store = memory.store.read().expect("lock");
+                    if !store.users.is_empty() || !store.corridors.is_empty() {
+                        return;
+                    }
                 }
+                let mut store = memory.write_guard();
                 let fallback_asset = transfer
                     .map(|item| item.asset_hex.clone())
                     .unwrap_or_else(default_asset_hex);
@@ -1145,14 +1187,17 @@ impl Repository {
 
     async fn ensure_corridor_destination(&self, corridor_id: u32, address: &str) {
         match self {
-            Self::Memory(store) => {
-                let mut store = store.write().expect("lock");
-                let exists = store.destinations.iter().any(|item| {
-                    item.corridor_id == corridor_id && item.address == address
-                });
-                if exists {
-                    return;
+            Self::Memory(memory) => {
+                {
+                    let store = memory.store.read().expect("lock");
+                    let exists = store.destinations.iter().any(|item| {
+                        item.corridor_id == corridor_id && item.address == address
+                    });
+                    if exists {
+                        return;
+                    }
                 }
+                let mut store = memory.write_guard();
                 store.next_destination_id += 1;
                 let destination_id = store.next_destination_id;
                 store.destinations.push(CorridorDestinationRecord {
@@ -1171,8 +1216,8 @@ impl Repository {
 
     async fn get_user_credential(&self, wallet: &str) -> Option<Credential> {
         match self {
-            Self::Memory(store) => {
-                let store = store.read().expect("lock");
+            Self::Memory(memory) => {
+                let store = memory.store.read().expect("lock");
                 let user = store.users.iter().find(|user| user.wallet == wallet && user.enabled)?;
                 Some(Credential {
                     wallet: user.wallet.clone(),
@@ -1203,7 +1248,7 @@ impl Repository {
 
     async fn get_corridor(&self, id: u32) -> Option<CorridorRecord> {
         match self {
-            Self::Memory(store) => store
+            Self::Memory(memory) => memory.store
                 .read()
                 .expect("lock")
                 .corridors
@@ -1216,7 +1261,7 @@ impl Repository {
 
     async fn list_users(&self) -> Vec<IssuerUser> {
         match self {
-            Self::Memory(store) => store.read().expect("lock").users.clone(),
+            Self::Memory(memory) => memory.store.read().expect("lock").users.clone(),
             Self::Postgres(store) => store.list_users().await.unwrap_or_default(),
         }
     }
@@ -1231,8 +1276,8 @@ impl Repository {
 
     async fn update_user(&self, id: i64, patch: UserPatch) -> Result<IssuerUser, String> {
         match self {
-            Self::Memory(store) => {
-                let mut store = store.write().expect("lock");
+            Self::Memory(memory) => {
+                let mut store = memory.write_guard();
                 let user = store
                     .users
                     .iter_mut()
@@ -1264,15 +1309,15 @@ impl Repository {
 
     async fn list_corridors(&self) -> Vec<CorridorRecord> {
         match self {
-            Self::Memory(store) => store.read().expect("lock").corridors.clone(),
+            Self::Memory(memory) => memory.store.read().expect("lock").corridors.clone(),
             Self::Postgres(store) => store.list_corridors().await.unwrap_or_default(),
         }
     }
 
     async fn update_corridor(&self, id: u32, patch: CorridorPatch) -> Result<CorridorRecord, String> {
         match self {
-            Self::Memory(store) => {
-                let mut store = store.write().expect("lock");
+            Self::Memory(memory) => {
+                let mut store = memory.write_guard();
                 let corridor = store
                     .corridors
                     .iter_mut()
@@ -1312,8 +1357,8 @@ impl Repository {
     ) -> Result<CorridorDestinationRecord, String> {
         let normalized_address = normalize_wallet_hex(&request.address)?;
         match self {
-            Self::Memory(store) => {
-                let mut store = store.write().expect("lock");
+            Self::Memory(memory) => {
+                let mut store = memory.write_guard();
                 if !store.corridors.iter().any(|corridor| corridor.id == corridor_id) {
                     return Err(format!("unknown corridor id: {corridor_id}"));
                 }
@@ -1343,7 +1388,7 @@ impl Repository {
 
     async fn list_enabled_destinations(&self, corridor_id: u32) -> Vec<CorridorDestinationRecord> {
         match self {
-            Self::Memory(store) => store
+            Self::Memory(memory) => memory.store
                 .read()
                 .expect("lock")
                 .destinations
@@ -1364,7 +1409,7 @@ impl Repository {
         address: &str,
     ) -> Option<CorridorDestinationRecord> {
         match self {
-            Self::Memory(store) => store
+            Self::Memory(memory) => memory.store
                 .read()
                 .expect("lock")
                 .destinations
@@ -1377,7 +1422,7 @@ impl Repository {
 
     async fn find_active_user_by_wallet(&self, wallet: &str) -> Option<IssuerUser> {
         match self {
-            Self::Memory(store) => store
+            Self::Memory(memory) => memory.store
                 .read()
                 .expect("lock")
                 .users
@@ -1390,7 +1435,7 @@ impl Repository {
 
     async fn find_active_credential(&self, user_id: i64) -> Option<IssuerCredentialRecord> {
         match self {
-            Self::Memory(store) => store
+            Self::Memory(memory) => memory.store
                 .read()
                 .expect("lock")
                 .credentials
@@ -1407,8 +1452,8 @@ impl Repository {
         roots: &Roots,
     ) -> Result<RootSnapshotRecord, String> {
         match self {
-            Self::Memory(store) => {
-                let mut store = store.write().expect("lock");
+            Self::Memory(memory) => {
+                let mut store = memory.write_guard();
                 store.next_snapshot_id += 1;
                 let record = RootSnapshotRecord {
                     id: store.next_snapshot_id,
@@ -1439,8 +1484,8 @@ impl Repository {
         compliance_contract_id: Option<String>,
     ) -> Result<(), String> {
         match self {
-            Self::Memory(store) => {
-                let mut store = store.write().expect("lock");
+            Self::Memory(memory) => {
+                let mut store = memory.write_guard();
                 let corridor_id = {
                     let snapshot = store
                         .root_snapshots
@@ -1476,8 +1521,8 @@ impl Repository {
         compliance_contract_id: &str,
     ) -> Result<(), String> {
         match self {
-            Self::Memory(store) => {
-                let mut store = store.write().expect("lock");
+            Self::Memory(memory) => {
+                let mut store = memory.write_guard();
                 for snapshot in &mut store.root_snapshots {
                     if snapshot.publish_status == "active"
                         && snapshot.compliance_contract_id.as_deref()
@@ -1498,8 +1543,8 @@ impl Repository {
 
     async fn fail_root_snapshot(&self, id: i64, message: String) -> Result<(), String> {
         match self {
-            Self::Memory(store) => {
-                let mut store = store.write().expect("lock");
+            Self::Memory(memory) => {
+                let mut store = memory.write_guard();
                 let snapshot = store
                     .root_snapshots
                     .iter_mut()
@@ -1515,7 +1560,7 @@ impl Repository {
 
     async fn latest_root_snapshot(&self, corridor_id: Option<u32>) -> Option<RootSnapshotRecord> {
         match self {
-            Self::Memory(store) => store
+            Self::Memory(memory) => memory.store
                 .read()
                 .expect("lock")
                 .root_snapshots
@@ -1534,8 +1579,8 @@ impl Repository {
         payload: Value,
     ) -> Result<(WebhookEventRecord, bool), String> {
         match self {
-            Self::Memory(store) => {
-                let mut store = store.write().expect("lock");
+            Self::Memory(memory) => {
+                let mut store = memory.write_guard();
                 if let Some(existing) = store
                     .webhook_events
                     .iter()
@@ -1564,8 +1609,8 @@ impl Repository {
         event: NormalizedProviderEvent,
     ) -> Result<IssuerUser, String> {
         match self {
-            Self::Memory(store) => {
-                let mut store = store.write().expect("lock");
+            Self::Memory(memory) => {
+                let mut store = memory.write_guard();
                 let user_index = store.users.iter().position(|user| user.wallet == event.wallet);
                 let user_id = if let Some(index) = user_index {
                     let user = &mut store.users[index];
@@ -1673,8 +1718,8 @@ impl Repository {
 
     async fn throttle_mock_kyc_wallet(&self, wallet_hex: &str, min_secs: i64) -> Result<(), String> {
         match self {
-            Self::Memory(store) => {
-                let mut store = store.write().expect("lock");
+            Self::Memory(memory) => {
+                let mut store = memory.write_guard();
                 let now = now_unix();
                 if let Some(last) = store.mock_kyc_last_request.get(wallet_hex) {
                     if now - last < min_secs {
@@ -1692,8 +1737,8 @@ impl Repository {
 
     async fn insert_mock_kyc_challenge(&self, record: MockKycChallengeRecord) -> Result<(), String> {
         match self {
-            Self::Memory(store) => {
-                store.write().expect("lock").mock_kyc_challenges.push(record);
+            Self::Memory(memory) => {
+                memory.write_guard().mock_kyc_challenges.push(record);
                 Ok(())
             }
             Self::Postgres(store) => store.insert_mock_kyc_challenge(record).await,
@@ -1705,7 +1750,7 @@ impl Repository {
         challenge_id: &str,
     ) -> Result<Option<MockKycChallengeRecord>, String> {
         match self {
-            Self::Memory(store) => Ok(store
+            Self::Memory(memory) => Ok(memory.store
                 .read()
                 .expect("lock")
                 .mock_kyc_challenges
@@ -1718,8 +1763,8 @@ impl Repository {
 
     async fn consume_mock_kyc_challenge(&self, challenge_id: &str) -> Result<(), String> {
         match self {
-            Self::Memory(store) => {
-                let mut store = store.write().expect("lock");
+            Self::Memory(memory) => {
+                let mut store = memory.write_guard();
                 let challenge = store
                     .mock_kyc_challenges
                     .iter_mut()
@@ -1737,7 +1782,7 @@ impl Repository {
 
     async fn find_user_by_wallet(&self, wallet: &str) -> Result<Option<IssuerUser>, String> {
         match self {
-            Self::Memory(store) => Ok(store
+            Self::Memory(memory) => Ok(memory.store
                 .read()
                 .expect("lock")
                 .users
@@ -1753,7 +1798,7 @@ impl Repository {
         user_id: i64,
     ) -> Result<Option<IssuerCredentialRecord>, String> {
         match self {
-            Self::Memory(store) => Ok(store
+            Self::Memory(memory) => Ok(memory.store
                 .read()
                 .expect("lock")
                 .credentials
@@ -1778,8 +1823,8 @@ impl Repository {
         create_credential: bool,
     ) -> Result<IssuerUser, String> {
         match self {
-            Self::Memory(store) => {
-                let mut store = store.write().expect("lock");
+            Self::Memory(memory) => {
+                let mut store = memory.write_guard();
                 if let Some(existing) = store
                     .users
                     .iter()
@@ -1872,7 +1917,8 @@ fn futures_for_destinations(
     corridor_id: u32,
 ) -> Vec<CorridorDestinationRecord> {
     match repo {
-        Repository::Memory(store) => store
+        Repository::Memory(memory) => memory
+            .store
             .read()
             .expect("lock")
             .destinations
@@ -2466,12 +2512,13 @@ impl PostgresStore {
         &self,
         record: crate::mock_kyc::MockKycChallengeRecord,
     ) -> Result<(), String> {
+        let id = parse_challenge_uuid(&record.id)?;
         self.client
             .execute(
                 "insert into mock_kyc_challenges (id, wallet_hex, challenge_xdr, nonce, expires_at)
-                 values ($1::uuid, $2, $3, $4, to_timestamp($5))",
+                 values ($1, $2, $3, $4, to_timestamp($5))",
                 &[
-                    &record.id,
+                    &id,
                     &record.wallet_hex,
                     &record.challenge_xdr,
                     &record.nonce,
@@ -2487,14 +2534,15 @@ impl PostgresStore {
         &self,
         challenge_id: &str,
     ) -> Result<Option<crate::mock_kyc::MockKycChallengeRecord>, String> {
+        let id = parse_challenge_uuid(challenge_id)?;
         let row = self
             .client
             .query_opt(
                 "select id::text, wallet_hex, challenge_xdr, nonce,
                         extract(epoch from expires_at)::bigint,
-                        extract(epoch from consumed_at)
-                 from mock_kyc_challenges where id = $1::uuid",
-                &[&challenge_id],
+                        extract(epoch from consumed_at)::bigint
+                 from mock_kyc_challenges where id = $1",
+                &[&id],
             )
             .await
             .map_err(|err| err.to_string())?;
@@ -2502,13 +2550,14 @@ impl PostgresStore {
     }
 
     async fn consume_mock_kyc_challenge(&self, challenge_id: &str) -> Result<(), String> {
+        let id = parse_challenge_uuid(challenge_id)?;
         let updated = self
             .client
             .execute(
                 "update mock_kyc_challenges
                  set consumed_at = now()
-                 where id = $1::uuid and consumed_at is null",
-                &[&challenge_id],
+                 where id = $1 and consumed_at is null",
+                &[&id],
             )
             .await
             .map_err(|err| err.to_string())?;
@@ -2624,6 +2673,10 @@ impl PostgresStore {
 
         Ok(user)
     }
+}
+
+fn parse_challenge_uuid(id: &str) -> Result<uuid::Uuid, String> {
+    uuid::Uuid::parse_str(id).map_err(|err| format!("invalid challenge id: {err}"))
 }
 
 fn parse_mock_kyc_challenge_row(row: Row) -> crate::mock_kyc::MockKycChallengeRecord {
@@ -2846,6 +2899,7 @@ mod tests {
             kyc_mode: "sep10".into(),
             verifier_id: None,
             expected_vk_hash: None,
+            require_db: false,
         }
     }
 
@@ -2885,10 +2939,10 @@ mod tests {
         cfg.compliance_id = Some("NEW_CONTRACT".into());
         let state = AppState::load(&cfg).await;
         {
-            let Repository::Memory(store) = state.repo.as_ref() else {
+            let Repository::Memory(memory) = state.repo.as_ref() else {
                 panic!("expected memory store");
             };
-            let mut store = store.write().expect("lock");
+            let mut store = memory.write_guard();
             store.next_snapshot_id = 1;
             store.root_snapshots.push(RootSnapshotRecord {
                 id: 1,
@@ -2907,10 +2961,10 @@ mod tests {
             });
         }
         state.invalidate_stale_root_snapshots(&cfg).await;
-        let Repository::Memory(store) = state.repo.as_ref() else {
+        let Repository::Memory(memory) = state.repo.as_ref() else {
             panic!("expected memory store");
         };
-        let store = store.read().expect("lock");
+        let store = memory.store.read().expect("lock");
         assert_eq!(store.root_snapshots[0].publish_status, "superseded");
     }
 

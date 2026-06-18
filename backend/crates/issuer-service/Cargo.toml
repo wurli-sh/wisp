@@ -23,7 +23,7 @@ sha2 = "0.11.0"
 stellar-strkey = "0.0.11"
 stellar-xdr = { version = "23", features = ["curr", "std", "base64"] }
 tokio = { version = "1", features = ["full"] }
-tokio-postgres = { version = "0.7", features = ["with-serde_json-1"] }
+tokio-postgres = { version = "0.7", features = ["with-serde_json-1", "with-uuid-1"] }
 tower-http = { version = "0.6", features = ["cors"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }

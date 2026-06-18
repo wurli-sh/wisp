@@ -68,6 +68,7 @@ pub fn router(cfg: Config, state: AppState) -> Router {
 async fn health(State(state): State<AppState>) -> impl IntoResponse {
     Json(json!({
         "status": "ok",
+        "store": state.store_label(),
         "roots_hash": state.roots_hash().await,
     }))
 }

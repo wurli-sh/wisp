@@ -3,7 +3,6 @@ use std::env;
 #[derive(Clone, Debug)]
 pub struct Config {
     pub listen_addr: String,
-    #[allow(dead_code)]
     pub state_path: Option<String>,
     pub api_token: Option<String>,
     pub public_base_url: String,
@@ -30,6 +29,7 @@ pub struct Config {
     pub kyc_mode: String,
     pub verifier_id: Option<String>,
     pub expected_vk_hash: Option<String>,
+    pub require_db: bool,
 }
 
 impl Config {
@@ -84,6 +84,10 @@ impl Config {
                 .filter(|s| !s.is_empty())
                 .or_else(|| env::var("VERIFIER_ID").ok().filter(|s| !s.is_empty())),
             expected_vk_hash: env::var("EXPECTED_VK_HASH").ok().filter(|s| !s.is_empty()),
+            require_db: env_truthy("ISSUER_REQUIRE_DB")
+                || env::var("AMOEBA_ENV")
+                    .map(|value| value.eq_ignore_ascii_case("production"))
+                    .unwrap_or(false),
         }
     }
 
@@ -114,6 +118,12 @@ impl Config {
             .find(|(name, _)| name == provider)
             .map(|(_, secret)| secret.as_str())
     }
+}
+
+fn env_truthy(key: &str) -> bool {
+    env::var(key)
+        .map(|value| matches!(value.as_str(), "1" | "true" | "TRUE" | "yes" | "YES"))
+        .unwrap_or(false)
 }
 
 fn parse_provider_secrets(raw: &str) -> Vec<(String, String)> {
@@ -159,6 +169,7 @@ mod tests {
             kyc_mode: "sep10".into(),
             verifier_id: None,
             expected_vk_hash: None,
+            require_db: false,
         }
     }
 
