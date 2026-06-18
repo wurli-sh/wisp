@@ -44,8 +44,20 @@ export interface ProofPackagePaths {
   sanctions_indices: number[];
 }
 
+export interface ProofPackageRequest {
+  sender_wallet: string;
+  recipient_wallet: string;
+  amount: string;
+  corridor_id: number;
+}
+
 export interface ProofPackage {
-  credential?: { wallet?: string; jurisdiction?: string };
+  schema_version?: number;
+  credential?: {
+    wallet?: string;
+    jurisdiction?: string;
+    credential_expiry?: string | number;
+  };
   transfer?: {
     asset?: string;
     sender?: string;

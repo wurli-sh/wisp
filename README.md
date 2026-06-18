@@ -203,10 +203,15 @@ AMOEBA_RUN_TESTNET_BLOCKERS=1 ./scripts/dev/verify-phase3-blockers.sh
 ### SDK API
 
 ```javascript
-import { AmoebaClient } from "@amoeba/sdk";
+import { AmoebaClient, DemoIssuerClient } from "@amoeba/sdk";
 
 const client = AmoebaClient.fromEnv();
-const pkg = await client.issuer.getDemoTransfer();
+const demoIssuer = new DemoIssuerClient(client.cfg.issuerUrl);
+const pkg = await demoIssuer.getDemoTransfer();
+await client.validatePackage(pkg, {
+  issuerPublicKey: process.env.ISSUER_PUBLIC_KEY!,
+  corridorId: Number(pkg.transfer?.corridor_id ?? 1),
+});
 const proven = await client.prove({ package: pkg });
 await client.approveSacForComplianceWithKeypair(pkg, senderSecret);
 await client.settleWithKeypair(proven, pkg, senderSecret);

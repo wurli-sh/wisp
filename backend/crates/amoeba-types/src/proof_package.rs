@@ -4,6 +4,10 @@ fn zero_string() -> String {
     "0".to_string()
 }
 
+fn schema_version_default() -> u32 {
+    1
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Credential {
     pub wallet: String,
@@ -81,6 +85,8 @@ pub struct DemoPackageMetadata {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProofPackage {
+    #[serde(default = "schema_version_default")]
+    pub schema_version: u32,
     pub credential: Credential,
     pub transfer: TransferParams,
     pub roots: Roots,
