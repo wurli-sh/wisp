@@ -2,7 +2,7 @@ services:
   - type: web
     name: amoeba-issuer
     runtime: docker
-    plan: starter
+    plan: free
     region: singapore
     dockerfilePath: ./backend/crates/issuer-service/Dockerfile
     dockerContext: .
