@@ -1,4 +1,5 @@
 # CI quality gate on PR/push to main.
+# Paused: manual dispatch only until re-enabled.
 # Deploy is NOT done here:
 #   - frontend → Vercel (frontend/vercel.json)
 #   - issuer-service → Render (render.yaml + Dockerfile)
@@ -6,10 +7,7 @@
 name: ci
 
 on:
-  pull_request:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   zk-contracts:
