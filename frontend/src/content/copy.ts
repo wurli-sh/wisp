@@ -64,35 +64,55 @@ export const COPY = {
   engine: {
     eyebrow: "How it works",
     headline: "Verify once. Prove anywhere. Settle forever.",
-    chapters: [
-      {
-        title: "Verify once.",
+    pipeline: {
+      issuer: {
+        title: "Trusted Issuer",
         kicker: "identity intake",
-        body: "An issuer verifies once and publishes a root on-chain. The document does not travel with the payment.",
-        benchmarks: [
-          { value: "1", label: "Credential" },
-          { value: "0", label: "PII on ledger" },
+        caption:
+          "Verify once. Publish the root. No documents travel with the payment.",
+        steps: [
+          { label: "Verifying…", detail: "Document intake" },
+          { label: "KYC complete", detail: "Credential issued" },
+          { label: "Merkle root on-chain", detail: "0x7f3a…c21e" },
         ],
       },
-      {
-        title: "Prove anywhere.",
-        kicker: "local proving",
-        body: "The browser generates a fresh proof for the sender, recipient, corridor, asset, and amount.",
-        benchmarks: [
-          { value: "<5s", label: "Proof generation" },
-          { value: "256B", label: "Proof size" },
+      compliance: {
+        title: "Amoeba",
+        kicker: "compliance layer",
+        caption:
+          "The browser proves sender, recipient, corridor, asset, and amount.",
+        steps: [
+          { label: "Awaiting credential", detail: "Idle" },
+          { label: "Generating proof…", detail: "Groth16 · BN254" },
+          { label: "Proof ready", detail: "8 checks passed" },
+        ],
+        checks: [
+          "KYC",
+          "Nullifier",
+          "Sanctions",
+          "Jurisdiction",
+          "Expiry",
+          "Source",
+          "Dest",
+          "Corridor",
         ],
       },
-      {
-        title: "Settle forever.",
-        kicker: "on-chain verification",
-        body: "Soroban verifies the proof, records the nullifier, and gates the SAC transfer via the compliance contract.",
-        benchmarks: [
-          { value: "<$0.001", label: "Verify cost" },
-          { value: "8", label: "Checks in one proof" },
+      receiver: {
+        title: "Recipient",
+        kicker: "on-chain settlement",
+        caption:
+          "Soroban verifies the proof, records the nullifier, and gates the transfer.",
+        steps: [
+          { label: "Awaiting proof…", detail: "Pending" },
+          { label: "Nullifier recorded", detail: "Verifying on Soroban" },
+          { label: "Compliant transfer", detail: "US→MX · $1,000" },
         ],
       },
-    ],
+      metrics: {
+        left: { value: "<5s", label: "Proof generation" },
+        right: { value: "256B", label: "Proof size" },
+      },
+    },
   },
 
   builders: {
