@@ -1,6 +1,4 @@
-<div align="center">
-  <img src="docs/amoeba-banner.png" width="100%" alt="Amoeba" />
-
+<img src="docs/amoeba-banner.png" width="100%" alt="Amoeba" />
 
 ZK compliance infrastructure for Stellar stablecoins and RWAs.
 
