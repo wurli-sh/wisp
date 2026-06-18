@@ -29,7 +29,8 @@ services:
       - key: PROVIDER_WEBHOOK_SECRETS
         value: fixture=demo-fixture-secret
       # Set in Render dashboard (secrets):
-      # SUPABASE_DB_URL — postgresql://...?sslmode=require
+      # SUPABASE_DB_URL — Session pooler URI (not db.*.supabase.co — IPv6 fails on Render)
+      # Supabase → Connect → Session pooler → URI + ?sslmode=require
       # ISSUER_API_TOKEN
       # ISSUER_PUBLIC_KEY
       # ISSUER_SECRET_KEY (or PUBLISH_SOURCE_ACCOUNT)
