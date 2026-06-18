@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { CorridorOption, DemoTransferRequest, ProofPackage } from "@amoeba/js";
-import type { MockKycStatusResponse, ProvenTransfer, AmoebaClient } from "@amoeba/sdk";
+import type { CorridorOption, DemoTransferRequest, ProofPackage } from "@amoeba_/js";
+import type { MockKycStatusResponse, ProvenTransfer, AmoebaClient } from "@amoeba_/sdk";
 import { COPY } from "@/content/copy";
 import { useAmoebaClient } from "@/hooks/useAmoebaClient";
 import { useDemoIssuerClient } from "@/hooks/useDemoIssuerClient";

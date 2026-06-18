@@ -1,5 +1,5 @@
-import { proofPackageToWitnessInput } from "@amoeba/js/witness";
-import type { ProofPackage } from "@amoeba/js";
+import { proofPackageToWitnessInput } from "@amoeba_/js/witness";
+import type { ProofPackage } from "@amoeba_/js";
 import { buildProvenTransfer } from "./build.js";
 import type { ProvenTransfer } from "./prover.js";
 import type { SnarkjsProof } from "./serialize.js";

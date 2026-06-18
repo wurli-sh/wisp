@@ -6,7 +6,7 @@ import {
   requestAccess,
   signTransaction,
 } from "@stellar/freighter-api";
-import type { WalletSigner } from "@amoeba/sdk";
+import type { WalletSigner } from "@amoeba_/sdk";
 import { env } from "@/config/env";
 
 export function useWallet() {

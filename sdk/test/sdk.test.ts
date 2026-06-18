@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { proofPackageToWitnessInput } from "@amoeba/js/witness";
+import { proofPackageToWitnessInput } from "@amoeba_/js/witness";
 import {
   AmoebaClient,
   CorridorDisabledForIssuerError,
@@ -16,7 +16,7 @@ import {
   validatePackage,
   validatePackageStructure,
 } from "../src/index.js";
-import type { ProofPackage } from "@amoeba/js";
+import type { ProofPackage } from "@amoeba_/js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "../..");

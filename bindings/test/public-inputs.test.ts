@@ -7,7 +7,7 @@ import {
   PUBLIC_INPUT_COUNT,
   PUBLIC_INPUT_FIELDS,
   PROTOCOL,
-} from "@amoeba/bindings/publicInputs";
+} from "@amoeba_/bindings/publicInputs";
 import protocol from "../protocol.json" with { type: "json" };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

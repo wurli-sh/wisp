@@ -1,4 +1,4 @@
-import { normalizeField } from "@amoeba/js";
+import { normalizeField } from "@amoeba_/js";
 import { rpc, scValToNative, xdr } from "@stellar/stellar-sdk";
 import type { AmoebaConfig } from "../config.js";
 import { resolveEventStartLedger } from "./ledger-window.js";

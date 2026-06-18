@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeftRight, Loader2, Wallet } from "lucide-react";
-import type { CorridorOption } from "@amoeba/js";
+import type { CorridorOption } from "@amoeba_/js";
 import { COPY } from "@/content/copy";
 import { stellarExplorerTx } from "@/config/env";
 import { Badge } from "@/components/ui/Badge";

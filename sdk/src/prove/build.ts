@@ -1,4 +1,4 @@
-import { PUBLIC_INPUT_FIELDS } from "@amoeba/bindings/publicInputs";
+import { PUBLIC_INPUT_FIELDS } from "@amoeba_/bindings/publicInputs";
 import { serializeSnarkjsProof, type SnarkjsProof } from "./serialize.js";
 import type { ProvenTransfer } from "./prover.js";
 

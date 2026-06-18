@@ -1,5 +1,5 @@
 import { rpc, scValToNative, xdr } from "@stellar/stellar-sdk";
-import type { ProofSettledData } from "compliance";
+import type { ProofSettledData } from "@amoeba_/compliance";
 import type { AmoebaConfig } from "../config.js";
 import { resolveEventStartLedger } from "./ledger-window.js";
 

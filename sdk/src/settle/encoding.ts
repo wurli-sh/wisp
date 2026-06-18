@@ -1,4 +1,4 @@
-import { normalizeField } from "@amoeba/js";
+import { normalizeField } from "@amoeba_/js";
 
 export function fieldDecimalToBytes32(decimal: string): Buffer {
   const n = normalizeField(decimal);
@@ -9,4 +9,4 @@ export function fieldDecimalToU256String(decimal: string): string {
   return normalizeField(decimal).toString();
 }
 
-export { normalizeField } from "@amoeba/js";
+export { normalizeField } from "@amoeba_/js";

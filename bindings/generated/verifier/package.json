@@ -1,11 +1,25 @@
 {
-  "version": "0.0.0",
-  "name": "verifier",
+  "name": "@amoeba_/verifier",
+  "version": "0.1.0",
+  "description": "Generated Soroban client for the Amoeba Groth16 verifier contract",
+  "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wurli-sh/amoeba.git",
+    "directory": "bindings/generated/verifier"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
   "exports": "./dist/index.js",
-  "typings": "dist/index.d.ts",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "^14.5.0",

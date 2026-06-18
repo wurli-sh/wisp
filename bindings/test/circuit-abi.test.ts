@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { PUBLIC_INPUT_FIELDS } from "@amoeba/bindings/publicInputs";
+import { PUBLIC_INPUT_FIELDS } from "@amoeba_/bindings/publicInputs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..", "..");

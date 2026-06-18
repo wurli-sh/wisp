@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Keypair, TransactionBuilder } from "@stellar/stellar-sdk";
-import { Client } from "compliance";
-import type { ProofPackage } from "@amoeba/js";
+import { Client } from "@amoeba_/compliance";
+import type { ProofPackage } from "@amoeba_/js";
 import type { AmoebaConfig } from "../config.js";
 import { REPO_ROOT } from "../config.js";
 import type { ProvenTransfer } from "../prove/prover.js";

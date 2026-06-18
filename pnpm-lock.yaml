@@ -23,9 +23,16 @@ importers:
 
   bindings:
     dependencies:
-      '@amoeba/js':
+      '@amoeba_/js':
         specifier: workspace:*
         version: link:../packages/amoeba-js
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.19.21
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
 
   bindings/generated/compliance:
     dependencies:
@@ -55,10 +62,10 @@ importers:
 
   circuits/circom:
     dependencies:
-      '@amoeba/bindings':
+      '@amoeba_/bindings':
         specifier: workspace:*
         version: link:../../bindings
-      '@amoeba/js':
+      '@amoeba_/js':
         specifier: workspace:*
         version: link:../../packages/amoeba-js
       ffjavascript:
@@ -74,10 +81,10 @@ importers:
 
   frontend:
     dependencies:
-      '@amoeba/js':
+      '@amoeba_/js':
         specifier: workspace:*
         version: link:../packages/amoeba-js
-      '@amoeba/sdk':
+      '@amoeba_/sdk':
         specifier: workspace:*
         version: link:../sdk
       '@paper-design/shaders-react':
@@ -142,6 +149,31 @@ importers:
         specifier: ^6.4.1
         version: 6.4.3(@types/node@22.19.21)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
 
+  issuer-sdk:
+    dependencies:
+      '@amoeba_/compliance':
+        specifier: workspace:*
+        version: link:../bindings/generated/compliance
+      '@amoeba_/js':
+        specifier: workspace:*
+        version: link:../packages/amoeba-js
+      '@amoeba_/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+      '@stellar/stellar-sdk':
+        specifier: ^14.5.0
+        version: 14.6.1
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.19.21
+      tsx:
+        specifier: ^4.19.0
+        version: 4.22.4
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   packages/amoeba-js:
     dependencies:
       ffjavascript:
@@ -151,33 +183,36 @@ importers:
       '@types/node':
         specifier: ^22.10.0
         version: 22.19.21
+      tsx:
+        specifier: ^4.19.0
+        version: 4.22.4
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
 
   sdk:
     dependencies:
-      '@amoeba/bindings':
+      '@amoeba_/bindings':
         specifier: workspace:*
         version: link:../bindings
-      '@amoeba/js':
+      '@amoeba_/compliance':
+        specifier: workspace:*
+        version: link:../bindings/generated/compliance
+      '@amoeba_/js':
         specifier: workspace:*
         version: link:../packages/amoeba-js
+      '@amoeba_/verifier':
+        specifier: workspace:*
+        version: link:../bindings/generated/verifier
       '@stellar/stellar-sdk':
         specifier: ^14.5.0
         version: 14.6.1
       ajv:
         specifier: ^8.17.1
         version: 8.20.0
-      compliance:
-        specifier: workspace:*
-        version: link:../bindings/generated/compliance
       snarkjs:
         specifier: ^0.7.0
         version: 0.7.6
-      verifier:
-        specifier: workspace:*
-        version: link:../bindings/generated/verifier
     devDependencies:
       '@types/node':
         specifier: ^22.10.0

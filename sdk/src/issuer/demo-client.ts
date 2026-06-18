@@ -1,4 +1,4 @@
-import type { DemoTransferRequest, ProofPackage } from "@amoeba/js";
+import type { DemoTransferRequest, ProofPackage } from "@amoeba_/js";
 import { HttpIssuerAdapter } from "./http-adapter.js";
 
 export interface MockKycChallengeResponse {

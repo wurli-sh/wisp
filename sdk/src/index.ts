@@ -38,7 +38,7 @@ import {
   type ResolvedIssuer,
 } from "./issuer/resolve.js";
 import { fieldDecimalToBytes32, normalizeField } from "./settle/encoding.js";
-import type { ProofPackage } from "@amoeba/js";
+import type { ProofPackage } from "@amoeba_/js";
 import {
   validatePackage,
   type ValidatePackageOptions,

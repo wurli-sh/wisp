@@ -1,13 +1,43 @@
 {
-  "name": "@amoeba/bindings",
-  "private": true,
+  "name": "@amoeba_/bindings",
+  "version": "0.1.0",
+  "description": "Canonical Amoeba ABI bindings — public inputs, proof package types, contract metadata",
+  "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wurli-sh/amoeba.git",
+    "directory": "bindings"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
   "exports": {
-    "./publicInputs": "./generated/publicInputs.ts",
-    "./proofPackage": "./generated/proofPackage.ts",
-    "./contracts": "./generated/contracts.ts"
+    "./publicInputs": {
+      "types": "./dist/publicInputs.d.ts",
+      "default": "./dist/publicInputs.js"
+    },
+    "./proofPackage": {
+      "types": "./dist/proofPackage.d.ts",
+      "default": "./dist/proofPackage.js"
+    },
+    "./contracts": {
+      "types": "./dist/contracts.d.ts",
+      "default": "./dist/contracts.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@amoeba/js": "workspace:*"
+    "@amoeba_/js": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
   }
 }

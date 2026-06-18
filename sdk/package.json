@@ -1,7 +1,20 @@
 {
-  "name": "@amoeba/sdk",
-  "private": true,
+  "name": "@amoeba_/sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for proving, settling, and auditing Amoeba compliant transfers on Stellar",
+  "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wurli-sh/amoeba.git",
+    "directory": "sdk"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -15,16 +28,17 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test test/sdk.test.ts"
+    "test": "node --import tsx --test test/sdk.test.ts",
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@amoeba/bindings": "workspace:*",
-    "@amoeba/js": "workspace:*",
+    "@amoeba_/bindings": "workspace:*",
+    "@amoeba_/compliance": "workspace:*",
+    "@amoeba_/js": "workspace:*",
+    "@amoeba_/verifier": "workspace:*",
     "@stellar/stellar-sdk": "^14.5.0",
     "ajv": "^8.17.1",
-    "compliance": "workspace:*",
-    "snarkjs": "^0.7.0",
-    "verifier": "workspace:*"
+    "snarkjs": "^0.7.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

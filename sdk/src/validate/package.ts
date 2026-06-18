@@ -5,7 +5,7 @@ import {
   publicSignalsMatch,
   rebuildExpectedPublicInputsFromRoots,
   type ProofPackage,
-} from "@amoeba/js";
+} from "@amoeba_/js";
 import { rpc } from "@stellar/stellar-sdk";
 import type { AmoebaConfig } from "../config.js";
 import {

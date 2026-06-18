@@ -1,4 +1,4 @@
-import { Client } from "verifier";
+import { Client } from "@amoeba_/verifier";
 import type { AmoebaConfig } from "../config.js";
 
 export async function getVerifierVkHash(cfg: AmoebaConfig): Promise<string> {

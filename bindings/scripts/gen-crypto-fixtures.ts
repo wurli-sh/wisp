@@ -12,7 +12,7 @@ import {
   merkleRootForLeafAtIndex,
   sparseSanctionsPath,
   toString,
-} from "@amoeba/js";
+} from "@amoeba_/js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(__dirname, "..", "fixtures");

@@ -1,4 +1,4 @@
-import type { CorridorOption, ProofPackage, ProofPackageRequest } from "@amoeba/js";
+import type { CorridorOption, ProofPackage, ProofPackageRequest } from "@amoeba_/js";
 
 export interface IssuerWellKnown {
   api_version: string;

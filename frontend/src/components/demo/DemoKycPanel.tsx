@@ -1,5 +1,5 @@
 import { ShieldCheck } from "lucide-react";
-import type { MockKycStatusResponse } from "@amoeba/sdk";
+import type { MockKycStatusResponse } from "@amoeba_/sdk";
 import { COPY } from "@/content/copy";
 import { useWallet } from "@/hooks/useWallet";
 import { Badge } from "@/components/ui/Badge";

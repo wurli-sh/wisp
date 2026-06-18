@@ -5,12 +5,12 @@ import {
   addressToLimbs,
   computeCorridorConfigHash,
   fieldToJson,
-} from "@amoeba/js";
+} from "@amoeba_/js";
 import {
   buildWitnessInput as buildWitnessCore,
   demoFromFixture,
-} from "@amoeba/js/witness";
-import { PUBLIC_INPUT_FIELDS, PROTOCOL } from "@amoeba/bindings/publicInputs";
+} from "@amoeba_/js/witness";
+import { PUBLIC_INPUT_FIELDS, PROTOCOL } from "@amoeba_/bindings/publicInputs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const INPUTS_DIR = path.join(__dirname, "..", "inputs");

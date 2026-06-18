@@ -2,8 +2,8 @@
   "name": "amoeba-circuit",
   "private": true,
   "dependencies": {
-    "@amoeba/bindings": "workspace:*",
-    "@amoeba/js": "workspace:*",
+    "@amoeba_/bindings": "workspace:*",
+    "@amoeba_/js": "workspace:*",
     "ffjavascript": "^0.3.1",
     "snarkjs": "^0.7.6"
   },

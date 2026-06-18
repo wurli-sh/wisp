@@ -1,4 +1,4 @@
-import type { ProofPackage } from "@amoeba/js";
+import type { ProofPackage } from "@amoeba_/js";
 
 const MERKLE_DEPTH = 20;
 

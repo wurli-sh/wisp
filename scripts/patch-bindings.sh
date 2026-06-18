@@ -13,4 +13,4 @@ for pkg in compliance verifier; do
   echo "patched $src"
 done
 
-pnpm --filter compliance --filter verifier run build
+pnpm --filter @amoeba_/compliance --filter @amoeba_/verifier run build

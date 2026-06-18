@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import type { ProofSettledEvent } from "@amoeba/sdk";
+import type { ProofSettledEvent } from "@amoeba_/sdk";
 import { COPY } from "@/content/copy";
 import { stellarExplorerTx } from "@/config/env";
 import { useAmoebaClient } from "@/hooks/useAmoebaClient";

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { AmoebaClient } from "@amoeba/sdk";
+import { AmoebaClient } from "@amoeba_/sdk";
 import { env } from "@/config/env";
 
 export function useAmoebaClient() {

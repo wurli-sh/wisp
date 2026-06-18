@@ -1,4 +1,4 @@
-import { Client } from "compliance";
+import { Client } from "@amoeba_/compliance";
 import type { AmoebaConfig } from "../config.js";
 
 export async function auditNullifier(

@@ -1,4 +1,4 @@
-/** @deprecated Import from ./http-adapter.js or @amoeba/sdk */
+/** @deprecated Import from ./http-adapter.js or @amoeba_/sdk */
 export {
   HttpIssuerAdapter,
   HttpIssuerAdapter as IssuerClient,

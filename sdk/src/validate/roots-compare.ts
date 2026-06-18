@@ -1,4 +1,4 @@
-import { normalizeField } from "@amoeba/js";
+import { normalizeField } from "@amoeba_/js";
 
 export interface RootsRecord {
   merkle_root: string;

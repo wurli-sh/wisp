@@ -1,4 +1,4 @@
-import type { MockKycStatusResponse, MockKycSubmitResponse } from "@amoeba/sdk";
+import type { MockKycStatusResponse, MockKycSubmitResponse } from "@amoeba_/sdk";
 import { COPY } from "@/content/copy";
 
 export function kycMissingLabel(item: string): string {
