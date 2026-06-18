@@ -22,6 +22,7 @@ bindings/generated/**/dist/
 bindings/generated/publicInputs.mjs
 .env
 .env.local
+.env.*
 
 # Proving artifacts (too large for git)
 circuits/**/artifacts/*.zkey
