@@ -23,7 +23,6 @@ PY
 }
 
 SENDER_HEX="$(read_fixture sender_hex)"
-RECIPIENT_HEX="$(read_fixture recipient_hex)"
 CORRIDOR_ID="$(read_fixture corridor_id)"
 
 curl -sf -X POST "http://${ADDR}/v1/provider/webhooks/fixture" \
@@ -42,8 +41,4 @@ print(json.dumps({
     "corridor_eligibility": [int("${CORRIDOR_ID}")],
 }))
 PY
-)"
-
-echo ""
-echo "Seeded testnet sender ${SENDER_HEX} (corridor ${CORRIDOR_ID})"
-echo "Destination ${RECIPIENT_HEX} is ensured via issuer fixture seed on startup"
+)" >/dev/null

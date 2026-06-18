@@ -4,13 +4,13 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import type { ProofPackage } from "@amoeba/js";
+import type { ProofPackage } from "@amoeba_/js";
 import {
   PUBLIC_INPUT_FIELDS,
   normalizeField,
   rebuildExpectedPublicInputsFromRoots,
   publicSignalsMatch,
-} from "@amoeba/js";
+} from "@amoeba_/js";
 import {
   AmoebaClient,
   DemoIssuerClient,
@@ -18,7 +18,7 @@ import {
   loadAmoebaEnv,
   rootsMatch,
   type ProvenTransfer,
-} from "@amoeba/sdk";
+} from "@amoeba_/sdk";
 
 interface CliArgs {
   provenPath?: string;

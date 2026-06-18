@@ -1,1 +1,1 @@
-export { loadAmoebaEnv } from "@amoeba/sdk";
+export { loadAmoebaEnv } from "@amoeba_/sdk";

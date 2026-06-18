@@ -32,12 +32,7 @@ if [[ -z "${REGISTRATION_TOKEN}" ]]; then
   exit 1
 fi
 
-echo "=== Deploy compliance contract ==="
-echo "Network:  ${NETWORK}"
-echo "Verifier: ${VERIFIER_ID}"
-echo "Treasury: ${TREASURY}"
-echo "RegToken: ${REGISTRATION_TOKEN}"
-echo "RegFee:   ${REGISTRATION_FEE}"
+echo "Deploy compliance (${NETWORK}) verifier=${VERIFIER_ID}"
 
 cd "$ROOT"
 stellar contract build --package compliance
@@ -89,4 +84,4 @@ fi
   fi
 } | tee "$DEPLOY_DIR/compliance.env"
 
-echo "Deployed compliance: ${COMPLIANCE_ID}"
+echo "Compliance deployed: ${COMPLIANCE_ID}"

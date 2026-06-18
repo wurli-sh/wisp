@@ -55,7 +55,7 @@ elif [[ ! -f "${PUBLIC_FIXTURES}/demo-transfer-testnet.json" ]]; then
 fi
 
 echo ""
-echo "2. Build JS packages (@amoeba/js + @amoeba/sdk)"
+echo "2. Build JS packages (@amoeba_/js + @amoeba_/sdk)"
 pnpm build:js
 
 echo ""

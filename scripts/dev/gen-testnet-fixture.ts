@@ -6,8 +6,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { payloadToHex, strKeyToPayload } from "@amoeba/js/strkey";
-import { loadAmoebaEnv } from "@amoeba/sdk";
+import { payloadToHex, strKeyToPayload } from "@amoeba_/js/strkey";
+import { loadAmoebaEnv } from "@amoeba_/sdk";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "../..");

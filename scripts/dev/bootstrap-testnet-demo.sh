@@ -9,13 +9,11 @@ SOURCE="${SOURCE:-amoeba-admin}"
 DEPLOY_DIR="${ROOT}/.amoeba"
 mkdir -p "$DEPLOY_DIR"
 
-echo "=== Bootstrap testnet demo (Phase 3 blockers) ==="
-echo "Network: ${NETWORK}"
+echo "[bootstrap] testnet demo"
 
 ensure_identity() {
   local name="$1"
   if ! stellar keys public-key "${name}" &>/dev/null; then
-    echo "Generating identity ${name}..."
     stellar keys generate "${name}" --fund
   fi
 }
@@ -35,8 +33,7 @@ done
   echo "NETWORK=${NETWORK}"
 } > "${DEPLOY_DIR}/testnet-demo.env"
 
-echo ""
-echo "1. Circle testnet USDC SAC"
+echo "[bootstrap] 1/6 circle USDC"
 CIRCLE_SAC_ID="$(jq -r '.sac_contract_id' "${ROOT}/bindings/fixtures/circle-testnet-usdc.json")"
 CURRENT_SAC=""
 if [[ -f "${DEPLOY_DIR}/sac.env" ]]; then
@@ -45,10 +42,8 @@ if [[ -f "${DEPLOY_DIR}/sac.env" ]]; then
   CURRENT_SAC="${SAC_CONTRACT_ID:-${ASSET_ID:-}}"
 fi
 if [[ -z "${CURRENT_SAC}" ]] || [[ "${CURRENT_SAC}" != "${CIRCLE_SAC_ID}" ]]; then
-  echo "   Setting up Circle USDC (current=${CURRENT_SAC:-none})"
   SENDER_IDENTITY=amoeba-sender "${ROOT}/scripts/deploy/setup-circle-usdc-testnet.sh" --all-demo-accounts
 else
-  echo "   Using Circle SAC in ${DEPLOY_DIR}/sac.env"
   "${ROOT}/scripts/deploy/ensure-circle-usdc-trustlines.sh" amoeba-sender amoeba-recipient
 fi
 # shellcheck disable=SC1091
@@ -56,19 +51,16 @@ source "${DEPLOY_DIR}/sac.env"
 # shellcheck disable=SC1091
 source "${DEPLOY_DIR}/testnet-demo.env"
 
-echo ""
-echo "2. Generate testnet transfer fixture (dynamic epoch)"
+echo "[bootstrap] 2/6 fixture"
 node --import tsx "${ROOT}/scripts/dev/gen-testnet-fixture.ts"
 
-echo ""
-echo "3. Compile / setup circuit (if needed)"
+echo "[bootstrap] 3/6 circuit"
 if [[ ! -f "${ROOT}/circuits/circom/artifacts/compliance_corridor_final.zkey" ]]; then
   pnpm compile:circuit
   pnpm setup:circuit
 fi
 
-echo ""
-echo "4. Generate witness + prove (testnet profile)"
+echo "[bootstrap] 4/6 prove"
 export AMOEBA_FIXTURE_PROFILE=testnet
 node --import tsx "${ROOT}/circuits/circom/scripts/gen-fixture.ts"
 "${ROOT}/circuits/circom/scripts/prove.sh" \
@@ -76,25 +68,17 @@ node --import tsx "${ROOT}/circuits/circom/scripts/gen-fixture.ts"
 
 node --import tsx "${ROOT}/scripts/dev/write-testnet-golden.ts"
 
-echo "   Restoring local CI proof (valid.us-mx)"
 "${ROOT}/circuits/circom/scripts/prove.sh" \
   "${ROOT}/circuits/circom/inputs/valid.us-mx.json"
 
-echo ""
-echo "5. Deploy contracts (align VK with embedded vk.rs)"
+echo "[bootstrap] 5/6 deploy"
 "${ROOT}/scripts/dev/ensure-testnet-vk.sh"
 # shellcheck disable=SC1091
 source "${DEPLOY_DIR}/verifier.env"
 # shellcheck disable=SC1091
 source "${DEPLOY_DIR}/compliance.env"
 
-echo ""
-echo "6. Publish dynamic roots via issuer-service"
+echo "[bootstrap] 6/6 roots"
 "${ROOT}/scripts/dev/publish-roots-testnet-via-issuer.sh"
 
-echo ""
-echo "=== Bootstrap complete ==="
-echo "  Fixture: bindings/fixtures/demo-transfer-testnet.json"
-echo "  Golden:  bindings/fixtures/public-inputs.testnet.json"
-echo "  SAC:     ${SAC_CONTRACT_ID:-${ASSET_ID:-unknown}}"
-echo "  Compliance: ${COMPLIANCE_ID}"
+echo "[bootstrap] done compliance=${COMPLIANCE_ID}"

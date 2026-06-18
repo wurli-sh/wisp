@@ -2,7 +2,7 @@
 /**
  * Phase 3 testnet: prove → settle → audit → replay rejection.
  */
-import { AmoebaClient, DemoIssuerClient, loadAmoebaEnv } from "@amoeba/sdk";
+import { AmoebaClient, DemoIssuerClient, loadAmoebaEnv } from "@amoeba_/sdk";
 
 async function main() {
   const env = loadAmoebaEnv();

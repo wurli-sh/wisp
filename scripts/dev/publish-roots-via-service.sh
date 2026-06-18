@@ -10,7 +10,6 @@ BODY="${1:-{\"corridor_id\":1}}"
 curl -sf -X POST "http://${ADDR}/v1/admin/roots/publish" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
-  -d "${BODY}"
+  -d "${BODY}" >/dev/null
 
-echo ""
-echo "Roots published via issuer-service"
+echo "[publish-roots] ok"

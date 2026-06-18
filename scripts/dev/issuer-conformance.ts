@@ -16,7 +16,8 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { AmoebaClient, loadAmoebaEnv } from "@amoeba/sdk";
+import { loadAmoebaEnv } from "@amoeba_/sdk";
+import { runIssuerConformance } from "../../issuer-sdk/src/index.ts";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -107,16 +108,6 @@ async function main(): Promise<void> {
     }
   }
 
-  const client = AmoebaClient.fromEnv({ ISSUER_URL: issuerUrl });
-
-  console.log("1. Fetch /.well-known/amoeba-issuer.json");
-  const wellKnown = await client.issuer.getWellKnown?.();
-  if (!wellKnown) {
-    throw new Error("issuer adapter missing getWellKnown");
-  }
-  console.log("   api_version:", wellKnown.api_version);
-  console.log("   issuer:", wellKnown.issuer_stellar_address);
-
   const sender = cli.sender ?? env.SENDER_PUBLIC_KEY;
   const recipient = cli.recipient ?? env.RECIPIENT_PUBLIC_KEY;
   if (!sender || !recipient) {
@@ -126,41 +117,28 @@ async function main(): Promise<void> {
     );
   }
 
-  console.log("2. POST /v1/proof-packages");
-  const pkg = await client.issuer.createProofPackage({
-    sender_wallet: sender,
-    recipient_wallet: recipient,
-    amount: cli.amount,
-    corridor_id: cli.corridorId,
-  });
-
-  console.log("3. validatePackage");
-  await client.validatePackage(pkg, {
+  console.log("1-5. Run conformance flow");
+  const result = await runIssuerConformance({
+    issuerUrl,
     issuerPublicKey: issuerPk,
+    sender,
+    recipient,
+    amount: cli.amount,
     corridorId: cli.corridorId,
     strict: cli.strict,
-    wellKnownVkHash: wellKnown.circuit_vk_hash,
+    skipProve: cli.skipProve,
+    simulateSettle: cli.simulateSettle,
+    simulationPublicKey: env.SENDER_PUBLIC_KEY,
   });
-  console.log("   PASS");
-
-  let proven;
-  if (!cli.skipProve) {
-    console.log("4. prove (Node)");
-    proven = await client.prove({ package: pkg });
-    console.log("   nullifier:", proven.nullifier.slice(0, 16) + "…");
+  const wellKnown = result.wellKnown;
+  console.log("   api_version:", wellKnown.api_version);
+  console.log("   issuer:", wellKnown.issuer_stellar_address);
+  console.log("   validatePackage: PASS");
+  if (result.proven) {
+    console.log("   nullifier:", result.proven.nullifier.slice(0, 16) + "…");
   }
-
   if (cli.simulateSettle) {
-    if (!proven) {
-      throw new Error("--simulate-settle requires prove (omit --skip-prove)");
-    }
-    const signer = env.SENDER_PUBLIC_KEY;
-    if (!signer) {
-      throw new Error("SENDER_PUBLIC_KEY required for --simulate-settle");
-    }
-    console.log("5. simulateSettle");
-    await client.simulateSettle(proven, pkg, signer);
-    console.log("   PASS");
+    console.log("   simulateSettle: PASS");
   }
 
   console.log("\nIssuer conformance PASSED");
