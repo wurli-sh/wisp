@@ -1,79 +1,158 @@
 <div align="center">
-  <img src="./docs/amoeba-banner.png" width="100%" alt="Amoeba banner" />
-</div>
+  <img src="docs/amoeba-banner.png" width="100%" alt="Amoeba" />
 
-# Amoeba
 
 ZK compliance infrastructure for Stellar stablecoins and RWAs.
 
-Amoeba lets issuers verify users once, publish compliance roots on-chain, and let apps generate fresh client-side Groth16 proofs for each transfer. Soroban verifies the proof, records the nullifier, and gates settlement without putting customer documents on-chain.
+Verify users once with a trusted issuer, publish compliance roots on-chain, and let apps generate fresh client-side Groth16 proofs for every transfer. Soroban verifies the proof, records the nullifier, and gates settlement — without putting customer documents on-chain.
 
-> Amoeba is not an anonymity rail. Sender, recipient, asset, and amount remain public on-chain. The proof shows the transfer is compliant without exposing the user’s identity data.
+> **Amoeba is not an anonymity rail.** Sender, recipient, asset, and amount remain public on-chain. The ZK proof shows the transfer is *compliant* without exposing the sender's identity data.
 
 ---
 
-## What Amoeba Proves
+## Deployed on Stellar Testnet
 
-One proof covers 8 checks:
+| Resource | Value |
+| -------- | ----- |
+| **Network** | Stellar Testnet (`Test SDF Network ; September 2015`) |
+| **RPC** | `https://soroban-testnet.stellar.org` |
+| **Explorer** | [stellar.expert/explorer/testnet](https://stellar.expert/explorer/testnet) |
+| **Verifier** | `CDOGTUWS2UUAO3QEPDTCJTITSICBFRHRYUO7NH54YYIQXJFELARPW6UQ` |
+| **Compliance** | `CDRMPTRCZWP5BHYDKCHTCVNN4Y7MOYQ6MEGKY2DWX5N4GLZJWUZ6DCVL` |
+| **Circle USDC SAC** | `CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA` |
+| **VK hash** | `c127f452225fb4101464e2dc7e54ab3940ccf17197654dc1a0e95fef65c94875` |
+
+Contract IDs are written to `.amoeba/*.env` after deploy. See [`scripts/deploy/`](scripts/deploy/) for redeploy.
+
+---
+
+## Architecture
+
+### Compliance Proof Flow
+
+```
+Trusted issuer
+  |-- verifies user once (off-chain KYC)
+  |-- publishes merkle / sanctions / jurisdiction / corridor roots on-chain
+  v
+Browser prover
+  |-- fetches proof package from issuer-service
+  |-- builds witness via @amoeba_/js
+  |-- generates Groth16 proof (BN254, 17 public inputs)
+  v
+Soroban compliance contract
+  |-- rebinds 17 public inputs to transfer params
+  |-- verifies Groth16 proof via verifier contract
+  |-- records nullifier (anti-replay)
+  |-- executes compliant SAC transfer
+```
+
+### Frontend → SDK → Contracts
+
+```
+Frontend (React 19 + Vite + Tailwind 4)
+  |  /           landing — prove once, settle forever
+  |  /demo       11-step prove → settle → audit console
+  |  /compliance Proofs · Audit · Corridors tabs
+  v
+@amoeba_/sdk (TypeScript)
+  |-- issuer client → proof package + merkle paths
+  |-- witness + Groth16 prove (snarkjs, browser or Node)
+  |-- SAC approve + compliant_transfer settle
+  |-- nullifier audit + root event parsing
+  v
+issuer-service (Rust, :3000)
+  |-- GET  /v1/fixtures/demo-transfer
+  |-- GET  /v1/merkle-path/:wallet
+  |-- POST /v1/admin/roots/publish
+  v
+Soroban contracts (Rust no_std)
+  verifier (Groth16 verify) → compliance (nullifier + SAC gate)
+```
+
+### What One Proof Covers (8 checks)
 
 | # | Check | Purpose |
-|---|---|---|
+|---|-------|---------|
 | 1 | Merkle membership | Sender is in the issuer KYC tree |
 | 2 | Nullifier binding | Each transfer is anti-replay bound |
 | 3 | Sanctions exclusion | Sender is not in the sanctions tree |
 | 4 | Jurisdiction | Sender jurisdiction is allowed |
 | 5 | Credential expiry | KYC credential is still valid |
-| 6 | Corridor source | Sender fits the corridor source rules |
-| 7 | Corridor destination | Recipient is in the corridor destination registry |
-| 8 | Corridor binding | Proof matches the on-chain corridor config |
+| 6 | Corridor source | Sender fits corridor source rules (e.g. US) |
+| 7 | Corridor destination | Recipient is in corridor destination registry (e.g. MX) |
+| 8 | Corridor binding | Corridor config hash matches on-chain state |
 
-## Architecture
+### Proof Cascade
 
-```text
-Trusted issuer
-  -> verifies user once
-  -> publishes issuer / sanctions / jurisdiction / corridor roots on-chain
-
-Browser prover
-  -> receives proof package from issuer-service
-  -> generates Groth16 proof for sender + recipient + asset + amount + corridor
-
-Soroban compliance contract
-  -> rebinds 17 public inputs
-  -> verifies Groth16 proof
-  -> records nullifier
-  -> executes compliant SAC transfer
+```
+issuer-service.getDemoTransfer()
+     |
+     v
+@amoeba_/js buildWitnessInput (Poseidon2, Merkle, nullifier)
+     |
+     v
+snarkjs Groth16 prove (compliance_corridor.wasm + zkey)
+     |
+     v
+compliance.compliant_transfer(proof, 17 public inputs)
+     |-- verifier.verify_proof()
+     |-- nullifier.insert(nullifier)  [reject if seen]
+     |-- sac.transfer_from(sender, recipient, amount)
+     |
+     v
+audit(nullifier) — on-chain attestation lookup
 ```
 
-## Repository Structure
+**8 compliance checks** · **17 public inputs** · **Groth16 BN254** · **Poseidon2 t=4** · **20-level Merkle/SMT**
 
-```text
+### Directory Structure
+
+```
 amoeba/
-├── backend/              # Soroban contracts + Rust issuer/compliance crates
-│   ├── programs/         # verifier + compliance contracts
+├── backend/
+│   ├── programs/         # Soroban verifier + compliance contracts
 │   └── crates/           # amoeba-crypto, amoeba-types, issuer-service
-├── circuits/             # Circom circuit, fixtures, setup, ceremony tooling
+├── circuits/circom/      # Circom circuit, fixtures, ceremony tooling
 ├── bindings/             # Canonical ABI, generated clients, JSON fixtures
-├── packages/amoeba-js/   # Shared JS crypto + witness generation
-├── sdk/                  # TypeScript SDK for prove, settle, audit
-├── issuer-sdk/           # Issuer-side JS client
-├── frontend/             # Vite + React landing, demo, compliance hub
-├── scripts/              # Dev, deploy, ceremony, publish scripts
-└── docs/                 # Banner, plans, and supporting docs
+├── packages/amoeba-js/   # @amoeba_/js — Poseidon2, Merkle, witness
+├── sdk/                  # @amoeba_/sdk — prove, settle, audit
+├── issuer-sdk/           # @amoeba_/issuer-sdk — issuer-side client
+├── frontend/             # @amoeba_/web — landing, demo, compliance hub
+├── scripts/              # dev, deploy, ceremony, publish
+└── docs/                 # Banner and design docs
 ```
+
+---
+
+## Key Features
+
+- **Verify once, prove per transfer** — issuer KYC tree + client-side Groth16; no PII on-chain
+- **8-in-1 compliance circuit** — sanctions, jurisdiction, expiry, corridor binding in one proof
+- **Soroban-native verifier** — Groth16 verified in-contract; nullifier anti-replay
+- **Travel-rule corridors** — US→MX and extensible corridor config hashes
+- **Full TypeScript stack** — `@amoeba_/js`, `@amoeba_/sdk`, `@amoeba_/issuer-sdk`
+- **Ceremony-ready** — multi-party trusted setup scripts + VK drift checks in CI
+
+---
 
 ## Tech Stack
 
 | Layer | Stack |
-|---|---|
-| Frontend | Vite 6, React 19, Tailwind 4 |
-| Contracts | Soroban SDK 25, Rust `no_std` |
-| ZK | Circom 2.2.3, snarkjs, Groth16, BN254, Poseidon2 |
-| Backend | Rust issuer-service |
-| SDKs | TypeScript (`@amoeba_/js`, `@amoeba_/sdk`, `@amoeba_/issuer-sdk`) |
-| Settlement | Stellar SAC + Soroban |
+| ----- | ----- |
+| **Frontend** | Vite 6, React 19, Tailwind 4, framer-motion, GSAP |
+| **Contracts** | Soroban SDK 25, Rust `no_std`, release LTO |
+| **ZK** | Circom 2.2.3, snarkjs, Groth16, BN254, Poseidon2 |
+| **Backend** | Rust issuer-service (Axum) |
+| **SDKs** | `@amoeba_/js`, `@amoeba_/sdk`, `@amoeba_/issuer-sdk` |
+| **Settlement** | Stellar SAC + Soroban `compliant_transfer` |
+| **Design** | Font: Space Grotesk. Primary: `#00008A` |
 
-## Prerequisites
+---
+
+## Local Development
+
+### Prerequisites
 
 - Rust 1.94+
 - Node 25+
@@ -81,108 +160,42 @@ amoeba/
 - Stellar CLI 25+
 - circom 2.2.3
 - snarkjs 0.7+
-- `soroban-verifier-gen` via `cargo install soroban-verifier-gen`
+- `cargo install soroban-verifier-gen`
 
-## Quick Start
-
-```bash
-pnpm install
-stellar contract build
-./scripts/dev/demo-phase4.sh
-pnpm dev:frontend
-```
-
-## Key Commands
+### Key commands
 
 | Command | Description |
-|---|---|
-| `pnpm build:js` | Build shared JS packages |
+| ------- | ----------- |
+| `pnpm compile:circuit` | Compile Circom circuit |
+| `pnpm setup:circuit` | One-person trusted setup |
 | `pnpm gen:bindings` | Regenerate ABI bindings |
 | `pnpm gen:crypto-fixtures` | Regenerate crypto/address fixtures |
-| `pnpm test:witness` | Witness and crypto tests |
-| `pnpm test:sdk` | SDK tests |
-| `pnpm build:frontend` | Frontend production build |
-| `./scripts/dev/demo-e2e.sh` | Full local ZK + contracts pipeline |
-| `./scripts/dev/demo-phase2.sh` | Bindings + issuer-service pipeline |
-| `./scripts/dev/demo-phase3.sh` | SDK prove/settle local demo |
-| `./scripts/dev/demo-phase4.sh` | Copy circuit artifacts + frontend build gate |
-| `./scripts/dev/verify-testnet.sh` | Phase 0 testnet verifier gate |
-| `./scripts/dev/verify-compliance-testnet.sh` | Phase 1 compliance gate |
-| `./scripts/dev/verify-phase3-testnet.sh` | Full prove -> settle -> audit testnet flow |
+| `pnpm prove` / `pnpm verify` | Local prove + snarkjs verify |
+| `pnpm build:frontend` | Production frontend build |
+| `pnpm ceremony:init` | Initialize multi-party ceremony |
 
-## Frontend Routes
+### Environment
 
-| Route | Purpose |
-|---|---|
-| `/` | Landing page |
-| `/demo` | Prove -> settle -> audit console |
-| `/compliance` | Proofs, audit, and corridor views |
-
----
-
-## Phase 0 — Gate Check
-
-A minimal Groth16 proof must verify in a Soroban contract before Phase 1 begins.
+**Frontend** (`frontend/.env` — copy from `frontend/.env.example`):
 
 ```bash
-./scripts/dev/verify-testnet.sh
+VITE_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
+VITE_VERIFIER_CONTRACT_ID=
+VITE_COMPLIANCE_CONTRACT_ID=
+VITE_SAC_CONTRACT_ID=
+VITE_ISSUER_PUBLIC_KEY=
+VITE_ISSUER_URL=/issuer          # dev proxy → localhost:3000
 ```
 
-## Phase 1 — ZK + Contracts
-
-End-to-end path: Circom proof -> Soroban verifier -> compliance contract -> SAC transfer.
-
-### Local command sequence
+**Issuer service**:
 
 ```bash
-# Full local pipeline (compile, prove, verify, contract tests)
-./scripts/dev/demo-e2e.sh
+export ISSUER_STATE_PATH=.amoeba/issuer-state.json
+export ISSUER_API_TOKEN=demo-token
+cargo run -p issuer-service       # :3000
 ```
 
-Or step by step:
-
-```bash
-cd circuits/circom
-pnpm gen:fixtures
-./scripts/compile.sh
-./scripts/setup.sh
-./scripts/prove.sh inputs/valid.us-mx.json
-./scripts/verify-local.sh
-./scripts/export-vk.sh
-
-cd ../..
-cargo test -p verifier -p compliance
-stellar contract build
-```
-
-### Public inputs (17 fields)
-
-| Index | Field |
-|------:|-------|
-| 0 | merkle_root |
-| 1 | nullifier |
-| 2–3 | asset_lo, asset_hi |
-| 4–5 | sender_lo, sender_hi |
-| 6 | epoch |
-| 7–8 | recipient_lo, recipient_hi |
-| 9 | amount |
-| 10 | sanctions_root |
-| 11 | jurisdiction_root |
-| 12 | timestamp (= epoch × 86400) |
-| 13 | corridor_id |
-| 14 | corridor_config_hash |
-| 15 | source_jurisdiction_root |
-| 16 | dest_address_root |
-
-Address limbs: `hi = bytes[0..16]`, `lo = bytes[16..32]` as big-endian field elements.
-
-### snarkjs -> Soroban proof encoding
-
-G1 points use 32-byte big-endian `x || y` with no ark serialization flags. G2 uses `x_c1 || x_c0 || y_c1 || y_c0` per snarkjs `pi_b` rows. The verifier negates `pi_a` internally.
-
-### Testnet deploy (optional)
-
-Requires funded `amoeba-admin` identity on testnet:
+**Testnet deploy** (requires funded `amoeba-admin` identity):
 
 ```bash
 export NETWORK=testnet
@@ -191,118 +204,11 @@ export SOURCE=amoeba-admin
 ./scripts/deploy/deploy-compliance.sh
 ./scripts/deploy/setup-sac.sh
 ./scripts/deploy/publish-roots.sh
-
-./scripts/dev/verify-compliance-testnet.sh
 ```
 
-Deployed contract IDs are written to `.amoeba/*.env`.
+---
 
-### SAC bypass caveat
-
-Direct SAC transfers can bypass Amoeba unless issuer authorization is configured. The demo uses approve + `transfer_from` via the compliance contract; Circle testnet USDC does not support on-chain router blocking.
-
-### Mainnet ceremony gate
-
-`circuits/circom/scripts/setup.sh` is not a mainnet ceremony. Mainnet requires a completed, published multi-party phase 2 ceremony with verifier sync.
-
-- Canonical evidence package: `circuits/circom/artifacts/ceremony/`
-- Required flags in `manifest.json`: `published: true`, `verifier_contract_synced: true`
-- The final zkey must remain locally available for strict deploy-time verification and is not committed to git
-- Flow: `ceremony:init` -> contribute (>=3) -> finalize -> `ceremony:sync` -> `ceremony:publish`
-
-Use the `ceremony:*` npm scripts plus the manifests under `circuits/circom/artifacts/ceremony/`.
-
-### Launch runbooks
-
-The executable source of truth in this repo is the deploy/testnet script set under `scripts/deploy/` and `scripts/dev/`.
-
-## Phase 2 — Bindings + Backend
-
-Freeze the 17-field public input ABI and run the issuer HTTP service that serves proof packages and publishes roots.
-
-### Local command sequence
-
-```bash
-./scripts/dev/demo-phase2.sh
-```
-
-Or step by step:
-
-```bash
-pnpm gen:bindings
-pnpm gen:crypto-fixtures
-cargo test -p amoeba-crypto -p amoeba-types -p issuer-service
-pnpm test:bindings
-
-export ISSUER_STATE_PATH=.amoeba/issuer-state.json
-export ISSUER_API_TOKEN=demo-token
-cargo run -p issuer-service
-
-curl -sf localhost:3000/v1/fixtures/demo-transfer
-curl -sf localhost:3000/v1/fixtures/demo-transfer | node --import tsx scripts/dev/assert-public-inputs.ts
-```
-
-### Bindings
-
-Canonical ABI: [`bindings/public-inputs.json`](bindings/public-inputs.json). See [`bindings/README.md`](bindings/README.md) for encoding rules.
-
-Regenerate after ABI edits:
-
-```bash
-pnpm gen:bindings
-pnpm gen:crypto-fixtures
-```
-
-### Issuer service endpoints
-
-| Method | Path |
-|---|---|
-| GET | `/health` |
-| GET | `/v1/fixtures/demo-transfer` |
-| GET | `/v1/merkle-path/:wallet` |
-| POST | `/v1/admin/roots/publish` (Bearer token) |
-
-Publish roots via service on testnet:
-
-```bash
-export ISSUER_API_TOKEN=...
-./scripts/dev/publish-roots-via-service.sh
-```
-
-## Phase 3 — SDK + Testnet Settlement
-
-Node SDK orchestrates issuer paths -> witness -> Groth16 prove -> Soroban `compliant_transfer`.
-
-### Stage 1 — Blocker gate
-
-```bash
-./scripts/dev/verify-phase3-blockers.sh
-AMOEBA_RUN_TESTNET_BLOCKERS=1 ./scripts/dev/verify-phase3-blockers.sh
-```
-
-### Stage 2 — Local SDK demo
-
-```bash
-./scripts/dev/demo-phase3.sh
-```
-
-Or:
-
-```bash
-pnpm test:sdk
-```
-
-with `issuer-service` running.
-
-### Testnet settlement
-
-```bash
-./scripts/dev/bootstrap-testnet-demo.sh
-./scripts/dev/check-circle-usdc-testnet.sh
-./scripts/dev/verify-phase3-testnet.sh
-```
-
-### SDK API
+## SDK Usage
 
 ```ts
 import { AmoebaClient, DemoIssuerClient } from "@amoeba_/sdk";
@@ -322,31 +228,81 @@ await client.settleWithKeypair(proven, pkg, senderSecret);
 await client.audit(proven.nullifier, senderPublicKey);
 ```
 
-Testnet fixtures use `AMOEBA_FIXTURE_PROFILE=testnet` and `bindings/fixtures/demo-transfer-testnet.json`.
+Testnet fixtures: `AMOEBA_FIXTURE_PROFILE=testnet` and `bindings/fixtures/demo-transfer-testnet.json`.
 
-## Phase 4 — Frontend
+---
 
-Vite + React demo UI over `@amoeba_/sdk`: landing (`/`), interactive console (`/demo`), compliance hub (`/compliance`).
+## Public Inputs (17 fields)
 
-### Local command sequence
+Canonical ABI: [`bindings/public-inputs.json`](bindings/public-inputs.json). See [`bindings/README.md`](bindings/README.md).
+
+| Index | Field |
+| ----: | ----- |
+| 0 | merkle_root |
+| 1 | nullifier |
+| 2–3 | asset_lo, asset_hi |
+| 4–5 | sender_lo, sender_hi |
+| 6 | epoch |
+| 7–8 | recipient_lo, recipient_hi |
+| 9 | amount |
+| 10 | sanctions_root |
+| 11 | jurisdiction_root |
+| 12 | timestamp (= epoch × 86400) |
+| 13 | corridor_id |
+| 14 | corridor_config_hash |
+| 15 | source_jurisdiction_root |
+| 16 | dest_address_root |
+
+Address limbs: `hi = bytes[0..16]`, `lo = bytes[16..32]` as big-endian field elements.
+
+**snarkjs → Soroban encoding:** G1 uses 32-byte big-endian `x || y` (no ark flags). G2 uses `x_c1 || x_c0 || y_c1 || y_c0` per snarkjs `pi_b` rows. Verifier negates `pi_a` internally.
+
+---
+
+## Issuer Service
+
+| Method | Path |
+| ------ | ---- |
+| GET | `/health` |
+| GET | `/v1/fixtures/demo-transfer` |
+| GET | `/v1/merkle-path/:wallet` |
+| POST | `/v1/admin/roots/publish` (Bearer token) |
 
 ```bash
-./scripts/dev/demo-phase4.sh
-pnpm dev:frontend
+export ISSUER_API_TOKEN=...
+./scripts/dev/publish-roots-via-service.sh
 ```
 
-Set contract IDs in `frontend/.env` per `frontend/.env.example`. Browser proving serves wasm/zkey from `frontend/public/circuits/`, copied by `demo-phase4.sh`.
+---
 
-### Routes
+## Trust & Security
 
-| Route | Purpose |
-|---|---|
-| `/` | Marketing landing |
-| `/demo` | 11-step prove -> settle -> audit console |
-| `/compliance` | Tabs: Proofs · Audit · Corridors |
+- **Regulated compliance, not privacy** — transfer parties and amounts are public; proof attests compliance without PII
+- **Nullifier anti-replay** — each proof binds a unique nullifier recorded on-chain
+- **VK drift checks** — CI verifies verifier hash matches ceremony artifacts
+- **Admin-guarded contracts** — pausable, event-emitting Soroban programs
+- **SAC bypass caveat** — direct SAC transfers can bypass Amoeba unless issuer authorization is configured; demo uses approve + `transfer_from` via compliance contract
+- **Mainnet ceremony gate** — `setup.sh` is not a mainnet ceremony; requires multi-party phase 2 with `published: true` and `verifier_contract_synced: true` in `circuits/circom/artifacts/ceremony/manifest.json`
 
-### E2E
+Launch runbooks: [`scripts/deploy/`](scripts/deploy/) and [`scripts/dev/`](scripts/dev/).
+
+---
+
+## Packages
+
+| Package | Description |
+| ------- | ----------- |
+| [`@amoeba_/js`](packages/amoeba-js/) | Poseidon2, Merkle, nullifier, witness builder |
+| [`@amoeba_/sdk`](sdk/) | Prove, settle, audit on Stellar |
+| [`@amoeba_/issuer-sdk`](issuer-sdk/) | Issuer-side HTTP client |
+| [`@amoeba_/web`](frontend/) | Demo UI (private workspace package) |
 
 ```bash
-cd frontend && pnpm build && pnpm test:e2e
+./scripts/publish/publish-packages.sh --dry-run
 ```
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
