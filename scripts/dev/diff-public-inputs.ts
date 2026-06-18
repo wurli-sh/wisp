@@ -13,8 +13,10 @@ import {
 } from "@amoeba/js";
 import {
   AmoebaClient,
+  DemoIssuerClient,
   getLatestChainRoots,
   loadAmoebaEnv,
+  rootsMatch,
   type ProvenTransfer,
 } from "@amoeba/sdk";
 
@@ -150,21 +152,6 @@ function rootsFromChain(bundle: {
   };
 }
 
-function rootsMatch(a: RootsRecord, b: RootsRecord): boolean {
-  return (
-    normalizeField(a.merkle_root).toString() === normalizeField(b.merkle_root).toString() &&
-    normalizeField(a.sanctions_root).toString() === normalizeField(b.sanctions_root).toString() &&
-    normalizeField(a.jurisdiction_root).toString() ===
-      normalizeField(b.jurisdiction_root).toString() &&
-    normalizeField(a.corridor_config_hash).toString() ===
-      normalizeField(b.corridor_config_hash).toString() &&
-    normalizeField(a.source_jurisdiction_root).toString() ===
-      normalizeField(b.source_jurisdiction_root).toString() &&
-    normalizeField(a.dest_address_root).toString() ===
-      normalizeField(b.dest_address_root).toString()
-  );
-}
-
 function buildVector(
   roots: RootsRecord,
   pkg: ProofPackage,
@@ -279,7 +266,7 @@ async function main(): Promise<void> {
     if (!cli.sender || !cli.recipient || !cli.amount) {
       throw new Error("--fetch requires --sender, --recipient, and --amount");
     }
-    pkg = await client.issuer.createDemoTransfer({
+    pkg = await new DemoIssuerClient(cli.issuerUrl).createDemoTransfer({
       sender_strkey: cli.sender,
       recipient_strkey: cli.recipient,
       amount: cli.amount,

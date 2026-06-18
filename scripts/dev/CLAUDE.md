@@ -27,6 +27,9 @@ Development and testnet verification scripts.
 | `phase3-testnet-settle.ts` | SDK settle + double-publish checks on testnet |
 | `load-amoeba-env.ts` | Load `.amoeba/*.env` files into process env (superseded by `@amoeba/sdk` `env.ts`) |
 
+| `compliance-deploy-ledger.sh` | Deploy compliance contract with ledger key scan |
+| `issuer-conformance.ts` | Issuer API conformance test suite |
+
 Dev `.ts` helpers run via `node --import tsx scripts/dev/<name>.ts` from repo root.
 
 ### `diff-public-inputs.ts`

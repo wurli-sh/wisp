@@ -3,9 +3,10 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 NETWORK="${NETWORK:-testnet}"
-SOURCE="${SOURCE:-amoeba-admin}"
+SOURCE="${SOURCE:-amoeba-issuer}"
 FIXTURE="${FIXTURE:-${ROOT}/circuits/circom/inputs/valid.us-mx.json}"
 DEPLOY_DIR="${ROOT}/.amoeba"
+ISSUER_PUBLIC_URL="${ISSUER_PUBLIC_URL:-${ISSUER_URL:-http://127.0.0.1:3000}}"
 
 if [[ -f "$DEPLOY_DIR/compliance.env" ]]; then
   # shellcheck disable=SC1091
@@ -51,16 +52,38 @@ source_jurisdiction_root=$(read_field source_jurisdiction_root)
 dest_address_root=$(read_field dest_address_root)
 
 ISSUER="${ISSUER:-$SOURCE}"
+METADATA_URI="${METADATA_URI:-${ISSUER_PUBLIC_URL%/}/.well-known/amoeba-issuer.json}"
 
 echo "=== Publishing issuer + corridor roots ==="
 echo "Compliance: ${COMPLIANCE_ID}"
 echo "Issuer:     ${ISSUER}"
+echo "Metadata:   ${METADATA_URI}"
+
+register_err="$(mktemp)"
+trap 'rm -f "$register_err"' EXIT
+
+if ! stellar contract invoke \
+  --id "$COMPLIANCE_ID" \
+  --source-account "$SOURCE" \
+  --network "$NETWORK" \
+  -- register_issuer \
+  --issuer "$ISSUER" \
+  --metadata_uri "$METADATA_URI" 2>"$register_err"; then
+  if grep -qE 'Error\(Contract, #20\)|AlreadyRegistered' "$register_err"; then
+    echo "register_issuer: already registered, continuing"
+  else
+    cat "$register_err" >&2
+    exit 1
+  fi
+fi
+rm -f "$register_err"
+trap - EXIT
 
 stellar contract invoke \
   --id "$COMPLIANCE_ID" \
   --source-account "$SOURCE" \
   --network "$NETWORK" \
-  -- register_issuer \
+  -- update_issuer_root \
   --issuer "$ISSUER" \
   --merkle_root "$(field_hex "$merkle_root")" \
   --sanctions_root "$(field_hex "$sanctions_root")" \
@@ -71,6 +94,7 @@ stellar contract invoke \
   --source-account "$SOURCE" \
   --network "$NETWORK" \
   -- register_corridor \
+  --issuer "$ISSUER" \
   --corridor_id "$corridor_id" \
   --source_jurisdiction_root "$(field_hex "$source_jurisdiction_root")" \
   --dest_address_root "$(field_hex "$dest_address_root")" \

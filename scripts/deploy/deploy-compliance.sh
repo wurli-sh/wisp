@@ -5,6 +5,9 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 NETWORK="${NETWORK:-testnet}"
 SOURCE="${SOURCE:-amoeba-admin}"
 ADMIN="${ADMIN:-$SOURCE}"
+TREASURY="${TREASURY:-$ADMIN}"
+REGISTRATION_TOKEN="${REGISTRATION_TOKEN:-${SAC_CONTRACT_ID:-${ASSET_ID:-}}}"
+REGISTRATION_FEE="${REGISTRATION_FEE:-0}"
 DEPLOY_DIR="${ROOT}/.amoeba"
 SCRIPT_DIR="$ROOT/circuits/circom/scripts"
 mkdir -p "$DEPLOY_DIR"
@@ -24,9 +27,17 @@ if [[ -z "${VERIFIER_ID:-}" ]]; then
   exit 1
 fi
 
+if [[ -z "${REGISTRATION_TOKEN}" ]]; then
+  echo "ERROR: REGISTRATION_TOKEN not set. Export REGISTRATION_TOKEN or SAC_CONTRACT_ID for v2 issuer registration fees."
+  exit 1
+fi
+
 echo "=== Deploy compliance contract ==="
 echo "Network:  ${NETWORK}"
 echo "Verifier: ${VERIFIER_ID}"
+echo "Treasury: ${TREASURY}"
+echo "RegToken: ${REGISTRATION_TOKEN}"
+echo "RegFee:   ${REGISTRATION_FEE}"
 
 cd "$ROOT"
 stellar contract build --package compliance
@@ -55,13 +66,27 @@ stellar contract invoke \
   --network "$NETWORK" \
   -- initialize \
   --admin "$ADMIN" \
+  --treasury "$TREASURY" \
+  --registration_token "$REGISTRATION_TOKEN" \
+  --registration_fee "$REGISTRATION_FEE" \
   --verifier "$VERIFIER_ID" \
   --expected_vk_hash "$VK_HASH_RAW"
+
+COMPLIANCE_DEPLOY_LEDGER=""
+if command -v jq >/dev/null 2>&1 && command -v curl >/dev/null 2>&1; then
+  COMPLIANCE_DEPLOY_LEDGER="$("${ROOT}/scripts/dev/compliance-deploy-ledger.sh" "${COMPLIANCE_ID}" 2>/dev/null || true)"
+fi
 
 {
   echo "VERIFIER_ID=${VERIFIER_ID}"
   echo "COMPLIANCE_ID=${COMPLIANCE_ID}"
   echo "VK_HASH=${VK_HASH}"
+  echo "TREASURY=${TREASURY}"
+  echo "REGISTRATION_TOKEN=${REGISTRATION_TOKEN}"
+  echo "REGISTRATION_FEE=${REGISTRATION_FEE}"
+  if [[ -n "${COMPLIANCE_DEPLOY_LEDGER}" ]]; then
+    echo "COMPLIANCE_DEPLOY_LEDGER=${COMPLIANCE_DEPLOY_LEDGER}"
+  fi
 } | tee "$DEPLOY_DIR/compliance.env"
 
 echo "Deployed compliance: ${COMPLIANCE_ID}"

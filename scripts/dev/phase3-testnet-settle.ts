@@ -2,7 +2,7 @@
 /**
  * Phase 3 testnet: prove → settle → audit → replay rejection.
  */
-import { AmoebaClient, loadAmoebaEnv } from "@amoeba/sdk";
+import { AmoebaClient, DemoIssuerClient, loadAmoebaEnv } from "@amoeba/sdk";
 
 async function main() {
   const env = loadAmoebaEnv();
@@ -12,7 +12,13 @@ async function main() {
     COMPLIANCE_CONTRACT_ID: env.COMPLIANCE_ID ?? env.COMPLIANCE_CONTRACT_ID,
   });
 
-  const pkg = await client.issuer.getDemoTransfer();
+  const demoIssuer = new DemoIssuerClient(client.cfg.issuerUrl);
+  const pkg = await demoIssuer.getDemoTransfer();
+  const issuerPk = env.ISSUER_PUBLIC_KEY;
+  if (!issuerPk) throw new Error("ISSUER_PUBLIC_KEY missing");
+  const corridorId = Number(pkg.transfer?.corridor_id ?? 1);
+  await client.validatePackage(pkg, { issuerPublicKey: issuerPk, corridorId });
+  console.log("Package validated against chain roots");
   console.log("Proving (epoch=%s)...", pkg.transfer?.epoch);
   const proven = await client.prove({ package: pkg });
   const secret = process.env.SENDER_SECRET;

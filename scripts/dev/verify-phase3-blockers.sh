@@ -75,8 +75,8 @@ export AMOEBA_FIXTURES_DIR="${ROOT}/bindings/fixtures"
 
 export COMPLIANCE_CONTRACT_ID="${COMPLIANCE_ID:-${COMPLIANCE_CONTRACT_ID:-}}"
 export ISSUER_PUBLIC_KEY="${ISSUER_PUBLIC_KEY:-}"
-export PUBLISH_SOURCE_ACCOUNT="${PUBLISH_SOURCE_ACCOUNT:-${SOURCE:-amoeba-admin}}"
-export ADMIN_PUBLIC_KEY="${ADMIN_PUBLIC_KEY:-$(stellar keys public-key "${PUBLISH_SOURCE_ACCOUNT}" 2>/dev/null || true)}"
+export PUBLISH_SOURCE_ACCOUNT="${PUBLISH_SOURCE_ACCOUNT:-amoeba-issuer}"
+export ADMIN_PUBLIC_KEY="${ADMIN_PUBLIC_KEY:-$(stellar keys public-key "${SOURCE:-amoeba-admin}" 2>/dev/null || true)}"
 unset ADMIN_SECRET_KEY ISSUER_SECRET_KEY
 
 if [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
