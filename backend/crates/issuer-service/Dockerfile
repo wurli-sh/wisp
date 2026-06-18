@@ -5,6 +5,7 @@ WORKDIR /app
 
 COPY Cargo.toml Cargo.lock ./
 COPY backend ./backend
+COPY bindings/generated/public_inputs.rs ./bindings/generated/public_inputs.rs
 
 RUN cargo build --release -p issuer-service
 
