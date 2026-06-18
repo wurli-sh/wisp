@@ -160,6 +160,15 @@ pub fn validate_wallet_strkey(wallet: &str) -> Result<String, String> {
     Ok(payload_to_hex(&payload))
 }
 
+/// Accept 64-char hex or Stellar strkey; return lowercase wallet hex for DB lookup.
+pub fn normalize_wallet_hex(wallet: &str) -> Result<String, String> {
+    let trimmed = wallet.trim();
+    if trimmed.len() == 64 && trimmed.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Ok(trimmed.to_lowercase());
+    }
+    validate_wallet_strkey(trimmed)
+}
+
 pub fn wallet_strkey_from_hex(wallet_hex: &str) -> Result<String, String> {
     let bytes = hex::decode(wallet_hex).map_err(|_| "invalid wallet hex".to_string())?;
     let payload: [u8; 32] = bytes

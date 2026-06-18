@@ -2,7 +2,6 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryFrom;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use rand::random;
 use amoeba_crypto::{
     address_to_limbs, compute_corridor_config_hash, compute_nullifier, compute_zero_hashes,
     fr_to_canonical_decimal, hash2, mod_u128, mod_u64, poseidon2_hash1, poseidon2_hash2,
@@ -15,10 +14,13 @@ use amoeba_types::{
     EPOCH_LEN_SECS,
 };
 use ark_bn254::Fr;
+use rand::random;
 use serde_json::{json, Value};
 
+use crate::mock_kyc::normalize_wallet_hex;
 use crate::state::{CorridorDestinationRecord, CorridorRecord, IssuerCredentialRecord, IssuerUser};
 
+#[derive(Debug)]
 pub struct NormalizedProviderEvent {
     pub provider: String,
     pub provider_ref: String,
@@ -179,34 +181,37 @@ pub fn normalize_provider_payload(
     event_key: &str,
     payload: &Value,
 ) -> Result<NormalizedProviderEvent, String> {
-    let wallet = payload
+    let wallet = normalize_wallet_hex(
+        payload
         .get("wallet")
         .or_else(|| payload.get("wallet_hex"))
         .and_then(Value::as_str)
-        .ok_or_else(|| "provider payload missing wallet".to_string())?
-        .to_string();
+        .ok_or_else(|| "provider payload missing wallet".to_string())?,
+    )?;
     let jurisdiction = payload
         .get("jurisdiction")
         .and_then(Value::as_str)
-        .unwrap_or("US")
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .ok_or_else(|| "provider payload missing jurisdiction".to_string())?
         .to_string();
     let jurisdiction_code = payload
         .get("jurisdiction_code")
         .and_then(Value::as_u64)
         .map(|value| value as u32)
-        .unwrap_or_else(|| default_jurisdiction_code(&jurisdiction));
+        .ok_or_else(|| "provider payload missing jurisdiction_code".to_string())?;
     let credential_expiry = payload
         .get("credential_expiry")
         .and_then(Value::as_u64)
-        .unwrap_or(2_000_000_000);
+        .ok_or_else(|| "provider payload missing credential_expiry".to_string())?;
     let sanctions_clear = payload
         .get("sanctions_clear")
         .and_then(Value::as_bool)
-        .unwrap_or(true);
+        .ok_or_else(|| "provider payload missing sanctions_clear".to_string())?;
     let enabled = payload
         .get("enabled")
         .and_then(Value::as_bool)
-        .unwrap_or(true);
+        .ok_or_else(|| "provider payload missing enabled".to_string())?;
     let credential_secret = payload
         .get("credential_secret")
         .and_then(|value| match value {
@@ -214,7 +219,7 @@ pub fn normalize_provider_payload(
             Value::Number(num) => Some(num.to_string()),
             _ => None,
         })
-        .unwrap_or_else(|| format!("{}", 424242u64 + wallet.len() as u64));
+        .ok_or_else(|| "provider payload missing credential_secret".to_string())?;
     let provider_ref = payload
         .get("provider_ref")
         .or_else(|| payload.get("id"))
@@ -386,6 +391,7 @@ pub fn build_canonical_proof_package(
         .collect();
 
     Ok(ProofPackage {
+        schema_version: 1,
         credential: Credential {
             wallet: sender.wallet.clone(),
             jurisdiction: sender.jurisdiction.clone(),
@@ -517,4 +523,50 @@ fn default_jurisdiction_code(country: &str) -> u32 {
         .get(&country.to_ascii_uppercase().as_str())
         .copied()
         .unwrap_or(840)
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    #[test]
+    fn normalize_provider_payload_requires_approval_fields() {
+        let err = normalize_provider_payload(
+            "persona",
+            "evt_1",
+            &json!({
+                "wallet": "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301"
+            }),
+        )
+        .expect_err("payload without approval fields must fail");
+        assert!(err.contains("missing jurisdiction"));
+    }
+
+    #[test]
+    fn normalize_provider_payload_normalizes_wallet_hex() {
+        let wallet = crate::mock_kyc::wallet_strkey_from_hex(
+            "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301",
+        )
+        .expect("wallet strkey");
+        let event = normalize_provider_payload(
+            "persona",
+            "evt_1",
+            &json!({
+                "wallet": wallet,
+                "jurisdiction": "US",
+                "jurisdiction_code": 840,
+                "credential_expiry": 2_000_000_000u64,
+                "sanctions_clear": true,
+                "enabled": true,
+                "credential_secret": "424242"
+            }),
+        )
+        .expect("normalized payload");
+        assert_eq!(
+            event.wallet,
+            "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301"
+        );
+    }
 }

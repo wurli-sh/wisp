@@ -1,5 +1,6 @@
 mod auth;
 mod config;
+mod log_util;
 mod mock_kyc;
 mod routes;
 mod state;
@@ -23,6 +24,25 @@ async fn main() {
         .init();
 
     let cfg = Config::from_env();
+    let store = if cfg.supabase_db_url.is_some() {
+        "postgres"
+    } else {
+        "memory"
+    };
+    tracing::info!(
+        listen = %cfg.listen_addr,
+        compliance = cfg.compliance_id.as_deref().unwrap_or("unset"),
+        issuer = cfg
+            .issuer_public_key
+            .as_deref()
+            .map(log_util::short_key)
+            .unwrap_or_else(|| "unset".into()),
+        publish_source = cfg.publish_source_account.as_deref().unwrap_or("unset"),
+        fixture = %cfg.fixture_profile,
+        kyc = %cfg.kyc_mode,
+        store,
+        "issuer-service starting"
+    );
     let state = AppState::load(&cfg).await;
     let app = routes::router(cfg.clone(), state);
 

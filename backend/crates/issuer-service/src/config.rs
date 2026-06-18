@@ -6,6 +6,7 @@ pub struct Config {
     #[allow(dead_code)]
     pub state_path: Option<String>,
     pub api_token: Option<String>,
+    pub public_base_url: String,
     pub webhook_secrets: Vec<(String, String)>,
     #[allow(dead_code)]
     pub supabase_url: Option<String>,
@@ -27,6 +28,8 @@ pub struct Config {
     pub web_auth_domain: String,
     pub horizon_url: String,
     pub kyc_mode: String,
+    pub verifier_id: Option<String>,
+    pub expected_vk_hash: Option<String>,
 }
 
 impl Config {
@@ -35,6 +38,11 @@ impl Config {
             listen_addr: env::var("ISSUER_LISTEN_ADDR").unwrap_or_else(|_| "127.0.0.1:3000".into()),
             state_path: env::var("ISSUER_STATE_PATH").ok().filter(|s| !s.is_empty()),
             api_token: env::var("ISSUER_API_TOKEN").ok().filter(|s| !s.is_empty()),
+            public_base_url: env::var("ISSUER_PUBLIC_URL")
+                .or_else(|_| env::var("ISSUER_URL"))
+                .unwrap_or_else(|_| "http://127.0.0.1:3000".into())
+                .trim_end_matches('/')
+                .to_string(),
             webhook_secrets: parse_provider_secrets(
                 &env::var("PROVIDER_WEBHOOK_SECRETS").unwrap_or_default(),
             ),
@@ -71,6 +79,11 @@ impl Config {
             horizon_url: env::var("HORIZON_URL")
                 .unwrap_or_else(|_| "https://horizon-testnet.stellar.org".into()),
             kyc_mode: env::var("KYC_MODE").unwrap_or_else(|_| "sep10".into()),
+            verifier_id: env::var("VERIFIER_CONTRACT_ID")
+                .ok()
+                .filter(|s| !s.is_empty())
+                .or_else(|| env::var("VERIFIER_ID").ok().filter(|s| !s.is_empty())),
+            expected_vk_hash: env::var("EXPECTED_VK_HASH").ok().filter(|s| !s.is_empty()),
         }
     }
 
@@ -79,41 +92,12 @@ impl Config {
     pub fn publish_source_account(&self) -> Option<String> {
         self.publish_source_account
             .clone()
-            .or_else(|| self.admin_secret_key.clone())
             .or_else(|| self.issuer_secret_key.clone())
+            .or_else(|| self.admin_secret_key.clone())
     }
 
-    /// True when the signing account is the compliance admin (not the registered issuer).
-    pub fn admin_signs_publish(&self) -> bool {
-        let Some(source) = self.publish_source_account() else {
-            return false;
-        };
-        if self
-            .issuer_secret_key
-            .as_ref()
-            .is_some_and(|k| k == &source)
-        {
-            return false;
-        }
-        if source == "amoeba-issuer" {
-            return false;
-        }
-        if self.admin_secret_key.is_some() {
-            return true;
-        }
-        if source.starts_with('S') && source.len() > 50 {
-            return self.issuer_secret_key.as_ref() != Some(&source);
-        }
-        true
-    }
-
-    /// Stellar address that must authorize `update_issuer_root` (must match signer).
-    pub fn publish_auth_key(&self) -> Option<String> {
-        if self.admin_signs_publish() {
-            self.admin_public_key.clone()
-        } else {
-            self.issuer_public_key.clone()
-        }
+    pub fn metadata_uri(&self) -> String {
+        format!("{}/.well-known/amoeba-issuer.json", self.public_base_url)
     }
 
     pub fn demo_transfer_filename(&self) -> &'static str {
@@ -155,6 +139,7 @@ mod tests {
             listen_addr: "127.0.0.1:3000".into(),
             state_path: None,
             api_token: None,
+            public_base_url: "http://127.0.0.1:3000".into(),
             webhook_secrets: Vec::new(),
             supabase_url: None,
             supabase_service_role_key: None,
@@ -172,33 +157,25 @@ mod tests {
             web_auth_domain: "localhost".into(),
             horizon_url: "https://horizon-testnet.stellar.org".into(),
             kyc_mode: "sep10".into(),
+            verifier_id: None,
+            expected_vk_hash: None,
         }
     }
 
     #[test]
-    fn publish_auth_uses_admin_public_when_admin_identity_source() {
-        let mut cfg = test_cfg();
-        cfg.publish_source_account = Some("amoeba-admin".into());
-        assert!(cfg.admin_signs_publish());
-        assert_eq!(cfg.publish_auth_key().as_deref(), Some("GADMIN"));
-    }
-
-    #[test]
-    fn publish_auth_uses_issuer_when_issuer_secret_signs() {
+    fn publish_source_prefers_issuer_secret_when_available() {
         let mut cfg = test_cfg();
         cfg.issuer_secret_key = Some("SISSUER".into());
-        cfg.publish_source_account = Some("SISSUER".into());
-        assert!(!cfg.admin_signs_publish());
-        assert_eq!(cfg.publish_auth_key().as_deref(), Some("GISSUER"));
+        assert_eq!(cfg.publish_source_account().as_deref(), Some("SISSUER"));
     }
 
     #[test]
-    fn publish_auth_requires_admin_public_not_issuer_fallback() {
-        let mut cfg = test_cfg();
-        cfg.admin_secret_key = Some("SADMIN".into());
-        cfg.admin_public_key = None;
-        assert!(cfg.admin_signs_publish());
-        assert_eq!(cfg.publish_auth_key(), None);
+    fn metadata_uri_uses_public_base_url() {
+        let cfg = test_cfg();
+        assert_eq!(
+            cfg.metadata_uri(),
+            "http://127.0.0.1:3000/.well-known/amoeba-issuer.json"
+        );
     }
 
     #[test]

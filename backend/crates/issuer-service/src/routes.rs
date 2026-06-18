@@ -26,6 +26,7 @@ pub fn router(cfg: Config, state: AppState) -> Router {
 
     let public = Router::new()
         .route("/health", get(health))
+        .route("/.well-known/amoeba-issuer.json", get(well_known_issuer))
         .route("/v1/credential/{wallet}", get(get_credential))
         .route("/v1/merkle-path/{wallet}", get(merkle_path))
         .route("/v1/jurisdiction-path/{jurisdiction}", get(jurisdiction_path))
@@ -71,6 +72,21 @@ async fn health(State(state): State<AppState>) -> impl IntoResponse {
     }))
 }
 
+async fn well_known_issuer(axum::Extension(cfg): axum::Extension<Config>) -> impl IntoResponse {
+    Json(json!({
+        "api_version": "2",
+        "protocol_version": "2",
+        "issuer_stellar_address": cfg.issuer_public_key,
+        "metadata_uri": cfg.metadata_uri(),
+        "service_url": cfg.public_base_url,
+        "compliance_contract_id": cfg.compliance_id,
+        "verifier_contract_id": cfg.verifier_id,
+        "circuit_vk_hash": cfg.expected_vk_hash,
+        "proof_package_schema": 1,
+        "network_passphrase": cfg.network_passphrase,
+    }))
+}
+
 async fn demo_transfer(State(state): State<AppState>) -> Result<Json<ProofPackage>, StatusCode> {
     state.proof_package().await.map(Json).ok_or(StatusCode::NOT_FOUND)
 }
@@ -88,11 +104,12 @@ async fn create_demo_transfer(
 }
 
 async fn create_proof_package(
+    axum::Extension(cfg): axum::Extension<Config>,
     State(state): State<AppState>,
     Json(req): Json<ProofPackageRequest>,
 ) -> Result<Json<ProofPackage>, (StatusCode, String)> {
     state
-        .create_proof_package(&req)
+        .create_proof_package(&cfg, &req)
         .await
         .map(Json)
         .map_err(|err| (StatusCode::BAD_REQUEST, err))
@@ -456,6 +473,8 @@ mod tests {
         cfg.webhook_secrets = vec![("persona".into(), "shh".into())];
         cfg.fixtures_dir =
             concat!(env!("CARGO_MANIFEST_DIR"), "/../../../bindings/fixtures").into();
+        // Unit tests should not depend on on-chain events being available.
+        cfg.compliance_id = None;
         let state = AppState::load(&cfg).await;
         router(cfg, state)
     }
@@ -467,10 +486,12 @@ mod tests {
         cfg.webhook_secrets = vec![("persona".into(), "shh".into())];
         cfg.fixtures_dir =
             concat!(env!("CARGO_MANIFEST_DIR"), "/../../../bindings/fixtures").into();
+        // Unit tests should not depend on on-chain events being available.
+        cfg.compliance_id = None;
         let state = AppState::load(&cfg).await;
         seed_demo_user(&state).await;
         let _ = state
-            .create_proof_package(&state.bootstrap_request(&cfg).await.expect("bootstrap"))
+            .create_proof_package(&cfg, &state.bootstrap_request(&cfg).await.expect("bootstrap"))
             .await
             .expect("bootstrap package");
         let app = router(cfg, state);
@@ -540,6 +561,47 @@ mod tests {
         let json: Value = serde_json::from_slice(&body).unwrap();
         assert!(json.get("computed_roots").is_some());
         assert!(json["computed_roots"].get("merkle_root").is_some());
+    }
+
+    #[tokio::test]
+    async fn well_known_issuer_returns_metadata() {
+        let mut cfg = Config::from_env();
+        cfg.api_token = Some("test-token".into());
+        cfg.webhook_secrets = vec![("persona".into(), "shh".into())];
+        cfg.fixtures_dir =
+            concat!(env!("CARGO_MANIFEST_DIR"), "/../../../bindings/fixtures").into();
+        cfg.issuer_public_key = Some("GISSUER".into());
+        cfg.compliance_id = Some("CCOMPLIANCE".into());
+        cfg.verifier_id = Some("CVERIFIER".into());
+        cfg.expected_vk_hash = Some("deadbeef".into());
+        let state = AppState::load(&cfg).await;
+        let app = router(cfg.clone(), state);
+        let res = app
+            .oneshot(
+                Request::get("/.well-known/amoeba-issuer.json")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        let body = axum::body::to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap();
+        let json: Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(json["api_version"], "2");
+        assert_eq!(json["protocol_version"], "2");
+        assert_eq!(json["issuer_stellar_address"], "GISSUER");
+        assert_eq!(
+            json["metadata_uri"],
+            "http://127.0.0.1:3000/.well-known/amoeba-issuer.json"
+        );
+        assert_eq!(json["service_url"], "http://127.0.0.1:3000");
+        assert_eq!(json["compliance_contract_id"], "CCOMPLIANCE");
+        assert_eq!(json["verifier_contract_id"], "CVERIFIER");
+        assert_eq!(json["circuit_vk_hash"], "deadbeef");
+        assert_eq!(json["proof_package_schema"], 1);
+        assert_eq!(json["network_passphrase"], cfg.network_passphrase);
     }
 
     #[tokio::test]

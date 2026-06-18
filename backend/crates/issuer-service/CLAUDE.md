@@ -48,6 +48,7 @@ Off-chain issuer backend service — manages identity trees, generates Merkle pr
 | `stellar` | Soroban contract interaction |
 | `config` | Env-based configuration |
 | `mock_kyc` | Mock KYC challenge/response for demo flows |
+| `log_util` | Logging utilities and structured event emission |
 
 ## Migrations
 

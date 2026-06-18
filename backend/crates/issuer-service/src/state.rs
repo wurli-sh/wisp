@@ -13,9 +13,10 @@ use serde_json::{json, Value};
 use tokio_postgres::{Client, NoTls, Row};
 
 use crate::config::Config;
+use crate::log_util::{short_key, short_root};
 use crate::mock_kyc::{
     build_challenge, classify_mock_kyc_resubmit, horizon_account_sequence, mock_credential_expiry,
-    mock_jurisdiction, signed_challenge_matches_stored, validate_wallet_strkey,
+    mock_jurisdiction, normalize_wallet_hex, signed_challenge_matches_stored, validate_wallet_strkey,
     verify_signed_challenge, MockKycChallengeRecord,
     MockKycChallengeResponse, MockKycLifecycleStatus, MockKycMissing, MockKycResubmitAction,
     MockKycRootsStatus, MockKycStatusResponse, MockKycSubmitRequest, MockKycSubmitResponse,
@@ -218,10 +219,21 @@ impl AppState {
             bootstrap_corridor_id: Arc::new(RwLock::new(None)),
         };
 
+        let store = if cfg.supabase_db_url.is_some() {
+            "postgres"
+        } else {
+            "memory"
+        };
+        tracing::info!(
+            store,
+            compliance = cfg.compliance_id.as_deref().unwrap_or("unset"),
+            "issuer state loaded"
+        );
+
         state.seed_from_fixtures(cfg).await;
         state.invalidate_stale_root_snapshots(cfg).await;
         if let Some(req) = state.bootstrap_request(cfg).await {
-            let _ = state.create_proof_package(&req).await.map(|pkg| {
+            let _ = state.create_proof_package(cfg, &req).await.map(|pkg| {
                 *state.cache.write().expect("lock") = Some(pkg);
             });
         }
@@ -373,7 +385,7 @@ impl AppState {
             .await;
         self.ensure_roots_published(cfg, fixture.corridor_id).await?;
         let mut proof = self
-            .create_proof_package(&ProofPackageRequest {
+            .create_proof_package(cfg, &ProofPackageRequest {
                 sender_wallet: fixture.sender_hex.clone(),
                 recipient_wallet: fixture.recipient_hex.clone(),
                 amount: fixture.amount.clone(),
@@ -381,6 +393,13 @@ impl AppState {
             })
             .await?;
         patch_proof_demo_strkeys(&mut proof, &fixture);
+        tracing::info!(
+            corridor_id = fixture.corridor_id,
+            sender = %short_key(&fixture.sender_hex),
+            recipient = %short_key(&fixture.recipient_hex),
+            amount = %fixture.amount,
+            "demo transfer package built"
+        );
         Ok((fixture, proof))
     }
 
@@ -410,6 +429,11 @@ impl AppState {
             .await
         {
             tracing::warn!("failed to supersede stale root snapshots: {err}");
+        } else {
+            tracing::info!(
+                compliance = %short_key(current),
+                "invalidated stale root snapshots for other compliance contracts"
+            );
         }
     }
 
@@ -423,9 +447,15 @@ impl AppState {
                     cfg.compliance_id.as_deref(),
                 )
             {
+                tracing::info!(
+                    corridor_id,
+                    merkle = %short_root(&computed.merkle_root),
+                    "roots: up-to-date, skip on-chain publish"
+                );
                 return Ok(());
             }
         }
+        tracing::info!(corridor_id, "roots: publishing on-chain");
         let results = self
             .publish_roots(
                 cfg,
@@ -446,11 +476,15 @@ impl AppState {
 
     pub async fn create_proof_package(
         &self,
+        cfg: &Config,
         req: &ProofPackageRequest,
     ) -> Result<ProofPackage, String> {
+        let sender_wallet = crate::mock_kyc::normalize_wallet_hex(&req.sender_wallet)?;
+        let recipient_wallet = crate::mock_kyc::normalize_wallet_hex(&req.recipient_wallet)?;
+
         let sender = self
             .repo
-            .find_active_user_by_wallet(&req.sender_wallet)
+            .find_active_user_by_wallet(&sender_wallet)
             .await
             .ok_or_else(|| "approved sender not found".to_string())?;
         if !sender.sanctions_clear {
@@ -480,10 +514,21 @@ impl AppState {
         if !corridor.enabled {
             return Err(format!("corridor {} is disabled", corridor.id));
         }
+        let (roots_status, roots_message) = self.current_roots_status(cfg, &corridor).await?;
+        if cfg.compliance_id.is_some() && roots_status != MockKycRootsStatus::Active {
+            return Err(
+                roots_message.unwrap_or_else(|| {
+                    format!(
+                        "roots are not current for corridor {}. publish fresh roots before issuing proofs",
+                        corridor.id
+                    )
+                }),
+            );
+        }
 
         let destination = self
             .repo
-            .find_destination(req.corridor_id, &req.recipient_wallet)
+            .find_destination(req.corridor_id, &recipient_wallet)
             .await
             .ok_or_else(|| "recipient not approved for corridor".to_string())?;
         if !destination.enabled {
@@ -501,6 +546,14 @@ impl AppState {
             &destinations,
             req.amount.clone(),
         )?;
+        tracing::info!(
+            corridor_id = req.corridor_id,
+            sender = %short_key(&sender_wallet),
+            recipient = %short_key(&recipient_wallet),
+            amount = %req.amount,
+            merkle = %short_root(&proof.roots.merkle_root),
+            "proof package built"
+        );
         *self.cache.write().expect("lock") = Some(proof.clone());
         Ok(proof)
     }
@@ -523,6 +576,11 @@ impl AppState {
         };
 
         let mut results = Vec::new();
+        tracing::info!(
+            corridors = corridor_ids.len(),
+            compliance = cfg.compliance_id.as_deref().unwrap_or("unset"),
+            "roots publish: start"
+        );
         for corridor_id in corridor_ids {
             let roots = self.compute_roots_for_corridor(corridor_id).await?;
             let snapshot = self
@@ -544,11 +602,17 @@ impl AppState {
                         status: "active".into(),
                         message: Some(msg),
                     });
+                    tracing::info!(
+                        corridor_id,
+                        snapshot_id = snapshot.id,
+                        "roots publish: corridor ok"
+                    );
                 }
                 Err(err) => {
                     self.repo
                         .fail_root_snapshot(snapshot.id, err.clone())
                         .await?;
+                    tracing::warn!(corridor_id, error = %err, "roots publish: corridor failed");
                     results.push(PublishResult {
                         snapshot_id: snapshot.id,
                         corridor_id,
@@ -593,6 +657,12 @@ impl AppState {
                 consumed_at: None,
             })
             .await?;
+
+        tracing::info!(
+            wallet = %short_key(wallet_strkey),
+            challenge_id = %short_key(&challenge_id),
+            "mock kyc: challenge issued"
+        );
 
         Ok(MockKycChallengeResponse {
             challenge_id,
@@ -720,6 +790,13 @@ impl AppState {
             .consume_mock_kyc_challenge(&challenge.id)
             .await?;
 
+        tracing::info!(
+            wallet = %short_key(&challenge.wallet_strkey),
+            jurisdiction = %jurisdiction,
+            corridors = ?eligible,
+            "mock kyc: approved"
+        );
+
         let state = self.clone();
         let publish_cfg = cfg.clone();
         let publish_eligible = eligible.clone();
@@ -728,7 +805,16 @@ impl AppState {
                 .ensure_roots_published_for_corridors(&publish_cfg, &publish_eligible)
                 .await
             {
-                tracing::warn!("auto publish roots after mock KYC failed: {err}");
+                tracing::warn!(
+                    corridors = ?publish_eligible,
+                    error = %err,
+                    "mock kyc: auto root publish failed"
+                );
+            } else {
+                tracing::info!(
+                    corridors = ?publish_eligible,
+                    "mock kyc: auto root publish ok"
+                );
             }
         });
 
@@ -789,7 +875,7 @@ impl AppState {
 
     pub async fn mock_kyc_status(
         &self,
-        _cfg: &Config,
+        cfg: &Config,
         wallet_strkey: &str,
         corridor_id: Option<u32>,
         recipient_strkey: Option<&str>,
@@ -859,7 +945,7 @@ impl AppState {
         }
 
         let (roots_status, roots_message) = if let Some(corridor) = &target_corridor {
-            Self::derive_roots_status(self.latest_root_snapshot(Some(corridor.id)).await.as_ref())
+            self.current_roots_status(cfg, corridor).await?
         } else {
             (MockKycRootsStatus::Missing, None)
         };
@@ -906,6 +992,41 @@ impl AppState {
             ),
             _ => (MockKycRootsStatus::Missing, None),
         }
+    }
+
+    async fn current_roots_status(
+        &self,
+        cfg: &Config,
+        corridor: &CorridorRecord,
+    ) -> Result<(MockKycRootsStatus, Option<String>), String> {
+        let snapshot = self.latest_root_snapshot(Some(corridor.id)).await;
+        let base = Self::derive_roots_status(snapshot.as_ref());
+        let Some(snapshot) = snapshot else {
+            return Ok(base);
+        };
+        if base.0 != MockKycRootsStatus::Active {
+            return Ok(base);
+        }
+        let computed = self.compute_roots_for_corridor(corridor.id).await?;
+        if !Self::roots_match(&snapshot, &computed) {
+            return Ok((
+                MockKycRootsStatus::Missing,
+                Some(format!(
+                    "published roots are stale for corridor {}. republish before issuing proofs",
+                    corridor.id
+                )),
+            ));
+        }
+        if !Self::snapshot_matches_compliance(&snapshot, cfg.compliance_id.as_deref()) {
+            return Ok((
+                MockKycRootsStatus::Missing,
+                Some(format!(
+                    "published roots target a different compliance contract for corridor {}",
+                    corridor.id
+                )),
+            ));
+        }
+        Ok(base)
     }
 
     async fn compute_roots_for_corridor(&self, corridor_id: u32) -> Result<Roots, String> {
@@ -1133,7 +1254,7 @@ impl Repository {
                     user.jurisdiction_code = jurisdiction_code;
                 }
                 if let Some(wallet) = patch.wallet {
-                    user.wallet = wallet;
+                    user.wallet = normalize_wallet_hex(&wallet)?;
                 }
                 Ok(user.clone())
             }
@@ -1189,6 +1310,7 @@ impl Repository {
         corridor_id: u32,
         request: DestinationCreate,
     ) -> Result<CorridorDestinationRecord, String> {
+        let normalized_address = normalize_wallet_hex(&request.address)?;
         match self {
             Self::Memory(store) => {
                 let mut store = store.write().expect("lock");
@@ -1198,7 +1320,7 @@ impl Repository {
                 if let Some(existing) = store
                     .destinations
                     .iter_mut()
-                    .find(|item| item.corridor_id == corridor_id && item.address == request.address)
+                    .find(|item| item.corridor_id == corridor_id && item.address == normalized_address)
                 {
                     existing.enabled = request.enabled;
                     existing.metadata = request.metadata;
@@ -1208,7 +1330,7 @@ impl Repository {
                 let record = CorridorDestinationRecord {
                     id: store.next_destination_id,
                     corridor_id,
-                    address: request.address,
+                    address: normalized_address,
                     enabled: request.enabled,
                     metadata: request.metadata,
                 };
@@ -1935,7 +2057,7 @@ impl PostgresStore {
             user.jurisdiction_code = value;
         }
         if let Some(value) = patch.wallet {
-            user.wallet = value;
+            user.wallet = normalize_wallet_hex(&value)?;
         }
         let row = self
             .client
@@ -2021,6 +2143,7 @@ impl PostgresStore {
         corridor_id: u32,
         request: DestinationCreate,
     ) -> Result<CorridorDestinationRecord, String> {
+        let normalized_address = normalize_wallet_hex(&request.address)?;
         let row = self
             .client
             .query_one(
@@ -2031,7 +2154,7 @@ impl PostgresStore {
                  returning id, corridor_id, address, enabled, metadata",
                 &[
                     &(corridor_id as i32),
-                    &request.address,
+                    &normalized_address,
                     &request.enabled,
                     &request.metadata,
                 ],
@@ -2703,6 +2826,7 @@ mod tests {
             listen_addr: "127.0.0.1:3000".into(),
             state_path: None,
             api_token: Some("test-token".into()),
+            public_base_url: "http://127.0.0.1:3000".into(),
             webhook_secrets: vec![("persona".into(), "shh".into())],
             supabase_url: None,
             supabase_service_role_key: None,
@@ -2720,6 +2844,8 @@ mod tests {
             web_auth_domain: "localhost".into(),
             horizon_url: "https://horizon-testnet.stellar.org".into(),
             kyc_mode: "sep10".into(),
+            verifier_id: None,
+            expected_vk_hash: None,
         }
     }
 
@@ -2809,9 +2935,79 @@ mod tests {
             .await
             .expect("seed user");
         let req = state.bootstrap_request(&cfg).await.expect("bootstrap request");
-        let proof = state.create_proof_package(&req).await.expect("proof");
+        let proof = state.create_proof_package(&cfg, &req).await.expect("proof");
         assert_eq!(proof.transfer.corridor_id, 1);
         assert_eq!(proof.transfer.sender, req.sender_wallet);
+    }
+
+    #[tokio::test]
+    async fn stale_active_roots_block_status_and_proof_creation() {
+        let mut cfg = test_cfg();
+        cfg.compliance_id = Some("CCOMPLIANCE".into());
+        let state = AppState::load(&cfg).await;
+        state
+            .apply_webhook_event(
+                "fixture",
+                "demo-user",
+                json!({
+                    "wallet_hex": "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301",
+                    "jurisdiction": "US",
+                    "jurisdiction_code": 840,
+                    "credential_expiry": 2000000000u64,
+                    "sanctions_clear": true,
+                    "enabled": true,
+                    "credential_secret": "424242",
+                }),
+            )
+            .await
+            .expect("seed user");
+        let roots = state
+            .compute_roots_for_corridor(1)
+            .await
+            .expect("initial roots");
+        let snapshot = state
+            .repo
+            .create_pending_root_snapshot(1, &roots)
+            .await
+            .expect("snapshot");
+        state
+            .repo
+            .activate_root_snapshot(snapshot.id, "ok".into(), cfg.compliance_id.clone())
+            .await
+            .expect("activate snapshot");
+        state
+            .add_destination(
+                1,
+                DestinationCreate {
+                    address: "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd".into(),
+                    enabled: true,
+                    metadata: Value::Null,
+                },
+            )
+            .await
+            .expect("mutate corridor destinations");
+        let req = state.bootstrap_request(&cfg).await.expect("bootstrap request");
+        let wallet_strkey = crate::mock_kyc::wallet_strkey_from_hex(&req.sender_wallet)
+            .expect("wallet strkey");
+
+        let status = state
+            .mock_kyc_status(
+                &cfg,
+                &wallet_strkey,
+                Some(1),
+                None,
+            )
+            .await
+            .expect("status");
+        assert_eq!(status.roots_status, MockKycRootsStatus::Missing);
+        assert!(!status.eligible_for_proof);
+        assert!(status.missing.contains(&MockKycMissing::RootsPublished));
+
+        let err = state
+            .create_proof_package(&cfg, &req)
+            .await
+            .expect_err("stale roots must block proof creation");
+        assert!(err.contains("stale"));
     }
 
     #[tokio::test]
