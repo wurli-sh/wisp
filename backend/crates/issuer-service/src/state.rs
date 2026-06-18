@@ -1932,7 +1932,26 @@ fn futures_for_destinations(
 
 impl PostgresStore {
     async fn connect(db_url: &str) -> Result<Self, String> {
-        let (client, connection) = tokio_postgres::connect(db_url, NoTls)
+        if db_url.contains("sslmode=disable") {
+            let (client, connection) = tokio_postgres::connect(db_url, NoTls)
+                .await
+                .map_err(|err| err.to_string())?;
+            tokio::spawn(async move {
+                if let Err(err) = connection.await {
+                    tracing::error!("supabase postgres connection error: {err}");
+                }
+            });
+            return Ok(Self { client });
+        }
+
+        use native_tls::TlsConnector;
+        use postgres_native_tls::MakeTlsConnector;
+
+        let tls = TlsConnector::builder()
+            .build()
+            .map_err(|err| err.to_string())?;
+        let connector = MakeTlsConnector::new(tls);
+        let (client, connection) = tokio_postgres::connect(db_url, connector)
             .await
             .map_err(|err| err.to_string())?;
         tokio::spawn(async move {

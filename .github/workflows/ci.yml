@@ -1,3 +1,8 @@
+# CI quality gate on PR/push to main.
+# Deploy is NOT done here:
+#   - frontend → Vercel (frontend/vercel.json)
+#   - issuer-service → Render (render.yaml + Dockerfile)
+#   - npm packages → release.yml on v* tags
 name: ci
 
 on:
@@ -54,6 +59,10 @@ jobs:
         run: |
           pnpm test:witness
           pnpm test:bindings
+          pnpm test:issuer-sdk
+
+      - name: Frontend build (Vercel smoke)
+        run: pnpm build:frontend
 
       - name: SDK prove integration (issuer-service)
         run: |

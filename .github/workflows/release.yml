@@ -1,16 +1,19 @@
+# Publish @amoeba_/* to npm on version tags.
+# Deploy is elsewhere: Vercel (frontend), Render (issuer-service).
+# Requires GitHub secret NPM_TOKEN (granular token with bypass 2FA + @amoeba_ publish).
 name: release
 
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -27,35 +30,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build publishable packages
-        run: pnpm build:js
-
-      - name: Publish @amoeba_/js
-        run: pnpm --filter @amoeba_/js publish --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @amoeba_/compliance
-        run: pnpm --filter @amoeba_/compliance publish --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @amoeba_/verifier
-        run: pnpm --filter @amoeba_/verifier publish --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @amoeba_/bindings
-        run: pnpm --filter @amoeba_/bindings publish --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @amoeba_/sdk
-        run: pnpm --filter @amoeba_/sdk publish --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @amoeba_/issuer-sdk
-        run: pnpm --filter @amoeba_/issuer-sdk publish --access public --no-git-checks
+      - name: Publish packages
+        run: ./scripts/publish/publish-packages.sh
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

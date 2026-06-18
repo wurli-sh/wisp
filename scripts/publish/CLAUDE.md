@@ -101,11 +101,13 @@ Or single package: `pnpm --filter @amoeba_/js publish --access public --no-git-c
 Push a version tag to trigger automated publish:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
-Workflow: `.github/workflows/release.yml` (runs on `v*` tags). Requires `NPM_TOKEN` in GitHub Actions secrets.
+Workflow: `.github/workflows/release.yml` (runs on `v*` tags or **manual dispatch**). Requires `NPM_TOKEN` in GitHub Actions secrets (granular token with bypass 2FA).
+
+Repo CI (`.github/workflows/ci.yml`) runs tests only — it does **not** deploy Vercel or Render.
 
 ## Version bumps
 

@@ -18,6 +18,7 @@ if ! command -v psql >/dev/null 2>&1; then
 fi
 
 echo "migrate-issuer-db: applying migrations from ${MIGRATIONS_DIR}"
+MIGRATE_FAILED=0
 for migration in \
   "${MIGRATIONS_DIR}/001_supabase_issuer.sql" \
   "${MIGRATIONS_DIR}/002_mock_kyc_challenges.sql" \
@@ -26,6 +27,13 @@ for migration in \
     echo "migrate-issuer-db: missing migration: ${migration}" >&2
     exit 1
   fi
-  PGOPTIONS='-c client_min_messages=warning' psql "${DB_URL}" -v ON_ERROR_STOP=1 -q -f "${migration}"
+  if ! PGOPTIONS='-c client_min_messages=warning' psql "${DB_URL}" -v ON_ERROR_STOP=1 -q -f "${migration}"; then
+    MIGRATE_FAILED=1
+    break
+  fi
 done
+if [[ "${MIGRATE_FAILED}" -eq 1 ]]; then
+  echo "migrate-issuer-db: connection failed — on Render use Supabase Session pooler URI (not db.*.supabase.co IPv6 direct)" >&2
+  exit 1
+fi
 echo "migrate-issuer-db: ok"
