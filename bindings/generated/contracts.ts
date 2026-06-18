@@ -13,6 +13,11 @@ export const CONTRACT_ENV = {
 
 export const COMPLIANCE_METHODS = {
   register_issuer: "register_issuer",
+  update_issuer_metadata: "update_issuer_metadata",
+  get_issuer: "get_issuer",
+  get_issuer_roots: "get_issuer_roots",
+  get_corridor: "get_corridor",
+  list_issuers: "list_issuers",
   update_issuer_root: "update_issuer_root",
   register_corridor: "register_corridor",
   update_corridor: "update_corridor",

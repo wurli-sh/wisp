@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://amoeba.dev/schemas/proof-package.v1.json",
+  "title": "ProofPackage",
+  "description": "Issuer handoff for client-side Groth16 proving (Amoeba Issuer API v1)",
+  "type": "object",
+  "required": ["credential", "transfer", "roots", "paths", "witness_private", "public_inputs"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "credential": {
+      "type": "object",
+      "required": ["wallet", "jurisdiction", "credential_expiry"],
+      "properties": {
+        "wallet": { "type": "string" },
+        "jurisdiction": { "type": "string" },
+        "credential_expiry": { "type": "integer", "minimum": 0 },
+        "sanctions_clear": { "type": "boolean" },
+        "corridor_eligibility": { "type": "array", "items": { "type": "integer" } },
+        "credential_commitment": { "type": "string" }
+      }
+    },
+    "transfer": {
+      "type": "object",
+      "required": ["asset", "sender", "recipient", "amount", "corridor_id", "epoch", "timestamp"],
+      "properties": {
+        "asset": { "type": "string" },
+        "sender": { "type": "string" },
+        "recipient": { "type": "string" },
+        "amount": { "type": "string" },
+        "corridor_id": { "type": "integer", "minimum": 0 },
+        "epoch": { "type": "integer", "minimum": 0 },
+        "timestamp": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "roots": {
+      "type": "object",
+      "required": [
+        "merkle_root",
+        "sanctions_root",
+        "jurisdiction_root",
+        "source_jurisdiction_root",
+        "dest_address_root",
+        "corridor_config_hash"
+      ],
+      "properties": {
+        "merkle_root": { "type": "string" },
+        "sanctions_root": { "type": "string" },
+        "jurisdiction_root": { "type": "string" },
+        "source_jurisdiction_root": { "type": "string" },
+        "dest_address_root": { "type": "string" },
+        "corridor_config_hash": { "type": "string" }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "required": [
+        "membership",
+        "membership_indices",
+        "sanctions",
+        "sanctions_indices",
+        "jurisdiction",
+        "jurisdiction_indices",
+        "source_jurisdiction",
+        "source_jurisdiction_indices",
+        "dest_address",
+        "dest_address_indices"
+      ],
+      "properties": {
+        "membership": { "type": "array", "items": { "type": "string" } },
+        "membership_indices": { "type": "array", "items": { "type": "integer", "enum": [0, 1] } },
+        "sanctions": { "type": "array", "items": { "type": "string" } },
+        "sanctions_indices": { "type": "array", "items": { "type": "integer", "enum": [0, 1] } },
+        "jurisdiction": { "type": "array", "items": { "type": "string" } },
+        "jurisdiction_indices": { "type": "array", "items": { "type": "integer", "enum": [0, 1] } },
+        "source_jurisdiction": { "type": "array", "items": { "type": "string" } },
+        "source_jurisdiction_indices": { "type": "array", "items": { "type": "integer", "enum": [0, 1] } },
+        "dest_address": { "type": "array", "items": { "type": "string" } },
+        "dest_address_indices": { "type": "array", "items": { "type": "integer", "enum": [0, 1] } }
+      }
+    },
+    "witness_private": {
+      "type": "object",
+      "required": ["credential_secret", "jurisdiction", "credential_expiry"],
+      "properties": {
+        "demo_unsafe": { "type": "boolean" },
+        "credential_secret": { "type": "string" },
+        "transfer_nonce": { "type": "string" },
+        "jurisdiction": { "type": "string" },
+        "credential_expiry": { "type": "string" },
+        "sanctions_leaf_value": { "type": "string" }
+      }
+    },
+    "public_inputs": {
+      "type": "object",
+      "required": [
+        "merkle_root",
+        "nullifier",
+        "asset_lo",
+        "asset_hi",
+        "sender_lo",
+        "sender_hi",
+        "epoch",
+        "recipient_lo",
+        "recipient_hi",
+        "amount",
+        "sanctions_root",
+        "jurisdiction_root",
+        "timestamp",
+        "corridor_id",
+        "corridor_config_hash",
+        "source_jurisdiction_root",
+        "dest_address_root"
+      ],
+      "additionalProperties": { "type": ["string", "number"] }
+    },
+    "demo": {
+      "type": "object",
+      "properties": {
+        "sender_strkey": { "type": "string" },
+        "recipient_strkey": { "type": "string" },
+        "asset_strkey": { "type": "string" },
+        "issuer_strkey": { "type": "string" },
+        "source_country": { "type": "string" },
+        "dest_country": { "type": "string" }
+      }
+    }
+  }
+}
