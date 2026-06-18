@@ -7,19 +7,19 @@ mod storage;
 
 use error::ComplianceError;
 use events::{
-    AdminAccepted, AdminProposed, CorridorRegistered, CorridorUpdated, IssuerEnabledChanged,
-    IssuerRegistered, IssuerRootUpdated, PauseChanged, ProofSettled, ProofSettledData,
-    VerifierChanged,
+    AdminAccepted, AdminProposed, IssuerCorridorRegistered, IssuerCorridorUpdated,
+    IssuerEnabledChanged, IssuerMetadataUpdated, IssuerRegistered, IssuerRootUpdated,
+    PauseChanged, ProofSettled, ProofSettledData, VerifierChanged,
 };
 use public_inputs::{public_inputs_match, rebuild_expected_public_inputs};
 use soroban_sdk::{
     contract, contractclient, contractimpl, contracttype,
     crypto::bn254::{Bn254G1Affine, Bn254G2Affine, Fr},
-    token, Address, BytesN, Env, Vec,
+    token, Address, BytesN, Env, String, Vec,
 };
 use storage::{
-    Config, CorridorConfig, DataKey, IssuerRoots, DEFAULT_TTL, EPOCH_LEN_SECS, MAX_EPOCH_LAG,
-    MAX_ROOT_AGE_LEDGERS, PUBLIC_INPUT_COUNT,
+    Config, CorridorConfig, DataKey, IssuerPage, IssuerRecord, IssuerRoots, DEFAULT_TTL,
+    EPOCH_LEN_SECS, MAX_EPOCH_LAG, MAX_ISSUER_PAGE_SIZE, MAX_ROOT_AGE_LEDGERS, PUBLIC_INPUT_COUNT,
 };
 
 #[derive(Clone)]
@@ -57,6 +57,9 @@ impl Compliance {
     pub fn initialize(
         env: Env,
         admin: Address,
+        treasury: Address,
+        registration_token: Address,
+        registration_fee: i128,
         verifier: Address,
         expected_vk_hash: BytesN<32>,
     ) -> Result<(), ComplianceError> {
@@ -68,10 +71,14 @@ impl Compliance {
             &DataKey::Config,
             &Config {
                 admin,
+                treasury,
+                registration_token,
+                registration_fee,
                 verifier,
                 expected_vk_hash,
                 paused: false,
                 pending_admin: None,
+                next_issuer_seq: 0,
             },
         );
         Ok(())
@@ -131,19 +138,13 @@ impl Compliance {
         verifier: Address,
         expected_vk_hash: BytesN<32>,
     ) -> Result<(), ComplianceError> {
-        let config = Self::config(&env)?;
+        let mut config = Self::config(&env)?;
         config.admin.require_auth();
         let old_verifier = config.verifier.clone();
-        env.storage().instance().set(
-            &DataKey::Config,
-            &Config {
-                admin: config.admin,
-                verifier: verifier.clone(),
-                expected_vk_hash: expected_vk_hash.clone(),
-                paused: config.paused,
-                pending_admin: config.pending_admin,
-            },
-        );
+        config.verifier = verifier.clone();
+        config.expected_vk_hash = expected_vk_hash.clone();
+        env.storage().instance().set(&DataKey::Config, &config);
+
         VerifierChanged {
             old_verifier,
             new_verifier: verifier,
@@ -156,31 +157,67 @@ impl Compliance {
     pub fn register_issuer(
         env: Env,
         issuer: Address,
-        merkle_root: BytesN<32>,
-        sanctions_root: BytesN<32>,
-        jurisdiction_root: BytesN<32>,
+        metadata_uri: String,
     ) -> Result<(), ComplianceError> {
-        let config = Self::config(&env)?;
-        config.admin.require_auth();
-        let key = DataKey::Issuer(issuer.clone());
-        env.storage().persistent().set(
-            &key,
-            &IssuerRoots {
-                merkle_root: merkle_root.clone(),
-                sanctions_root: sanctions_root.clone(),
-                jurisdiction_root: jurisdiction_root.clone(),
-                updated_ledger: env.ledger().sequence(),
-                enabled: true,
-            },
-        );
-        env.storage()
+        let mut config = Self::config(&env)?;
+        issuer.require_auth();
+        if env
+            .storage()
             .persistent()
-            .extend_ttl(&key, DEFAULT_TTL, DEFAULT_TTL);
+            .has(&DataKey::Issuer(issuer.clone()))
+        {
+            return Err(ComplianceError::AlreadyRegistered);
+        }
+
+        let fee_token = token::Client::new(&env, &config.registration_token);
+        fee_token.transfer(&issuer, &config.treasury, &config.registration_fee);
+
+        let ledger = env.ledger().sequence();
+        let seq = config.next_issuer_seq;
+        config.next_issuer_seq = config.next_issuer_seq.saturating_add(1);
+        env.storage().instance().set(&DataKey::Config, &config);
+
+        let record = IssuerRecord {
+            issuer: issuer.clone(),
+            metadata_uri: metadata_uri.clone(),
+            enabled: true,
+            registered_at_ledger: ledger,
+            updated_at_ledger: ledger,
+            registration_seq: seq,
+        };
+        Self::set_persistent(&env, &DataKey::Issuer(issuer.clone()), &record);
+        Self::set_persistent(&env, &DataKey::IssuerIndex(seq), &issuer);
+
         IssuerRegistered {
             issuer,
-            merkle_root,
-            sanctions_root,
-            jurisdiction_root,
+            metadata_uri,
+            enabled: true,
+            registered_at_ledger: ledger,
+            updated_at_ledger: ledger,
+            registration_seq: seq,
+        }
+        .publish(&env);
+        Ok(())
+    }
+
+    pub fn update_issuer_metadata(
+        env: Env,
+        issuer: Address,
+        metadata_uri: String,
+    ) -> Result<(), ComplianceError> {
+        issuer.require_auth();
+        let mut record = Self::issuer_record(&env, &issuer)?;
+        let old_metadata_uri = record.metadata_uri.clone();
+        let updated_at_ledger = env.ledger().sequence();
+        record.metadata_uri = metadata_uri.clone();
+        record.updated_at_ledger = updated_at_ledger;
+        Self::set_persistent(&env, &DataKey::Issuer(issuer.clone()), &record);
+
+        IssuerMetadataUpdated {
+            issuer,
+            old_metadata_uri,
+            new_metadata_uri: metadata_uri,
+            updated_at_ledger,
         }
         .publish(&env);
         Ok(())
@@ -192,25 +229,23 @@ impl Compliance {
         merkle_root: BytesN<32>,
         sanctions_root: BytesN<32>,
         jurisdiction_root: BytesN<32>,
-        auth: Address,
     ) -> Result<(), ComplianceError> {
-        let config = Self::config(&env)?;
-        Self::require_issuer_or_admin(&auth, &issuer, &config.admin)?;
-        let mut roots = Self::issuer(&env, &issuer)?;
-        roots.merkle_root = merkle_root;
-        roots.sanctions_root = sanctions_root;
-        roots.jurisdiction_root = jurisdiction_root;
-        roots.updated_ledger = env.ledger().sequence();
-        let key = DataKey::Issuer(issuer.clone());
-        env.storage().persistent().set(&key, &roots);
-        env.storage()
-            .persistent()
-            .extend_ttl(&key, DEFAULT_TTL, DEFAULT_TTL);
+        issuer.require_auth();
+        let _ = Self::issuer_record(&env, &issuer)?;
+        let updated_ledger = env.ledger().sequence();
+        let roots = IssuerRoots {
+            merkle_root: merkle_root.clone(),
+            sanctions_root: sanctions_root.clone(),
+            jurisdiction_root: jurisdiction_root.clone(),
+            updated_ledger,
+        };
+        Self::set_persistent(&env, &DataKey::IssuerRoots(issuer.clone()), &roots);
         IssuerRootUpdated {
             issuer,
-            merkle_root: roots.merkle_root,
-            sanctions_root: roots.sanctions_root,
-            jurisdiction_root: roots.jurisdiction_root,
+            merkle_root,
+            sanctions_root,
+            jurisdiction_root,
+            updated_ledger,
         }
         .publish(&env);
         Ok(())
@@ -223,45 +258,47 @@ impl Compliance {
     ) -> Result<(), ComplianceError> {
         let config = Self::config(&env)?;
         config.admin.require_auth();
-        let mut roots = Self::issuer(&env, &issuer)?;
-        roots.enabled = enabled;
-        let key = DataKey::Issuer(issuer.clone());
-        env.storage().persistent().set(&key, &roots);
-        env.storage()
-            .persistent()
-            .extend_ttl(&key, DEFAULT_TTL, DEFAULT_TTL);
+        let mut record = Self::issuer_record(&env, &issuer)?;
+        record.enabled = enabled;
+        record.updated_at_ledger = env.ledger().sequence();
+        Self::set_persistent(&env, &DataKey::Issuer(issuer.clone()), &record);
         IssuerEnabledChanged { issuer, enabled }.publish(&env);
         Ok(())
     }
 
     pub fn register_corridor(
         env: Env,
+        issuer: Address,
         corridor_id: u32,
         source_jurisdiction_root: BytesN<32>,
         dest_address_root: BytesN<32>,
         corridor_config_hash: BytesN<32>,
     ) -> Result<(), ComplianceError> {
-        let config = Self::config(&env)?;
-        config.admin.require_auth();
-        let key = DataKey::Corridor(corridor_id);
-        env.storage().persistent().set(
-            &key,
-            &CorridorConfig {
-                corridor_id,
-                corridor_config_hash: corridor_config_hash.clone(),
-                source_jurisdiction_root: source_jurisdiction_root.clone(),
-                dest_address_root: dest_address_root.clone(),
-                enabled: true,
-            },
-        );
-        env.storage()
-            .persistent()
-            .extend_ttl(&key, DEFAULT_TTL, DEFAULT_TTL);
-        CorridorRegistered {
+        issuer.require_auth();
+        let _ = Self::issuer_record(&env, &issuer)?;
+        let key = DataKey::Corridor(issuer.clone(), corridor_id);
+        if env.storage().persistent().has(&key) {
+            return Err(ComplianceError::CorridorAlreadyExists);
+        }
+        let updated_ledger = env.ledger().sequence();
+        let corridor = CorridorConfig {
+            issuer: issuer.clone(),
+            corridor_id,
+            corridor_config_hash: corridor_config_hash.clone(),
+            source_jurisdiction_root: source_jurisdiction_root.clone(),
+            dest_address_root: dest_address_root.clone(),
+            enabled: true,
+            updated_ledger,
+        };
+        Self::set_persistent(&env, &key, &corridor);
+        IssuerCorridorRegistered {
+            issuer,
             corridor_id,
             corridor_config_hash,
             source_jurisdiction_root,
             dest_address_root,
+            enabled: true,
+            updated_ledger,
         }
         .publish(&env);
         Ok(())
@@ -269,37 +306,88 @@ impl Compliance {
 
     pub fn update_corridor(
         env: Env,
+        issuer: Address,
         corridor_id: u32,
         source_jurisdiction_root: BytesN<32>,
         dest_address_root: BytesN<32>,
         corridor_config_hash: BytesN<32>,
         enabled: bool,
     ) -> Result<(), ComplianceError> {
-        let config = Self::config(&env)?;
-        config.admin.require_auth();
-        let key = DataKey::Corridor(corridor_id);
-        env.storage().persistent().set(
-            &key,
-            &CorridorConfig {
-                corridor_id,
-                corridor_config_hash: corridor_config_hash.clone(),
-                source_jurisdiction_root: source_jurisdiction_root.clone(),
-                dest_address_root: dest_address_root.clone(),
-                enabled,
-            },
-        );
-        env.storage()
-            .persistent()
-            .extend_ttl(&key, DEFAULT_TTL, DEFAULT_TTL);
-        CorridorUpdated {
+        issuer.require_auth();
+        let _ = Self::issuer_record(&env, &issuer)?;
+        let key = DataKey::Corridor(issuer.clone(), corridor_id);
+        if !env.storage().persistent().has(&key) {
+            return Err(ComplianceError::UnknownCorridor);
+        }
+        let updated_ledger = env.ledger().sequence();
+        let corridor = CorridorConfig {
+            issuer: issuer.clone(),
+            corridor_id,
+            corridor_config_hash: corridor_config_hash.clone(),
+            source_jurisdiction_root: source_jurisdiction_root.clone(),
+            dest_address_root: dest_address_root.clone(),
+            enabled,
+            updated_ledger,
+        };
+        Self::set_persistent(&env, &key, &corridor);
+        IssuerCorridorUpdated {
+            issuer,
             corridor_id,
             corridor_config_hash,
             source_jurisdiction_root,
             dest_address_root,
             enabled,
+            updated_ledger,
         }
         .publish(&env);
         Ok(())
+    }
+
+    pub fn get_issuer(env: Env, issuer: Address) -> Option<IssuerRecord> {
+        Self::get_persistent(&env, &DataKey::Issuer(issuer))
+    }
+
+    pub fn get_issuer_roots(env: Env, issuer: Address) -> Option<IssuerRoots> {
+        Self::get_persistent(&env, &DataKey::IssuerRoots(issuer))
+    }
+
+    pub fn get_corridor(env: Env, issuer: Address, corridor_id: u32) -> Option<CorridorConfig> {
+        Self::get_persistent(&env, &DataKey::Corridor(issuer, corridor_id))
+    }
+
+    pub fn list_issuers(
+        env: Env,
+        cursor: Option<u32>,
+        limit: u32,
+    ) -> Result<IssuerPage, ComplianceError> {
+        if limit == 0 || limit > MAX_ISSUER_PAGE_SIZE {
+            return Err(ComplianceError::InvalidPageLimit);
+        }
+        let config = Self::config(&env)?;
+        let start = cursor.unwrap_or(0);
+        let end = core::cmp::min(start.saturating_add(limit), config.next_issuer_seq);
+        let mut issuers = Vec::new(&env);
+        let mut index = start;
+        while index < end {
+            if let Some(address) = Self::get_persistent::<Address>(&env, &DataKey::IssuerIndex(index))
+            {
+                if let Some(record) =
+                    Self::get_persistent::<IssuerRecord>(&env, &DataKey::Issuer(address))
+                {
+                    issuers.push_back(record);
+                }
+            }
+            index = index.saturating_add(1);
+        }
+        let next_cursor = if end < config.next_issuer_seq {
+            Some(end)
+        } else {
+            None
+        };
+        Ok(IssuerPage {
+            issuers,
+            next_cursor,
+        })
     }
 
     pub fn check_attestation(env: Env, nullifier: BytesN<32>) -> bool {
@@ -327,12 +415,13 @@ impl Compliance {
         if config.paused {
             return Err(ComplianceError::Paused);
         }
-        let issuer_roots = Self::issuer(&env, &args.issuer)?;
-        if !issuer_roots.enabled {
+
+        let issuer_record = Self::issuer_record(&env, &args.issuer)?;
+        if !issuer_record.enabled {
             return Err(ComplianceError::IssuerDisabled);
         }
-
-        let corridor = Self::corridor(&env, args.corridor_id)?;
+        let issuer_roots = Self::issuer_roots(&env, &args.issuer)?;
+        let corridor = Self::corridor(&env, &args.issuer, args.corridor_id)?;
         if !corridor.enabled {
             return Err(ComplianceError::CorridorDisabled);
         }
@@ -389,14 +478,7 @@ impl Compliance {
             return Err(ComplianceError::InvalidProof);
         }
 
-        env.storage()
-            .persistent()
-            .set(&DataKey::Nullifier(args.nullifier.clone()), &true);
-        env.storage().persistent().extend_ttl(
-            &DataKey::Nullifier(args.nullifier.clone()),
-            DEFAULT_TTL,
-            DEFAULT_TTL,
-        );
+        Self::set_persistent(&env, &DataKey::Nullifier(args.nullifier.clone()), &true);
 
         ProofSettled {
             data: ProofSettledData {
@@ -438,32 +520,45 @@ impl Compliance {
             .ok_or(ComplianceError::NotInitialized)
     }
 
-    fn issuer(env: &Env, issuer: &Address) -> Result<IssuerRoots, ComplianceError> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Issuer(issuer.clone()))
+    fn issuer_record(env: &Env, issuer: &Address) -> Result<IssuerRecord, ComplianceError> {
+        Self::get_persistent(env, &DataKey::Issuer(issuer.clone()))
             .ok_or(ComplianceError::UnknownIssuer)
     }
 
-    fn corridor(env: &Env, corridor_id: u32) -> Result<CorridorConfig, ComplianceError> {
-        env.storage()
-            .persistent()
-            .get(&DataKey::Corridor(corridor_id))
+    fn issuer_roots(env: &Env, issuer: &Address) -> Result<IssuerRoots, ComplianceError> {
+        Self::get_persistent(env, &DataKey::IssuerRoots(issuer.clone()))
+            .ok_or(ComplianceError::MissingIssuerRoots)
+    }
+
+    fn corridor(
+        env: &Env,
+        issuer: &Address,
+        corridor_id: u32,
+    ) -> Result<CorridorConfig, ComplianceError> {
+        Self::get_persistent(env, &DataKey::Corridor(issuer.clone(), corridor_id))
             .ok_or(ComplianceError::UnknownCorridor)
     }
 
-    fn require_issuer_or_admin(
-        auth: &Address,
-        issuer: &Address,
-        admin: &Address,
-    ) -> Result<(), ComplianceError> {
-        auth.require_auth();
-        if auth != issuer && auth != admin {
-            return Err(ComplianceError::Unauthorized);
-        }
-        Ok(())
+    fn get_persistent<T: soroban_sdk::IntoVal<Env, soroban_sdk::Val> + TryFromVal<Env, soroban_sdk::Val>>(
+        env: &Env,
+        key: &DataKey,
+    ) -> Option<T> {
+        env.storage().persistent().get(key)
+    }
+
+    fn set_persistent<T: soroban_sdk::IntoVal<Env, soroban_sdk::Val>>(
+        env: &Env,
+        key: &DataKey,
+        value: &T,
+    ) {
+        env.storage().persistent().set(key, value);
+        env.storage()
+            .persistent()
+            .extend_ttl(key, DEFAULT_TTL, DEFAULT_TTL);
     }
 }
+
+use soroban_sdk::TryFromVal;
 
 #[cfg(test)]
 mod test_sac;

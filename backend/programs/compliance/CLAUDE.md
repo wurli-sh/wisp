@@ -8,7 +8,7 @@ Orchestrates compliant transfers on Stellar. The main entry point is `compliant_
 |------|---------|
 | `src/lib.rs` | Contract entry points — initialize, admin ops, issuer ops, corridor ops, `compliant_transfer` |
 | `src/storage.rs` | Data model: Config, IssuerRoots, CorridorConfig, DataKey enum |
-| `src/error.rs` | 19 error variants (AlreadyInitialized, Unauthorized, UnknownIssuer, DuplicateNullifier, InvalidProof, etc.) |
+| `src/error.rs` | 22 error variants (AlreadyInitialized, Unauthorized, UnknownIssuer, DuplicateNullifier, InvalidProof, etc.) |
 | `src/events.rs` | Events: ProofSettled, PauseChanged, AdminProposed, etc. |
 | `src/public_inputs.rs` | 17-field public input reconstruction and validation |
 | `src/test.rs` | Comprehensive tests covering all validation gates |

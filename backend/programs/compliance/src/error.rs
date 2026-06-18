@@ -14,6 +14,7 @@ pub enum ComplianceError {
     StaleIssuerRoot = 8,
     DuplicateNullifier = 9,
     ZeroAmount = 10,
+    MissingIssuerRoots = 11,
     WrongVkHash = 12,
     PublicInputMismatch = 13,
     InvalidProof = 14,
@@ -22,4 +23,7 @@ pub enum ComplianceError {
     StaleEpoch = 17,
     Paused = 18,
     NoPendingAdmin = 19,
+    AlreadyRegistered = 20,
+    CorridorAlreadyExists = 21,
+    InvalidPageLimit = 22,
 }

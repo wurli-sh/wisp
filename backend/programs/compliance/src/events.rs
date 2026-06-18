@@ -1,4 +1,4 @@
-use soroban_sdk::{contractevent, contracttype, Address, BytesN};
+use soroban_sdk::{contractevent, contracttype, Address, BytesN, String};
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -60,18 +60,20 @@ pub struct VerifierChanged {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct IssuerRegistered {
     pub issuer: Address,
-    pub merkle_root: BytesN<32>,
-    pub sanctions_root: BytesN<32>,
-    pub jurisdiction_root: BytesN<32>,
+    pub metadata_uri: String,
+    pub enabled: bool,
+    pub registered_at_ledger: u32,
+    pub updated_at_ledger: u32,
+    pub registration_seq: u32,
 }
 
-#[contractevent(topics = ["issuer", "root"])]
+#[contractevent(topics = ["issuer", "metadata"])]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct IssuerRootUpdated {
+pub struct IssuerMetadataUpdated {
     pub issuer: Address,
-    pub merkle_root: BytesN<32>,
-    pub sanctions_root: BytesN<32>,
-    pub jurisdiction_root: BytesN<32>,
+    pub old_metadata_uri: String,
+    pub new_metadata_uri: String,
+    pub updated_at_ledger: u32,
 }
 
 #[contractevent(topics = ["issuer", "enabled"])]
@@ -81,21 +83,36 @@ pub struct IssuerEnabledChanged {
     pub enabled: bool,
 }
 
-#[contractevent(topics = ["corridor", "registered"])]
+#[contractevent(topics = ["issuer", "root"])]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct CorridorRegistered {
-    pub corridor_id: u32,
-    pub corridor_config_hash: BytesN<32>,
-    pub source_jurisdiction_root: BytesN<32>,
-    pub dest_address_root: BytesN<32>,
+pub struct IssuerRootUpdated {
+    pub issuer: Address,
+    pub merkle_root: BytesN<32>,
+    pub sanctions_root: BytesN<32>,
+    pub jurisdiction_root: BytesN<32>,
+    pub updated_ledger: u32,
 }
 
-#[contractevent(topics = ["corridor", "updated"])]
+#[contractevent(topics = ["corridor", "registered"])]
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct CorridorUpdated {
+pub struct IssuerCorridorRegistered {
+    pub issuer: Address,
     pub corridor_id: u32,
     pub corridor_config_hash: BytesN<32>,
     pub source_jurisdiction_root: BytesN<32>,
     pub dest_address_root: BytesN<32>,
     pub enabled: bool,
+    pub updated_ledger: u32,
+}
+
+#[contractevent(topics = ["corridor", "updated"])]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct IssuerCorridorUpdated {
+    pub issuer: Address,
+    pub corridor_id: u32,
+    pub corridor_config_hash: BytesN<32>,
+    pub source_jurisdiction_root: BytesN<32>,
+    pub dest_address_root: BytesN<32>,
+    pub enabled: bool,
+    pub updated_ledger: u32,
 }
