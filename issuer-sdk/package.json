@@ -1,0 +1,41 @@
+{
+  "name": "@amoeba_/issuer-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for operating an Amoeba issuer service and publishing roots",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wurli-sh/amoeba.git",
+    "directory": "issuer-sdk"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@amoeba_/compliance": "workspace:*",
+    "@amoeba_/js": "workspace:*",
+    "@amoeba_/sdk": "workspace:*",
+    "@stellar/stellar-sdk": "^14.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

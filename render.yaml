@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: amoeba-issuer
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./backend/crates/issuer-service/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: ISSUER_REQUIRE_DB
+        value: "1"
+      - key: AMOEBA_ENV
+        value: production
+      - key: AMOEBA_FIXTURE_PROFILE
+        value: testnet
+      - key: AMOEBA_FIXTURES_DIR
+        value: /app/bindings/fixtures
+      - key: KYC_MODE
+        value: sep10
+      - key: STELLAR_RPC_URL
+        value: https://soroban-testnet.stellar.org
+      - key: NETWORK_PASSPHRASE
+        value: "Test SDF Network ; September 2015"
+      - key: HORIZON_URL
+        value: https://horizon-testnet.stellar.org
+      - key: PROVIDER_WEBHOOK_SECRETS
+        value: fixture=demo-fixture-secret
+      # Set in Render dashboard (secrets):
+      # SUPABASE_DB_URL — postgresql://...?sslmode=require
+      # ISSUER_API_TOKEN
+      # ISSUER_PUBLIC_KEY
+      # ISSUER_SECRET_KEY (or PUBLISH_SOURCE_ACCOUNT)
+      # COMPLIANCE_CONTRACT_ID
+      # VERIFIER_CONTRACT_ID
+      # ISSUER_PUBLIC_URL — https://amoeba-issuer.onrender.com
+      # WEB_AUTH_DOMAIN — amoeba-issuer.onrender.com
