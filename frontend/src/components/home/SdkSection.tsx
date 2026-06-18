@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Check, ClipboardCopy } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 import { PAGE_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
+import { InstallCommand, TypeScriptSnippet } from "@/components/spell/code-highlight";
 import { HighlightedText } from "@/components/spell/highlighted-text";
 import { cn } from "@/lib/cn";
 import { fadeInUp, scrollViewport, staggerContainer } from "@/lib/animations";
@@ -86,22 +87,17 @@ export function SdkSection() {
 
           <div className="flex items-start justify-between gap-4 px-5 py-4">
             {isQuickstart ? (
-              <div className="m-0 flex-1 overflow-x-auto whitespace-pre-wrap text-left text-xs leading-relaxed text-white/85">
-                {sdk.snippet}
-              </div>
+              <TypeScriptSnippet code={sdk.snippet} />
             ) : (
-              <p className="flex-1 text-left text-sm text-white/85">
-                <span className="text-white/50">$ </span>
-                {current.command}
-              </p>
+              <InstallCommand command={current.command} />
             )}
             <button
               type="button"
-              aria-label="Copy"
+              aria-label={copied ? "Copied" : "Copy to clipboard"}
               onClick={handleCopy}
-              className="shrink-0 cursor-pointer p-2 text-white/40 transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-charcoal"
+              className="shrink-0 cursor-pointer border border-white/10 p-2 text-white/40 transition-colors hover:border-white/20 hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-charcoal"
             >
-              {copied ? <Check size={16} /> : <ClipboardCopy size={16} />}
+              {copied ? <Check size={15} strokeWidth={2.5} /> : <Copy size={15} strokeWidth={2} />}
             </button>
           </div>
         </motion.div>
