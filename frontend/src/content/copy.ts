@@ -146,13 +146,13 @@ export const COPY = {
     headlineAccent: "Then integrate it.",
     sub: "One TypeScript client to prove in the browser, settle with Freighter, and replay the audit trail.",
     tabs: [
-      { id: "pnpm", label: "pnpm", command: "pnpm add @amoeba/sdk" },
-      { id: "npm", label: "npm", command: "npm install @amoeba/sdk" },
-      { id: "yarn", label: "yarn", command: "yarn add @amoeba/sdk" },
-      { id: "bun", label: "bun", command: "bun add @amoeba/sdk" },
+      { id: "pnpm", label: "pnpm", command: "pnpm add @amoeba_/sdk" },
+      { id: "npm", label: "npm", command: "npm install @amoeba_/sdk" },
+      { id: "yarn", label: "yarn", command: "yarn add @amoeba_/sdk" },
+      { id: "bun", label: "bun", command: "bun add @amoeba_/sdk" },
       { id: "quickstart", label: "quickstart", command: "" },
     ],
-    snippet: `import { AmoebaClient } from "@amoeba/sdk";
+    snippet: `import { AmoebaClient } from "@amoeba_/sdk";
 
 const client = AmoebaClient.fromEnv();
 const proven = await client.prove({ package, browser: true });

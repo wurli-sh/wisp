@@ -19,16 +19,16 @@ export function Hero() {
       <motion.div
         className="pointer-events-none absolute bottom-0 left-1/2 z-0 h-[20%] w-full max-w-4xl -translate-x-1/2 px-4 sm:px-6"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        animate={{ opacity: 0.95 }}
         transition={{ duration: 2, delay: 0.1 }}
       >
         <Dithering
           style={{ height: "100%", width: "100%" }}
           colorBack="#2525AA"
-          colorFront="#FFFFFF"
+          colorFront="#D8F1FF"
           shape="simplex"
           type="4x4"
-          scale={0.5}
+          scale={0.3}
           speed={0.02}
         />
       </motion.div>

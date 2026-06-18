@@ -1,0 +1,33 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "cd .. && corepack enable && pnpm install",
+  "buildCommand": "cd .. && pnpm build:js && pnpm --filter @amoeba_/web build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/((?!circuits|fixtures|assets|favicon).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/circuits/(.*)\\.wasm",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/wasm"
+        }
+      ]
+    },
+    {
+      "source": "/circuits/(.*)\\.zkey",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/octet-stream"
+        }
+      ]
+    }
+  ]
+}

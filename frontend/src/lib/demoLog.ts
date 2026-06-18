@@ -1,5 +1,5 @@
-import type { ProofPackage } from "@amoeba/js";
-import type { ProvenTransfer } from "@amoeba/sdk";
+import type { ProofPackage } from "@amoeba_/js";
+import type { ProvenTransfer } from "@amoeba_/sdk";
 import { env } from "@/config/env";
 
 const PREFIX = "[amoeba:demo]";
@@ -15,11 +15,11 @@ export interface DemoFixtureStrkeys {
 let fixtureCache: DemoFixtureStrkeys | null = null;
 
 function enabled(): boolean {
-  if (import.meta.env.DEV) {
+  if (import.meta.env.VITE_AMOEBA_DEBUG === "1") {
     (globalThis as { __AMOEBA_DEBUG__?: boolean }).__AMOEBA_DEBUG__ = true;
     return true;
   }
-  return import.meta.env.VITE_AMOEBA_DEBUG === "1";
+  return false;
 }
 
 export function demoLog(checkpoint: string, data?: Record<string, unknown>): void {

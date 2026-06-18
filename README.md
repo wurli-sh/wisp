@@ -203,7 +203,7 @@ AMOEBA_RUN_TESTNET_BLOCKERS=1 ./scripts/dev/verify-phase3-blockers.sh
 ### SDK API
 
 ```javascript
-import { AmoebaClient, DemoIssuerClient } from "@amoeba/sdk";
+import { AmoebaClient, DemoIssuerClient } from "@amoeba_/sdk";
 
 const client = AmoebaClient.fromEnv();
 const demoIssuer = new DemoIssuerClient(client.cfg.issuerUrl);
@@ -222,7 +222,7 @@ Testnet fixtures use `AMOEBA_FIXTURE_PROFILE=testnet` and `bindings/fixtures/dem
 
 ## Phase 4 — Frontend
 
-Vite + React demo UI over `@amoeba/sdk`: landing (`/`), interactive console (`/demo`), compliance hub (`/compliance`).
+Vite + React demo UI over `@amoeba_/sdk`: landing (`/`), interactive console (`/demo`), compliance hub (`/compliance`).
 
 ### Local command sequence
 
