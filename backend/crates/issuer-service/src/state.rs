@@ -1947,10 +1947,18 @@ impl PostgresStore {
         use native_tls::TlsConnector;
         use postgres_native_tls::MakeTlsConnector;
 
-        let tls = TlsConnector::builder()
-            .build()
-            .map_err(|err| err.to_string())?;
-        let connector = MakeTlsConnector::new(tls);
+        let mut builder = TlsConnector::builder();
+        if db_url.contains("sslmode=verify-full") || db_url.contains("sslmode=verify-ca") {
+            // Trust platform roots (Debian ca-certificates in Docker).
+        } else {
+            // sslmode=require (and default): encrypt without verifying Supabase's legacy X.509v1 chain.
+            builder.danger_accept_invalid_certs(true);
+        }
+        let connector = MakeTlsConnector::new(
+            builder
+                .build()
+                .map_err(|err| err.to_string())?,
+        );
         let (client, connection) = tokio_postgres::connect(db_url, connector)
             .await
             .map_err(|err| err.to_string())?;
