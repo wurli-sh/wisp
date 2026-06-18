@@ -25,10 +25,10 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 - **backend/programs/** — Soroban smart contracts (verifier, compliance)
 - **backend/crates/** — Rust crates for off-chain crypto, types, and issuer service
 - **bindings/** — Canonical ABI, generated contract clients, shared JSON fixtures
-- **packages/amoeba-js/** — Shared JS crypto (`@amoeba/js`: Poseidon2, Merkle, field ops, nullifier, witness)
-- **sdk/** — TypeScript SDK (`@amoeba/sdk`) for proving, settling, and auditing compliant transfers
+- **packages/amoeba-js/** — Shared JS crypto (`@amoeba_/js`: Poseidon2, Merkle, field ops, nullifier, witness)
+- **sdk/** — TypeScript SDK (`@amoeba_/sdk`) for proving, settling, and auditing compliant transfers
 - **scripts/** — deploy, dev, fixture, and ceremony tooling
-- **frontend/** — Vite demo UI (`@amoeba/web`: landing, `/demo`, `/compliance`)
+- **frontend/** — Vite demo UI (`@amoeba_/web`: landing, `/demo`, `/compliance`)
 - **docs/** — Design notes, gap analyses, and planning documents
 
 ## Key Commands
@@ -37,7 +37,7 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 |---------|-------------|
 | `pnpm compile:circuit` | Compile Circom circuit |
 | `pnpm setup:circuit` | One-person trusted setup |
-| `pnpm build:js` | Build compliance client, `@amoeba/js`, `@amoeba/sdk` |
+| `pnpm build:js` | Build compliance client, `@amoeba_/js`, `@amoeba_/sdk` |
 | `pnpm gen:fixtures` | Generate witness fixtures |
 | `pnpm gen:bindings` | Regenerate ABI bindings from source |
 | `pnpm gen:crypto-fixtures` | Regenerate crypto/address fixtures |
@@ -45,8 +45,10 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 | `pnpm verify` | Snarkjs local verification |
 | `pnpm test:circuit` | Node circuit tests |
 | `pnpm test:bindings` | Binding ABI + circuit-abi drift tests |
-| `pnpm test:witness` | `@amoeba/js` witness tests |
+| `pnpm test:witness` | `@amoeba_/js` witness tests |
 | `pnpm test:sdk` | SDK unit tests |
+| `./scripts/publish/publish-packages.sh --dry-run` | npm publish dry-run for all `@amoeba_/*` packages |
+| `./scripts/publish/publish-packages.sh` | npm publish (see `scripts/publish/CLAUDE.md`) |
 | `cargo test -p verifier -p compliance` | Contract unit tests |
 | `cargo test -p amoeba-crypto -p amoeba-types -p issuer-service` | Backend crate tests |
 | `./scripts/dev/demo-e2e.sh` | Full local E2E pipeline |
@@ -66,7 +68,7 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 
 - Rust: `#![no_std]`, Soroban SDK 25.1.0, release profile with LTO
 - Circom: BN254, Poseidon2 t=4, 20-level Merkle/SMT depth
-- TypeScript: strict `tsc` → `dist/` for `@amoeba/js` and `@amoeba/sdk`; dev scripts via `tsx`
+- TypeScript: strict `tsc` → `dist/` for `@amoeba_/js` and `@amoeba_/sdk`; dev scripts via `tsx`
 - Node 25 for CI and local JS builds (see `.nvmrc`)
 - Tests: Rust doc tests + snapshot tests, Node `.test.ts`, shell fixture validation
 - Git: meaningful commits, no build artifacts committed

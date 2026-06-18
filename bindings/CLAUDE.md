@@ -23,3 +23,7 @@ pnpm gen:crypto-fixtures # regenerate crypto + address fixtures
 ```
 
 ABI edits must be made in `public-inputs.json` — all generated code is derived from it.
+
+## npm packages
+
+Published from this tree as `@amoeba_/bindings`, `@amoeba_/compliance`, and `@amoeba_/verifier`. After `pnpm gen:bindings` or `soroban contract bindings ts`, run `scripts/patch-bindings.sh` and republish. See [scripts/publish/CLAUDE.md](../scripts/publish/CLAUDE.md).

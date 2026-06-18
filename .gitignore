@@ -13,11 +13,15 @@ target/
 node_modules/
 packages/amoeba-js/dist/
 sdk/dist/
+bindings/dist/
+issuer-sdk/dist/
 frontend/dist/
 frontend/test-results/
 bindings/generated/**/package-lock.json
+bindings/generated/**/dist/
 bindings/generated/publicInputs.mjs
 .env
+.env.local
 
 # Proving artifacts (too large for git)
 circuits/**/artifacts/*.zkey
@@ -40,5 +44,6 @@ circuits/**/*.wtns
 
 # Local issuer state
 .amoeba/issuer-state.json
+.amoeba/issuer-state-testnet.json
 .amoeba/issuer-service.pid
 .amoeba/issuer-service.log

@@ -1,6 +1,6 @@
 # sdk/
 
-TypeScript SDK (`@amoeba/sdk`) — prove, settle, audit compliant transfers on Stellar.
+TypeScript SDK (`@amoeba_/sdk`) — prove, settle, audit compliant transfers on Stellar.
 
 ## Layout
 
@@ -18,8 +18,10 @@ TypeScript SDK (`@amoeba/sdk`) — prove, settle, audit compliant transfers on S
 | `src/errors.ts` | Typed error classes |
 | `src/index.ts` | `AmoebaClient` facade |
 
-Build: `pnpm --filter @amoeba/sdk run build` (requires compliance client + `@amoeba/js` built first).
+Build: `pnpm --filter @amoeba_/sdk run build` (requires compliance client + `@amoeba_/js` built first).
 
-`REPO_ROOT` resolves from package location (not cwd), so tests work via `pnpm --filter @amoeba/sdk`.
+`REPO_ROOT` resolves from package location (not cwd), so tests work via `pnpm --filter @amoeba_/sdk`.
 
 Tests: `pnpm test:sdk` — integration test skips if issuer-service is not on `:3000`; `./scripts/dev/demo-phase3.sh` starts issuer and runs the full prove path.
+
+npm: published as `@amoeba_/sdk` — see [scripts/publish/CLAUDE.md](../scripts/publish/CLAUDE.md).

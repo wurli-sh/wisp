@@ -1,6 +1,6 @@
 # packages/amoeba-js
 
-TypeScript implementation of Amoeba cryptographic primitives (`@amoeba/js`). Compiled to `dist/` via `tsc`.
+TypeScript implementation of Amoeba cryptographic primitives (`@amoeba_/js`). Compiled to `dist/` via `tsc`.
 
 ## Modules
 

@@ -1,6 +1,6 @@
 # frontend
 
-Amoeba demo UI (`@amoeba/web`) — Vite 6 + React 19 + Tailwind 4.
+Amoeba demo UI (`@amoeba_/web`) — Vite 6 + React 19 + Tailwind 4.
 
 **Routes:** `/` landing · `/demo` prove/settle/kyc console · `/compliance` (Proofs | Audit | Corridors tabs)
 

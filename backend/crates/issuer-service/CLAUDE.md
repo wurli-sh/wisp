@@ -24,7 +24,11 @@ Off-chain issuer backend service — manages identity trees, generates Merkle pr
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ISSUER_LISTEN_ADDR` | `127.0.0.1:3000` | HTTP listen address |
-| `ISSUER_STATE_PATH` | `.amoeba/issuer-state.json` | Persistent tree state |
+| `ISSUER_REQUIRE_DB` | — | When `1` (or `AMOEBA_ENV=production`), fail startup if Postgres is unset or unreachable |
+| `AMOEBA_ENV` | — | Set to `production` on Render/deployed hosts |
+| `ISSUER_STATE_PATH` | `.amoeba/issuer-state.json` | JSON snapshot for memory store (users, KYC, roots) |
+| `SUPABASE_DB_URL` | — | Postgres persistence (preferred over file snapshot) |
+| `DATABASE_URL` | — | Alias for `SUPABASE_DB_URL` |
 | `ISSUER_API_TOKEN` | — | Bearer token for root publishing |
 | `ISSUER_PUBLIC_KEY` | — | Issuer Stellar public key |
 | `ADMIN_PUBLIC_KEY` | — | Admin Stellar public key (for admin-signed root publish) |
@@ -42,7 +46,8 @@ Off-chain issuer backend service — manages identity trees, generates Merkle pr
 | Module | Description |
 |--------|-------------|
 | `routes` | Axum route handlers |
-| `state` | In-memory + persisted tree state |
+| `state` | Store layer: Postgres > file snapshot (`ISSUER_STATE_PATH`) > memory |
+| `memory_snapshot` | Atomic JSON load/save for local memory store |
 | `trees` | Identity/SMT merkle tree management |
 | `auth` | Bearer token middleware |
 | `stellar` | Soroban contract interaction |
