@@ -144,7 +144,7 @@ amoeba/
 | **Backend** | Rust issuer-service (Axum) |
 | **SDKs** | `@amoeba_/js`, `@amoeba_/sdk`, `@amoeba_/issuer-sdk` |
 | **Settlement** | Stellar SAC + Soroban `compliant_transfer` |
-| **Design** | Font: Space Grotesk. Primary: `#00008A` |
+| **Design** | Font: Space Grotesk. Primary: `#141812`, Accent: `#B7E7FF` |
 
 ---
 
