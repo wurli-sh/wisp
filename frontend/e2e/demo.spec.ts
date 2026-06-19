@@ -3,14 +3,14 @@ import { test, expect } from "@playwright/test";
 test.describe("Amoeba demo UI", () => {
   test("landing page renders hero copy", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Prove without showing." })).toBeVisible();
-    await expect(page.getByRole("link", { name: "See a live proof →" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Prove every transfer/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Live demo →" })).toBeVisible();
   });
 
-  test("landing page shows what it proves", async ({ page }) => {
-    await page.goto("/#what-it-proves");
-    await expect(page.getByRole("heading", { name: /Eight checks/i })).toBeVisible();
-    await expect(page.getByText("KYC membership")).toBeVisible();
+  test("landing page shows how it works", async ({ page }) => {
+    await page.goto("/#how-it-works");
+    await expect(page.getByRole("heading", { name: /Verify once\. Prove anywhere\./i })).toBeVisible();
+    await expect(page.getByText("Trusted Issuer")).toBeVisible();
   });
 
   test("nav routes to demo", async ({ page }) => {

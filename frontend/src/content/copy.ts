@@ -1,39 +1,47 @@
-export interface HeroCta {
-  readonly label: string;
-  readonly href: string;
-}
-
 export const COPY = {
   hero: {
-    eyebrow: "ZK-COMPLIANCE FOR CROSS-BORDER STELLAR STABLECOINS",
+    eyebrow: "ZK COMPLIANCE · STELLAR STABLECOINS",
     headlineLead: "Prove every transfer.",
     headlineAccent: "Expose nothing.",
-    sub: "Cross-border corridor compliance on Stellar. Customer credentials stay off-chain.",
+    sub: "ZK compliance rails for cross-border stablecoin payments, with a portable issuer SDK.",
     ctas: {
-      primary: { label: "See a live proof →", href: "/demo" },
+      primary: { label: "Live demo →", href: "/demo" },
       secondary: { label: "How it works", href: "#how-it-works" },
     },
+    showcase: [
+      {
+        eyebrow: "CORE ANGLE",
+        title: "ZK compliance rails for cross-border stablecoin payments.",
+        body: "Policy checks, corridor rules, and proof-backed settlement stay in one rail.",
+        points: ["Cross-border corridors", "Proof-backed compliance", "Stellar settlement"],
+      },
+      {
+        eyebrow: "PORTABLE SDK",
+        title: "Plug-and-play issuer SDK built to travel.",
+        body: "Integrate issuer credentials, roots, and transfer flows without tying the stack to a single anchor.",
+        points: ["Issuer adapters", "Portable integration", "Browser prove + wallet settle"],
+      },
+    ],
   },
 
   paradoxAct: {
-    eyebrow: "PUBLIC-CHAIN COMPLIANCE STILL FORCES A BAD TRADEOFF",
+    eyebrow: "THE COMPLIANCE TRADEOFF",
     headline: "Every transfer needs proof.",
     headlineAccent: "Not paperwork.",
-    closer: "Compliance evidence and customer privacy — one rail.",
     withoutZk: {
       label: "Manual compliance",
-      tagline: "Sensitive customer data follows the payment",
+      tagline: "Customer data follows the payment",
       rows: [
         { field: "Recipient", value: "GDKT…4H2P" },
         { field: "Tax ID", value: "489-32-7104" },
         { field: "Country", value: "US (from KYC file)" },
         { field: "Amount", value: "$50,000.00 USDC" },
       ],
-      pill: "HIGH DATA RISK · FRAGMENTED AUDIT",
+      pill: "HIGH RISK · FRAGMENTED AUDIT",
     },
     withZk: {
       label: "Amoeba rail",
-      tagline: "Proof settles with the transfer, credentials stay off-chain",
+      tagline: "Proof settles. Credentials stay off-chain.",
       rows: [
         { field: "Recipient", value: "GDKT…4H2P", revealed: true },
         { field: "Tax ID", value: "Groth16 membership", revealed: false },
@@ -41,35 +49,19 @@ export const COPY = {
         { field: "Amount", value: "$50,000.00 USDC", revealed: true },
       ],
       pill: "COMPLIANT · VERIFIED",
-      caption: "Both move money. Only one leaves reusable proof.",
+      caption: "Both move money. One leaves reusable proof.",
     },
-  },
-
-  whatItProves: {
-    eyebrow: "WHAT EVERY TRANSFER PROVES",
-    headline: "Eight checks.",
-    sub: "Transfers stay visible. Credentials stay private.",
-    checks: [
-      { name: "KYC membership", detail: "Sender is in the issuer's verified-user Merkle tree." },
-      { name: "Nullifier binding", detail: "Each transfer gets a unique anti-replay nullifier." },
-      { name: "Sanctions exclusion", detail: "Sender is not in the OFAC sanctions tree." },
-      { name: "Jurisdiction", detail: "Sender's KYC jurisdiction is allowed for the corridor." },
-      { name: "Credential expiry", detail: "KYC credential is still valid at proof time." },
-      { name: "Corridor source", detail: "Sender jurisdiction matches the corridor source (e.g. US)." },
-      { name: "Corridor destination", detail: "Recipient is in the corridor destination registry." },
-      { name: "Corridor binding", detail: "On-chain corridor config hash matches the proof." },
-    ],
   },
 
   engine: {
     eyebrow: "How it works",
-    headline: "Verify once. Prove anywhere. Settle forever.",
+    headlineLead: "Verify once. Prove anywhere.",
+    headlineAccent: "Settle forever.",
     pipeline: {
       issuer: {
         title: "Trusted Issuer",
         kicker: "identity intake",
-        caption:
-          "Verify once. Publish the root. No documents travel with the payment.",
+        caption: "Verify once. Publish the root. No documents with the payment.",
         steps: [
           { label: "Verifying…", detail: "Document intake" },
           { label: "KYC complete", detail: "Credential issued" },
@@ -79,8 +71,7 @@ export const COPY = {
       compliance: {
         title: "Amoeba",
         kicker: "compliance layer",
-        caption:
-          "The browser proves sender, recipient, corridor, asset, and amount.",
+        caption: "Browser proves sender, recipient, corridor, asset, and amount.",
         steps: [
           { label: "Awaiting credential", detail: "Idle" },
           { label: "Generating proof…", detail: "Groth16 · BN254" },
@@ -100,8 +91,7 @@ export const COPY = {
       receiver: {
         title: "Recipient",
         kicker: "on-chain settlement",
-        caption:
-          "Soroban verifies the proof, records the nullifier, and gates the transfer.",
+        caption: "Soroban verifies proof, records nullifier, gates transfer.",
         steps: [
           { label: "Awaiting proof…", detail: "Pending" },
           { label: "Nullifier recorded", detail: "Verifying on Soroban" },
@@ -109,7 +99,7 @@ export const COPY = {
         ],
       },
       metrics: {
-        left: { value: "<5s", label: "Proof generation" },
+        left: { value: "<5s", label: "Proof time" },
         right: { value: "256B", label: "Proof size" },
       },
     },
@@ -117,43 +107,44 @@ export const COPY = {
 
   builders: {
     eyebrow: "WHY BUILDERS CARE",
-    headline: "Ship the rail, not another compliance backlog.",
-    sub: "Corridor policy, issuer credentials, proof settlement, and audit evidence in one rail.",
-    featuredNote: "US→MX corridor live on Stellar testnet",
+    headlineRest: "Ship one rail across issuers,",
+    headlineAccent: "not one integration.",
+    sub: "Cross-border policy, issuer credentials, settlement, and audit trail in one portable compliance layer.",
+    featuredNote: "US→MX live on testnet",
     benefits: [
       {
         name: "Faster integration",
         stat: "1",
         statLabel: "Shared rail",
-        body: "Reuse one compliance flow instead of rebuilding checks per product.",
+        body: "One compliance flow — not a rebuild per product.",
         tags: ["SDK", "Demo"],
       },
       {
         name: "Corridor logic included",
         stat: "8",
         statLabel: "Checks per proof",
-        body: "Bind sender, recipient, corridor, asset, and amount in one proof.",
+        body: "Sender, recipient, corridor, asset, and amount in one proof.",
         tags: ["Travel rule", "Policy"],
       },
       {
         name: "Less exposed data",
         stat: "0",
         statLabel: "Raw PII on-chain",
-        body: "Keep credentials off-chain while preserving compliance evidence.",
+        body: "Credentials off-chain. Compliance evidence on-chain.",
         tags: ["Privacy", "GDPR"],
       },
       {
         name: "Portable credentials",
         stat: "1",
         statLabel: "Issuer verification",
-        body: "Verify once with an issuer, then reuse the credential across transfers.",
+        body: "Verify once. Reuse across transfers.",
         tags: ["Anchors", "SEP-24"],
       },
       {
         name: "Audit-ready settlement",
         stat: "∞",
         statLabel: "Replayable trail",
-        body: "Nullifiers and events leave an auditable trail without the documents.",
+        body: "Nullifiers and events — auditable without the documents.",
         tags: ["Audit", "Soroban"],
       },
     ],
@@ -161,10 +152,9 @@ export const COPY = {
 
   sdk: {
     eyebrow: "SDK",
-    headline: "See the rail. Then integrate it.",
-    headlineLead: "See the rail.",
-    headlineAccent: "Then integrate it.",
-    sub: "One TypeScript client to prove in the browser, settle with Freighter, and replay the audit trail.",
+    headlineLead: "Portable issuer SDK.",
+    headlineAccent: "Plug it into the rail.",
+    sub: "Designed to slot into issuer and payment flows: prove in the browser, settle with Freighter, replay audit events.",
     tabs: [
       { id: "pnpm", label: "pnpm", command: "pnpm add @amoeba_/sdk" },
       { id: "npm", label: "npm", command: "npm install @amoeba_/sdk" },
@@ -180,16 +170,15 @@ await client.settleWithWallet(proven, pkg, wallet);`,
     stats: [
       { value: "<5s", label: "Browser proving" },
       { value: "256B", label: "Proof size" },
-      { value: "8", label: "Checks in one proof" },
+      { value: "8", label: "Checks per proof" },
     ],
   },
 
   complianceCard: {
-    headline: "A reusable compliance credential for every transfer.",
-    sub: "Complete issuer verification once. Every transfer after carries its own proof without exposing the customer record.",
-    subLead: "Complete issuer verification once. Every transfer after carries its own proof, like a",
-    subAccent: "compliance credential",
-    subTail: "that travels with the payment, not the customer record.",
+    eyebrow: "ZK COMPLIANCE RAIL",
+    headlineAccent: "Verify once.",
+    headlineRest: "Prove on every transfer.",
+    sub: "Each cross-border transfer gets a fresh proof while customer data stays off-chain.",
     card: {
       brand: "Amoeba",
       network: "Stellar",
@@ -197,28 +186,28 @@ await client.settleWithWallet(proven, pkg, wallet);`,
       pan: "4532 •••• •••• 0420",
       corridor: "US → MX",
       status: "COMPLIANT",
-      proof: "Groth16 · 8 checks",
     },
     perks: [
       {
         label: "Verify once",
-        detail: "Issuer signs your credential. Merkle root goes on-chain. You never upload documents again.",
+        detail: "Issuer signs your credential. Merkle root on-chain. No repeat uploads.",
       },
       {
         label: "Prove anywhere",
-        detail: "Generate a fresh Groth16 proof in the browser for every corridor-compliant transfer.",
+        detail: "Fresh Groth16 proof in the browser for every compliant transfer.",
       },
       {
         label: "Audit forever",
-        detail: "Nullifiers and ProofSettled events on Soroban — replayable by anyone with a tx hash.",
+        detail: "Nullifiers and ProofSettled events — replayable from any tx hash.",
       },
     ],
   },
 
   move: {
     closer: {
-      headline: "Stop rebuilding regulated transfer flows from scratch.",
-      sub: "Open the demo to watch a proof generate, settle on Stellar, and leave an audit trail.",
+      eyebrow: "GLOBAL CORRIDORS",
+      headline: "One proof. Every corridor.",
+      sub: "Five fields in. One Groth16 proof out. No PII on-chain.",
       ctas: {
         primary: { label: "Open demo →", href: "/demo" },
         secondary: { label: "View on GitHub", href: "https://github.com/amoeba-zk/amoeba" },
@@ -232,24 +221,6 @@ await client.settleWithWallet(proven, pkg, wallet);`,
       { label: "Demo", href: "/demo" },
     ],
     wallet: { connect: "Connect Wallet", choose: "Choose Wallet" },
-  },
-
-  compliance: {
-    proofs: {
-      title: "Proof settlements",
-      subtitle: "Live feed of settlement events. Every row carries a proof; every proof is replayable.",
-    },
-    audit: {
-      title: "Audit lookup",
-      subtitle: "Search by transaction hash or nullifier.",
-      txPlaceholder: "Transaction hash",
-      nullifierPlaceholder: "Nullifier (hex)",
-      search: "Search",
-    },
-    corridors: {
-      title: "Corridors",
-      subtitle: "Travel-rule corridors enforced by the circuit.",
-    },
   },
 
   demo: {
@@ -266,7 +237,6 @@ await client.settleWithWallet(proven, pkg, wallet);`,
       rejected: "KYC rejected",
       rejectedHint:
         "Wallet verification failed. Retry signing the challenge in Freighter.",
-      submit: "Sign wallet challenge",
       connectFirst: "Connect Freighter before signing the challenge.",
       missing: {
         kyc: "Complete SEP-10 wallet verification for this wallet.",
@@ -281,7 +251,6 @@ await client.settleWithWallet(proven, pkg, wallet);`,
         steps: {
           setup: "Setup",
           verify: "Sign",
-          done: "Done",
         },
         demoPolicy:
           "Demo policy: after wallet verification the issuer assigns a US-approved sender profile (jurisdiction US, sanctions clear). This is not production identity verification.",
@@ -302,7 +271,6 @@ await client.settleWithWallet(proven, pkg, wallet);`,
         continueTransfer: "Continue to transfer",
         reopen: "Verify wallet",
         retry: "Retry verification",
-        rejectedBanner: "Your last verification attempt was rejected.",
         rejectedRequirements: "Ensure you sign the challenge with the connected Freighter account.",
       },
     },
@@ -326,7 +294,6 @@ await client.settleWithWallet(proven, pkg, wallet);`,
       nullifier: "Nullifier",
       transaction: "Transaction",
       connectWallet: "Connect Freighter",
-      refreshPackage: "Refresh proof package",
       fetchPackage: "Fetch proof package",
       proofStatus: "Proof status",
       proofReady: "Ready",
@@ -354,18 +321,5 @@ await client.settleWithWallet(proven, pkg, wallet);`,
       replay: "Replay last proof",
       audit: "View audit event",
     },
-  },
-
-  network: {
-    label: "Stellar testnet",
-    wrongNetwork: "Wrong network — Amoeba runs on Stellar testnet.",
-    switch: "Switch network",
-    switching: "Switching…",
-  },
-
-  footer: {
-    blurb:
-      "Amoeba is ZK-compliance infrastructure for cross-border Stellar stablecoins: private credentials and auditable settlement in one flow.",
-    highlight: "Stellar.",
   },
 } as const;

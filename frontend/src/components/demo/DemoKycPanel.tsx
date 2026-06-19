@@ -4,6 +4,7 @@ import { COPY } from "@/content/copy";
 import { useWallet } from "@/hooks/useWallet";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/cn";
 import { kycMissingLabel, kycRootsLabel } from "@/lib/kyc";
 
 interface DemoKycPanelProps {
@@ -43,23 +44,27 @@ export function DemoKycPanel({ status, skipped, onReopen }: DemoKycPanelProps) {
 
   return (
     <section
-      className={`flex flex-wrap items-center gap-x-3 gap-y-2 border-2 px-4 py-2.5 ${
+      className={cn(
+        "flex flex-wrap items-center gap-x-3 gap-y-2 border-2 px-4 py-2.5",
         approved
-          ? "border-success/30 bg-success-soft/40"
+          ? "border-brand/25 bg-brand-soft/70"
           : revoked
             ? "border-destructive/30 bg-destructive/5"
             : rejected
               ? "border-warning/40 bg-warning/10"
-              : "border-primary/15 bg-primary/3"
-      }`}
+              : "border-border bg-card",
+      )}
     >
       <div className="flex shrink-0 items-center gap-2">
         <ShieldCheck
-          className={`h-3.5 w-3.5 ${approved ? "text-success" : rejected ? "text-warning" : "text-primary"}`}
+          className={cn(
+            "h-3.5 w-3.5",
+            approved ? "text-brand" : revoked ? "text-destructive" : rejected ? "text-warning" : "text-primary",
+          )}
         />
         <h2 className="text-xs font-bold uppercase tracking-wide text-primary">{COPY.demo.kyc.title}</h2>
         <Badge
-          variant={approved ? "success" : revoked ? "danger" : rejected ? "warning" : "warning"}
+          variant={approved ? "brand" : revoked ? "danger" : rejected ? "warning" : "warning"}
           className="py-0.5 text-[10px]"
         >
           {approved
@@ -73,15 +78,16 @@ export function DemoKycPanel({ status, skipped, onReopen }: DemoKycPanelProps) {
       </div>
 
       <p
-        className={`min-w-0 flex-1 text-xs leading-snug ${
+        className={cn(
+          "min-w-0 flex-1 text-xs leading-snug",
           revoked
             ? "text-destructive"
             : rejected
               ? "text-warning"
               : approved && !status?.missing.length
-                ? "text-success"
-                : "text-muted-foreground"
-        }`}
+                ? "text-primary"
+                : "text-muted-foreground",
+        )}
       >
         {hint}
       </p>

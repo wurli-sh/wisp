@@ -261,7 +261,7 @@ export function KycOnboardingModal({
                 >
                   <div className="mb-5 flex items-center gap-3">
                     <div className="flex size-10 shrink-0 items-center justify-center bg-primary-soft">
-                      <ShieldCheck size={18} className="text-primary-bright" />
+                      <ShieldCheck size={18} className="text-primary-dark" />
                     </div>
                     <div>
                       <h2 className="text-lg leading-tight font-bold text-primary">
@@ -286,7 +286,7 @@ export function KycOnboardingModal({
                       return (
                         <div key={feature.label} className="flex items-center gap-3">
                           <div className="flex size-8 shrink-0 items-center justify-center bg-primary-soft">
-                            <Icon size={14} className="text-primary-bright" />
+                            <Icon size={14} className="text-primary-dark" />
                           </div>
                           <div className="min-w-0 flex-1">
                             <span className="block text-sm leading-tight font-medium text-foreground">
@@ -336,7 +336,7 @@ export function KycOnboardingModal({
                       <ShieldCheck size={22} className="text-primary" />
                     </div>
                     <motion.div
-                      className="absolute -right-1 -bottom-1 flex size-5 items-center justify-center bg-primary-bright"
+                      className="absolute -right-1 -bottom-1 flex size-5 items-center justify-center bg-primary-dark"
                       animate={{ scale: [1, 1.15, 1] }}
                       transition={{ duration: 1.5, repeat: Infinity }}
                     >

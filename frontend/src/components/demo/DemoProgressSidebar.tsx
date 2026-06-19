@@ -35,7 +35,7 @@ export function DemoProgressSidebar({ activeStep }: DemoProgressSidebarProps) {
 
       <div className="h-1 w-full bg-muted">
         <div
-          className="h-full bg-primary-bright transition-all duration-300"
+          className="h-full bg-primary-dark transition-all duration-300"
           style={{ width: `${percent}%` }}
         />
       </div>

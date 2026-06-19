@@ -7,6 +7,7 @@ import { stellarExplorerTx } from "@/config/env";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
+import { buttonHover, buttonTap } from "@/lib/animations";
 
 interface DemoTransferPanelProps {
   isConnected: boolean;
@@ -74,14 +75,14 @@ function SwapButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex shrink-0 cursor-pointer items-center justify-center bg-primary-bright text-white shadow-blue-pill outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0c1a] disabled:cursor-not-allowed disabled:opacity-40",
+        "relative z-10 flex shrink-0 cursor-pointer items-center justify-center border-2 border-brand-dark bg-brand text-brand-foreground shadow-blue-pill outline-none transition-colors hover:border-brand-dark hover:bg-brand-dark focus-visible:ring-2 focus-visible:ring-brand/30 focus-visible:ring-offset-2 focus-visible:ring-offset-charcoal-panel disabled:cursor-not-allowed disabled:opacity-40",
         className,
       )}
       animate={{ rotate: spin }}
       transition={{ type: "spring", stiffness: 320, damping: 24 }}
       whileTap={disabled ? undefined : { scale: 0.96 }}
     >
-      <ArrowLeftRight size={16} className="text-white" />
+      <ArrowLeftRight size={16} strokeWidth={2.25} className="text-brand-foreground" />
     </motion.button>
   );
 }
@@ -96,21 +97,23 @@ function DetailStat({
   className?: string;
 }) {
   return (
-    <div className={cn("flex min-h-[4.5rem] flex-col justify-between gap-2 border border-white/5 bg-black/20 p-4", className)}>
-      <span className="text-[10px] font-bold uppercase tracking-widest text-white/40">{label}</span>
-      <span className="truncate font-medium text-white/85">{children}</span>
+    <div className={cn("flex min-h-[4.5rem] flex-col justify-between gap-2 border-2 border-inverse-border bg-charcoal-panel p-4", className)}>
+      <span className="text-[10px] font-bold uppercase tracking-widest text-inverse-muted">{label}</span>
+      <span className="truncate font-medium text-inverse-foreground">{children}</span>
     </div>
   );
 }
 
 const fieldClass =
-  "min-h-12 border border-white/6 bg-black/30 px-4 text-sm font-medium text-white outline-none transition-colors placeholder:text-white/25 focus-visible:border-primary-bright/40 focus-visible:ring-2 focus-visible:ring-primary-bright/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0c1a]";
+  "min-h-12 border-2 border-inverse-border bg-charcoal-panel px-4 text-sm font-medium text-inverse-foreground outline-none transition-colors placeholder:text-inverse-muted focus-visible:border-brand-sky focus-visible:ring-2 focus-visible:ring-brand-sky/20 focus-visible:ring-offset-2 focus-visible:ring-offset-charcoal-panel";
 
-const labelClass = "text-[10px] font-bold uppercase tracking-widest text-white/50";
+const labelClass = "text-[10px] font-bold uppercase tracking-widest text-inverse-muted";
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary-bright/80">{children}</p>
+    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand-sky">
+      {children}
+    </p>
   );
 }
 
@@ -241,18 +244,16 @@ export function DemoTransferPanel({
 
   return (
     <div className="mx-auto w-full max-w-5xl">
-      <div className="relative overflow-hidden border-2 border-white/10 bg-[#0c0c1a] shadow-elev">
-        <div className="h-0.5 bg-linear-to-r from-primary via-primary-bright to-primary" />
-
+      <div className="relative overflow-hidden border-2 border-inverse-border bg-linear-to-br from-charcoal via-charcoal-panel-soft to-charcoal-panel text-inverse-foreground shadow-elev">
         <div className="relative flex flex-col">
-          <div className="flex items-center gap-2 border-b border-white/5 px-6 py-5">
-            <Wallet size={18} className="text-primary-bright" />
-            <span className="text-lg font-bold text-white">{transfer.title}</span>
+          <div className="flex items-center gap-2 border-b-2 border-inverse-border bg-charcoal-panel px-6 py-5">
+            <Wallet size={18} className="text-brand-sky" />
+            <span className="text-lg font-bold text-inverse-foreground">{transfer.title}</span>
           </div>
 
-          <div className="grid lg:grid-cols-2 lg:divide-x lg:divide-white/5">
+          <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
             <form
-              className="flex flex-col gap-6 px-6 py-7"
+              className="flex flex-col gap-6 bg-charcoal px-6 py-7"
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!primary.disabled) primary.onClick();
@@ -267,10 +268,10 @@ export function DemoTransferPanel({
                     value={sourceCountry}
                     onChange={(event) => onSourceCountryChange(event.target.value)}
                     disabled={isLoading}
-                    className={fieldClass}
+                    className={cn(fieldClass, "h-12")}
                   >
                     {sourceOptions.map((option) => (
-                      <option key={option} value={option} className="bg-[#0c0c1a] text-white">
+                      <option key={option} value={option} className="bg-charcoal-panel text-inverse-foreground">
                         {option}
                       </option>
                     ))}
@@ -290,10 +291,10 @@ export function DemoTransferPanel({
                     value={destCountry}
                     onChange={(event) => onDestCountryChange(event.target.value)}
                     disabled={isLoading}
-                    className={fieldClass}
+                    className={cn(fieldClass, "h-12")}
                   >
                     {destOptions.map((option) => (
-                      <option key={option} value={option} className="bg-[#0c0c1a] text-white">
+                      <option key={option} value={option} className="bg-charcoal-panel text-inverse-foreground">
                         {option}
                       </option>
                     ))}
@@ -312,7 +313,7 @@ export function DemoTransferPanel({
                   disabled={isLoading}
                   className={fieldClass}
                 />
-                <span className="text-[10px] leading-snug text-white/35">{transfer.recipientHint}</span>
+                <span className="text-[10px] leading-snug text-inverse-muted">{transfer.recipientHint}</span>
               </label>
 
               <label className="flex max-w-xs flex-col gap-2">
@@ -327,37 +328,43 @@ export function DemoTransferPanel({
                   disabled={isLoading}
                   className={cn(fieldClass, "tabular-nums")}
                 />
-                <span className="text-[10px] leading-snug text-white/35">{transfer.usdcFundingHint}</span>
+                <span className="text-[10px] leading-snug text-inverse-muted">{transfer.usdcFundingHint}</span>
               </label>
 
-              <motion.button
-                type="submit"
-                className="pill-gradient flex min-h-12 max-w-xs cursor-pointer items-center justify-center gap-2 bg-primary-bright px-6 py-3 text-sm font-bold text-white shadow-blue-pill outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c0c1a] disabled:cursor-not-allowed disabled:opacity-50"
-                disabled={primary.disabled}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              <motion.div
+                className="max-w-xs"
+                whileHover={primary.disabled ? undefined : buttonHover}
+                whileTap={primary.disabled ? undefined : buttonTap}
               >
-                {(isConnecting || isLoading) && <Loader2 size={16} className="animate-spin" />}
-                {primary.label}
-              </motion.button>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  size="lg"
+                  className="w-full focus-visible:ring-offset-charcoal"
+                  disabled={primary.disabled}
+                >
+                  {(isConnecting || isLoading) && <Loader2 size={16} className="animate-spin" />}
+                  {primary.label}
+                </Button>
+              </motion.div>
 
               {!primary.disabled && validationError && (
-                <p className="text-xs leading-snug text-amber-300/90">{validationError}</p>
+                <p className="border-2 border-warning/40 bg-warning/15 px-3 py-2 text-xs leading-snug text-warning">{validationError}</p>
               )}
               {primary.disabled && kycBlockReason && (
-                <p className="text-xs leading-snug text-white/45">{kycBlockReason}</p>
+                <p className="border-2 border-inverse-border bg-charcoal-panel-soft px-3 py-2 text-xs leading-snug text-inverse-muted">{kycBlockReason}</p>
               )}
             </form>
 
-            <div className="flex flex-col gap-6 border-t border-white/5 px-6 py-7 lg:border-t-0">
+            <div className="flex flex-col gap-6 border-t-2 border-inverse-border bg-charcoal-panel/80 px-6 py-7 lg:border-t-0 lg:border-l-2">
               <SectionTitle>Preview</SectionTitle>
 
-              <div className="flex flex-col gap-4 border border-white/5 bg-white/4 p-5">
+              <div className="flex flex-col gap-4 border-2 border-inverse-border bg-charcoal-panel-soft p-5">
                 <div className="flex h-7 justify-center overflow-hidden">
                   <AnimatePresence mode="wait" initial={false}>
                     <motion.span
                       key={corridorLabel}
-                      className="bg-white/5 px-3 py-1 text-xs font-bold uppercase tracking-wide text-white/60 ring-1 ring-white/5"
+                      className="bg-brand px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand-foreground ring-1 ring-brand/20"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
@@ -368,23 +375,23 @@ export function DemoTransferPanel({
                   </AnimatePresence>
                 </div>
 
-                <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3">
+                <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
                   <div className="min-w-0 overflow-hidden">
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-white/40">
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-inverse-muted">
                       {transfer.youSend}
                     </p>
                     <p
-                      className="truncate text-xl font-semibold tabular-nums text-white sm:text-2xl"
+                      className="truncate text-xl font-semibold tabular-nums text-inverse-foreground sm:text-2xl"
                       title={amount || undefined}
                     >
                       {previewAmount(amount)}
                     </p>
-                    <span className="mt-2 inline-block bg-primary-bright/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-primary-bright ring-1 ring-primary-bright/15">
+                    <span className="mt-2 inline-block bg-brand px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-foreground ring-1 ring-brand/30">
                       {transfer.asset}
                     </span>
                   </div>
 
-                  <div className="flex justify-center pt-6">
+                  <div className="flex justify-center">
                     <SwapButton
                       onClick={handleSwap}
                       disabled={!canSwapCountries}
@@ -394,11 +401,11 @@ export function DemoTransferPanel({
                   </div>
 
                   <div className="min-w-0 overflow-hidden text-right">
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-white/40">
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-inverse-muted">
                       {transfer.recipient}
                     </p>
                     <p
-                      className="truncate text-lg font-semibold text-white/90 sm:text-xl"
+                      className="truncate text-lg font-semibold text-inverse-foreground sm:text-xl"
                       title={recipient || undefined}
                     >
                       {recipient ? truncate(recipient, 8, 6) : "—"}
@@ -412,7 +419,7 @@ export function DemoTransferPanel({
                 <div className="grid gap-3 sm:grid-cols-2">
                   <DetailStat label={transfer.corridorId}>{corridorId || "—"}</DetailStat>
                   <DetailStat label={transfer.proofStatus}>
-                    <span className={hasProof ? "text-emerald-400" : "text-white/45"}>
+                    <span className={hasProof ? "text-success" : "text-inverse-muted"}>
                       {hasProof ? transfer.proofReady : transfer.proofPending}
                     </span>
                   </DetailStat>
@@ -447,7 +454,7 @@ export function DemoTransferPanel({
                             href={stellarExplorerTx(txHash)}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-semibold text-primary-bright hover:underline"
+                            className="font-semibold text-brand-sky hover:underline"
                           >
                             {truncate(txHash, 8, 8)}
                           </a>
@@ -460,12 +467,12 @@ export function DemoTransferPanel({
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 border-t border-white/5 bg-black/20 px-6 py-6">
+          <div className="flex flex-col gap-4 border-t-2 border-inverse-border bg-charcoal-panel px-6 py-6">
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 variant="danger"
                 size="sm"
-                className="!border !border-red-500/10 bg-red-500/10 text-red-300 hover:bg-red-500/15"
+                className="border-destructive/50 bg-destructive/15 shadow-none"
                 disabled={isLoading || !hasProof}
                 onClick={onTryInvalid}
               >
@@ -474,7 +481,7 @@ export function DemoTransferPanel({
               <Button
                 variant="outline"
                 size="sm"
-                className="!border !border-white/8 bg-white/5 text-white/70 shadow-none hover:bg-white/10"
+                className="border-2 border-inverse-border bg-charcoal-panel text-inverse-muted !shadow-none hover:bg-charcoal-panel-soft hover:text-inverse-foreground"
                 disabled={isLoading || !canReplay}
                 onClick={onTryReplay}
               >

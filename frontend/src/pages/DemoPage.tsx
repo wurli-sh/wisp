@@ -638,8 +638,8 @@ export function DemoPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 py-8 lg:gap-8 lg:py-12">
-      <header className="flex flex-col items-center gap-3 text-center sm:items-start sm:text-left">
-        <Badge variant={isConnected ? "success" : "warning"} className="self-center sm:self-start">
+      <header className="flex flex-col items-center gap-3 border-2 border-border bg-brand-soft/80 px-5 py-5 text-center shadow-none sm:items-start sm:px-6 sm:text-left">
+        <Badge variant={isConnected ? "brand" : "warning"} className="self-center sm:self-start">
           {isConnected ? "Wallet connected" : "Wallet disconnected"}
         </Badge>
         <div>
@@ -663,7 +663,9 @@ export function DemoPage() {
         </p>
       )}
 
-      <DemoProgressSidebar activeStep={activeStep} />
+      <div className="border-2 border-border bg-background px-4 py-4 shadow-soft sm:px-5">
+        <DemoProgressSidebar activeStep={activeStep} />
+      </div>
 
       <KycOnboardingModal
         open={showKycModal}
