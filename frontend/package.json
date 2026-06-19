@@ -15,6 +15,7 @@
     "@paper-design/shaders-react": "^0.0.76",
     "@stellar/freighter-api": "^5.0.0",
     "clsx": "^2.1.1",
+    "cobe": "^2.0.1",
     "framer-motion": "^12.36.0",
     "lucide-react": "^0.577.0",
     "react": "^19.2.4",

@@ -20,6 +20,11 @@ set -a
 [[ -f "${ROOT}/.amoeba/compliance.env" ]] && source "${ROOT}/.amoeba/compliance.env"
 set +a
 
+if [[ -n "${SUPABASE_DB_POOLER_URL:-}" ]] && [[ "${AMOEBA_ENV:-}" == "production" || -n "${RENDER:-}" ]]; then
+  export SUPABASE_DB_URL="${SUPABASE_DB_POOLER_URL}"
+  export DATABASE_URL="${SUPABASE_DB_POOLER_URL}"
+fi
+
 export ISSUER_LISTEN_ADDR="${ISSUER_LISTEN_ADDR:-127.0.0.1:3000}"
 export ISSUER_STATE_PATH="${ROOT}/.amoeba/issuer-state-testnet.json"
 export ISSUER_API_TOKEN="${ISSUER_API_TOKEN:-demo-token}"
@@ -37,6 +42,11 @@ export HORIZON_URL="${HORIZON_URL:-https://horizon-testnet.stellar.org}"
 export KYC_MODE="${KYC_MODE:-sep10}"
 export RUST_LOG="${RUST_LOG:-issuer_service=info,tower_http=warn}"
 export PROVIDER_WEBHOOK_SECRETS="${PROVIDER_WEBHOOK_SECRETS:-fixture=demo-fixture-secret}"
+
+REQUIRE_DB=0
+if [[ "${ISSUER_REQUIRE_DB:-}" == "1" || "${AMOEBA_ENV:-}" == "production" || -n "${RENDER:-}" ]]; then
+  REQUIRE_DB=1
+fi
 
 if [[ -z "${COMPLIANCE_DEPLOY_LEDGER:-}" ]] && [[ -n "${COMPLIANCE_CONTRACT_ID}" ]]; then
   COMPLIANCE_DEPLOY_LEDGER="$("${ROOT}/scripts/dev/compliance-deploy-ledger.sh" "${COMPLIANCE_CONTRACT_ID}" 2>/dev/null || true)"
@@ -69,10 +79,20 @@ if [[ -z "${ISSUER_PUBLIC_KEY}" ]]; then
   exit 1
 fi
 
+DB_ENABLED=0
 if [[ -n "${SUPABASE_DB_URL:-}" ]]; then
+  DB_ENABLED=1
   log_bru "running issuer db migrations…"
-  "${ROOT}/scripts/deploy/migrate-issuer-db.sh"
-  log_bru "db migrations ok"
+  if "${ROOT}/scripts/deploy/migrate-issuer-db.sh"; then
+    log_bru "db migrations ok"
+  elif [[ "${REQUIRE_DB}" == "1" ]]; then
+    exit 1
+  else
+    log_bru "db unreachable in local mode, falling back to ISSUER_STATE_PATH"
+    unset SUPABASE_DB_URL
+    unset DATABASE_URL
+    DB_ENABLED=0
+  fi
 fi
 
 mkdir -p "${ROOT}/.amoeba"
@@ -112,7 +132,7 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 STORE="memory"
-[[ -n "${SUPABASE_DB_URL:-}" ]] && STORE="postgres"
+[[ "${DB_ENABLED}" == "1" ]] && STORE="postgres"
 if [[ "${STORE}" == "memory" ]]; then
   log_bru "KYC persists via ISSUER_STATE_PATH=${ISSUER_STATE_PATH} (set SUPABASE_DB_URL for Postgres)"
 fi
@@ -154,7 +174,7 @@ if [[ "${REPUBLISH_ROOTS}" == "1" ]]; then
   fi
 fi
 
-if [[ -n "${SUPABASE_DB_URL:-}" ]]; then
+if [[ "${DB_ENABLED}" == "1" ]]; then
   if "${ROOT}/scripts/dev/patch-corridor-circle-asset.sh"; then
     log_bru "corridor asset ok"
   else
