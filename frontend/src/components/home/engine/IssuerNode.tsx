@@ -23,7 +23,7 @@ export function IssuerNode({ phase, cardRef, hideCaption }: IssuerNodeProps) {
             <Building2 size={14} strokeWidth={2} aria-hidden />
           </span>
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-primary-bright">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-primary-dark">
               {issuer.kicker}
             </p>
             <p className="truncate text-sm font-bold text-primary">{issuer.title}</p>

@@ -49,11 +49,11 @@ function tokenizeTsLine(line: string): Token[] {
 
 const tokenClass: Record<Token["type"], string> = {
   keyword: "text-primary-soft",
-  string: "text-[#FFF0B3]",
-  type: "text-[#B8F0FF]",
-  method: "text-white/95",
-  plain: "text-white/90",
-  punct: "text-white/55",
+  string: "text-code-command-accent",
+  type: "text-code-type",
+  method: "text-code-plain",
+  plain: "text-code-plain",
+  punct: "text-code-punct",
   space: "",
 };
 
@@ -87,19 +87,19 @@ export function InstallCommand({ command }: { command: string }) {
   const match = command.match(/^(pnpm|npm|yarn|bun)\s+(add|install)\s+(\S+)$/);
 
   if (!match) {
-    return <span className={cn(SNIPPET_CLASS, "text-white/90")}>{command}</span>;
+    return <span className={cn(SNIPPET_CLASS, "text-code-plain")}>{command}</span>;
   }
 
   const [, pm, verb, pkg] = match;
 
   return (
     <p className={cn("flex-1 text-left", SNIPPET_CLASS)}>
-      <span className="text-white/55">$ </span>
-      <span className="text-primary-bright">{pm}</span>
-      <span className="text-white/55"> </span>
-      <span className="text-[#B8F0FF]">{verb}</span>
-      <span className="text-white/55"> </span>
-      <span className="text-[#FFF0B3]">{pkg}</span>
+      <span className="text-code-punct">$ </span>
+      <span className="text-code-command">{pm}</span>
+      <span className="text-code-punct"> </span>
+      <span className="text-code-type">{verb}</span>
+      <span className="text-code-punct"> </span>
+      <span className="text-code-command-accent">{pkg}</span>
     </p>
   );
 }

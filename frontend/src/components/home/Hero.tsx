@@ -14,23 +14,35 @@ import {
 const TRUST_CHIPS = ["Stellar testnet", "Groth16 BN254", "8 checks · 1 proof"] as const;
 
 export function Hero() {
+  const { hero } = COPY;
+
   return (
-    <section className="relative flex min-h-[calc(100dvh-5.5rem)] items-center justify-center overflow-hidden bg-background py-16">
+    <section className="relative flex min-h-[calc(100dvh-5.5rem)] items-center justify-center overflow-hidden bg-background py-28 md:py-32">
       <motion.div
-        className="pointer-events-none absolute bottom-0 left-1/2 z-0 h-[20%] w-full max-w-4xl -translate-x-1/2 px-4 sm:px-6"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 mx-auto h-[24%] w-full max-w-5xl px-4 opacity-80 sm:h-[28%] sm:px-6"
         initial={{ opacity: 0 }}
-        animate={{ opacity: 0.95 }}
+        animate={{ opacity: 0.8 }}
         transition={{ duration: 2, delay: 0.1 }}
       >
-        <Dithering
-          style={{ height: "100%", width: "100%" }}
-          colorBack="#2525AA"
-          colorFront="#D8F1FF"
-          shape="simplex"
-          type="4x4"
-          scale={0.3}
-          speed={0.02}
-        />
+        <div
+          className="h-full w-full overflow-hidden"
+          style={{
+            maskImage: "linear-gradient(to top, black 18%, rgba(0,0,0,0.82) 45%, transparent 100%)",
+            WebkitMaskImage:
+              "linear-gradient(to top, black 18%, rgba(0,0,0,0.82) 45%, transparent 100%)",
+          }}
+        >
+          <Dithering
+            className="h-full w-full"
+            style={{ height: "100%", width: "100%" }}
+            colorBack="#F4FBFF"
+            colorFront="#0C100B"
+            shape="simplex"
+            type="4x4"
+            scale={0.42}
+            speed={0.018}
+          />
+        </div>
       </motion.div>
 
       <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center px-4 text-center sm:px-6">
@@ -41,38 +53,45 @@ export function Hero() {
           animate="visible"
         >
           <motion.div
-            className="mb-6 inline-flex items-center gap-2.5 border-2 border-primary/20 bg-primary-soft px-3.5 py-2 text-sm font-medium text-primary"
+            className="mb-6 inline-flex items-center gap-2.5 border-2 border-brand/15 bg-brand-soft px-3.5 py-2 text-sm font-medium text-primary"
             variants={fadeInUp}
           >
-            <div className="size-3.5 shrink-0 bg-primary-bright shadow-blue-pill" />
-            {COPY.hero.eyebrow}
+            <div className="size-3 shrink-0 bg-primary/80" />
+            {hero.eyebrow}
           </motion.div>
 
           <motion.h1
-            className="text-balance text-4xl font-bold leading-[1.1] tracking-tight text-foreground sm:text-5xl lg:text-6xl"
+            className="text-balance text-4xl font-bold leading-[1.1] tracking-tight text-charcoal sm:text-5xl lg:text-6xl"
             variants={fadeInUp}
           >
-            {COPY.hero.headlineLead}{" "}
+            {hero.headlineLead}{" "}
             <HighlightedText variant="sky" from="bottom" delay={0.12} className="whitespace-nowrap">
-              {COPY.hero.headlineAccent}
+              {hero.headlineAccent}
             </HighlightedText>
           </motion.h1>
+
+          <motion.p
+            className="mt-5 max-w-2xl text-balance text-sm leading-relaxed text-muted-foreground sm:text-base"
+            variants={fadeInUp}
+          >
+            {hero.sub}
+          </motion.p>
 
           <motion.div
             className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4"
             variants={fadeInUp}
           >
-            <Link to={COPY.hero.ctas.primary.href}>
+            <Link to={hero.ctas.primary.href}>
               <motion.div whileHover={buttonHover} whileTap={buttonTap}>
                 <Button size="lg" variant="primary">
-                  {COPY.hero.ctas.primary.label}
+                  {hero.ctas.primary.label}
                 </Button>
               </motion.div>
             </Link>
-            <a href={COPY.hero.ctas.secondary.href}>
+            <a href={hero.ctas.secondary.href}>
               <motion.div whileHover={buttonHover} whileTap={buttonTap}>
                 <Button size="lg" variant="outline">
-                  {COPY.hero.ctas.secondary.label}
+                  {hero.ctas.secondary.label}
                 </Button>
               </motion.div>
             </a>
@@ -91,6 +110,7 @@ export function Hero() {
               </li>
             ))}
           </motion.ul>
+
         </motion.div>
       </div>
     </section>

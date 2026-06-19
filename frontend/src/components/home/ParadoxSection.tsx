@@ -60,7 +60,7 @@ export function ParadoxSection() {
   const { paradoxAct } = COPY;
 
   return (
-    <section className="relative overflow-hidden bg-background py-24">
+    <section className="relative overflow-hidden bg-background py-28 md:py-32">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.35]"
         aria-hidden
@@ -91,7 +91,7 @@ export function ParadoxSection() {
             className="mt-4 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
           >
             {paradoxAct.headline}{" "}
-            <HighlightedText variant="primary" from="bottom" inView delay={0.06}>
+            <HighlightedText variant="sky" from="bottom" inView delay={0.06}>
               {paradoxAct.headlineAccent}
             </HighlightedText>
           </motion.h2>
@@ -203,18 +203,6 @@ export function ParadoxSection() {
             </motion.article>
           </div>
         </div>
-
-        <motion.p
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={scrollViewport}
-          className="mt-14 text-center text-lg font-medium text-primary"
-        >
-          Compliance and privacy —{" "}
-          <HighlightedText variant="soft" from="left" inView>
-            one proof.
-          </HighlightedText>
-        </motion.p>
       </div>
     </section>
   );

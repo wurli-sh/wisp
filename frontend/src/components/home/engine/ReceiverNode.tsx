@@ -23,7 +23,7 @@ export function ReceiverNode({ phase, cardRef, hideCaption }: ReceiverNodeProps)
             <Wallet size={14} strokeWidth={2} aria-hidden />
           </span>
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-primary-bright">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-primary-dark">
               {receiver.kicker}
             </p>
             <p className="truncate text-sm font-bold text-primary">{receiver.title}</p>

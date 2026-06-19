@@ -48,12 +48,12 @@ export function Tabs({
               <>
                 <motion.div
                   layoutId={layoutId}
-                  className="absolute inset-0 border border-primary/20 bg-primary-bright/25 shadow-soft"
+                  className="absolute inset-0 border border-brand/20 bg-brand-soft shadow-soft"
                   transition={{ type: "spring", stiffness: 420, damping: 32 }}
                 />
                 <motion.div
                   layoutId={`${layoutId}-bar`}
-                  className="absolute inset-x-0 bottom-0 h-0.5 bg-primary-bright"
+                  className="absolute inset-x-0 bottom-0 h-0.5 bg-primary-dark"
                   transition={{ type: "spring", stiffness: 420, damping: 32 }}
                 />
               </>

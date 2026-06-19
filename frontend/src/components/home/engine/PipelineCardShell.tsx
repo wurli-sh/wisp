@@ -31,7 +31,7 @@ export function PipelineCardShell({
       className={cn(
         "flex shrink-0 flex-col border-2 bg-background p-4 shadow-soft",
         isCenter ? "border-primary/40 bg-card shadow-card" : "border-border",
-        active && isCenter && "border-primary-bright shadow-blue-pill",
+        active && isCenter && "border-primary-dark shadow-blue-pill",
         className,
       )}
     >

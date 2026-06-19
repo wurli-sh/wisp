@@ -25,10 +25,10 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 flex w-full justify-center px-4">
-      <div className={cn("mt-4 grid h-14 w-full grid-cols-[1fr_auto_1fr] items-center border-2 border-border bg-primary-soft/80 px-4 shadow-soft backdrop-blur-md sm:px-6", PAGE_MAX)}>
+      <div className={cn("mt-4 grid h-14 w-full grid-cols-[1fr_auto_1fr] items-center border-2 border-border bg-brand-soft/60 px-4 shadow-soft backdrop-blur-md sm:px-6", PAGE_MAX)}>
         <Link to="/" className="group flex select-none items-center gap-2">
-          <div className="flex size-4 items-center justify-center bg-primary-bright shadow-blue-pill" />
-          <span className="text-base font-bold tracking-tight text-primary transition-colors group-hover:text-primary-bright">
+          <div className="flex size-4 items-center justify-center bg-brand shadow-blue-pill" />
+          <span className="text-base font-bold tracking-tight text-primary transition-colors group-hover:text-charcoal">
             Amoeba
           </span>
         </Link>
@@ -43,13 +43,13 @@ export function Navbar() {
                 to={href}
                 className={cn(
                   "relative px-3 py-1.5 text-xs font-medium transition-colors duration-200 sm:px-4 sm:text-sm",
-                  isActive ? "text-primary" : "text-muted-foreground hover:text-primary",
+                  isActive ? "text-brand-foreground" : "text-muted-foreground hover:text-primary",
                 )}
               >
                 {isActive && (
                   <motion.div
                     layoutId="activeNav"
-                    className="absolute inset-0 bg-primary-bright/20"
+                    className="absolute inset-0 bg-brand-dark"
                     transition={{ type: "spring", stiffness: 350, damping: 30 }}
                   />
                 )}
@@ -72,7 +72,7 @@ export function Navbar() {
                 aria-haspopup="menu"
                 aria-expanded={walletMenuOpen}
                 onClick={() => setWalletMenuOpen(!walletMenuOpen)}
-                className="pill-gradient flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap bg-primary-bright px-4 py-2 text-xs font-semibold text-primary-foreground shadow-blue-pill sm:px-5 sm:text-sm"
+                className="pill-gradient flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap bg-brand px-4 py-2 text-xs font-semibold text-brand-foreground shadow-blue-pill hover:bg-brand-dark sm:px-5 sm:text-sm"
               >
                 {COPY.nav.wallet.connect}
               </motion.button>
@@ -98,7 +98,7 @@ export function Navbar() {
                     }}
                     className="flex w-full cursor-pointer items-center gap-3 px-3 py-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-muted"
                   >
-                    <div className="size-4 bg-primary-bright" />
+                    <div className="size-4 bg-primary-dark" />
                     Freighter
                   </button>
                 </div>

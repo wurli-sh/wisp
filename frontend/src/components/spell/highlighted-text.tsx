@@ -24,7 +24,7 @@ const fromVariants = {
 
 const variantStyles: Record<HighlightVariant, { highlight: string; text: string }> = {
   bright: {
-    highlight: "bg-primary-bright",
+    highlight: "bg-primary-dark",
     text: "text-primary-foreground",
   },
   primary: {
@@ -36,8 +36,8 @@ const variantStyles: Record<HighlightVariant, { highlight: string; text: string 
     text: "text-primary",
   },
   sky: {
-    highlight: "bg-[#D8F1FF]",
-    text: "text-primary",
+    highlight: "bg-brand",
+    text: "text-brand-foreground",
   },
 };
 

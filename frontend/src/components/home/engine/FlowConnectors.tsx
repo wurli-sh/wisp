@@ -117,36 +117,67 @@ type GlowPathProps = {
   d: string;
   active: boolean;
   reducedMotion: boolean;
-  delay?: number;
 };
 
-function GlowPath({ d, active, reducedMotion, delay = 0 }: GlowPathProps) {
+function GlowPath({ d, active, reducedMotion }: GlowPathProps) {
   return (
     <g>
-      <path d={d} fill="none" stroke="#D4D4F0" strokeWidth="1.25" />
+      <path
+        d={d}
+        fill="none"
+        stroke="color-mix(in srgb, var(--color-border) 88%, white)"
+        strokeWidth="1.25"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      />
       {active && (
-        <motion.path
-          d={d}
-          fill="none"
-          stroke="#4D4DFF"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          pathLength={1}
-          strokeDasharray="0.1 0.9"
-          initial={{ strokeDashoffset: 1, opacity: 0.5 }}
-          animate={
-            reducedMotion
-              ? { strokeDashoffset: 0, opacity: 0.8 }
-              : { strokeDashoffset: [1, 0], opacity: [0.5, 1, 0.5] }
-          }
-          transition={{
-            duration: 1.6,
-            repeat: reducedMotion ? 0 : Infinity,
-            ease: "easeInOut",
-            delay,
-          }}
-          style={{ filter: "drop-shadow(0 0 5px rgba(77,77,255,0.7))" }}
-        />
+        <>
+          <motion.path
+            d={d}
+            fill="none"
+            stroke="color-mix(in srgb, var(--color-brand-sky) 68%, white)"
+            strokeWidth="2.75"
+            strokeLinecap="round"
+            vectorEffect="non-scaling-stroke"
+            initial={{ pathLength: 0, opacity: 0 }}
+            animate={
+              reducedMotion
+                ? { pathLength: 1, opacity: 0.7 }
+                : { pathLength: 1, opacity: 0.62 }
+            }
+            transition={{
+              pathLength: { duration: 0.72, ease: [0.22, 1, 0.36, 1] },
+              opacity: { duration: reducedMotion ? 0.3 : 0.45 },
+            }}
+            style={{
+              filter:
+                "drop-shadow(0 0 7px color-mix(in srgb, var(--color-brand-sky) 38%, transparent))",
+            }}
+          />
+          {!reducedMotion && (
+            <motion.path
+              d={d}
+              fill="none"
+              stroke="var(--color-primary-dark)"
+              strokeWidth="1.85"
+              strokeLinecap="round"
+              vectorEffect="non-scaling-stroke"
+              pathLength={1}
+              strokeDasharray="0.22 0.78"
+              initial={{ strokeDashoffset: 1, opacity: 0 }}
+              animate={{ strokeDashoffset: [1, 0], opacity: [0, 0.9, 0] }}
+              transition={{
+                duration: 1.8,
+                repeat: Infinity,
+                ease: "linear",
+              }}
+              style={{
+                filter:
+                  "drop-shadow(0 0 5px color-mix(in srgb, var(--color-brand-sky) 26%, transparent))",
+              }}
+            />
+          )}
+        </>
       )}
     </g>
   );
@@ -198,10 +229,10 @@ export function FlowConnectors({
   if (!layout) return null;
 
   const paths = [
-    { d: cubicPath(layout.leftTop.start, layout.leftTop.end), active: isLeftPathActive(phase), delay: 0 },
-    { d: cubicPath(layout.leftBottom.start, layout.leftBottom.end), active: isLeftPathActive(phase), delay: 0.15 },
-    { d: cubicPath(layout.rightTop.start, layout.rightTop.end), active: isRightPathActive(phase), delay: 0 },
-    { d: cubicPath(layout.rightBottom.start, layout.rightBottom.end), active: isRightPathActive(phase), delay: 0.15 },
+    { d: cubicPath(layout.leftTop.start, layout.leftTop.end), active: isLeftPathActive(phase) },
+    { d: cubicPath(layout.leftBottom.start, layout.leftBottom.end), active: isLeftPathActive(phase) },
+    { d: cubicPath(layout.rightTop.start, layout.rightTop.end), active: isRightPathActive(phase) },
+    { d: cubicPath(layout.rightBottom.start, layout.rightBottom.end), active: isRightPathActive(phase) },
   ];
 
   return (
@@ -215,13 +246,7 @@ export function FlowConnectors({
         aria-hidden
       >
         {paths.map((path, i) => (
-          <GlowPath
-            key={i}
-            d={path.d}
-            active={path.active}
-            reducedMotion={reducedMotion}
-            delay={path.delay}
-          />
+          <GlowPath key={i} d={path.d} active={path.active} reducedMotion={reducedMotion} />
         ))}
       </svg>
 

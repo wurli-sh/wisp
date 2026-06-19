@@ -10,10 +10,11 @@ import {
 import { PAGE_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
 import { cn } from "@/lib/cn";
+import { HighlightedText } from "@/components/spell/highlighted-text";
 import { fadeInUp, scrollViewport, staggerContainer } from "@/lib/animations";
 
 const dotGrid = {
-  backgroundImage: "radial-gradient(circle, rgba(77, 77, 255, 0.35) 1px, transparent 1px)",
+  backgroundImage: "radial-gradient(circle, color-mix(in srgb, var(--color-brand-sky) 70%, transparent) 1px, transparent 1px)",
   backgroundSize: "16px 16px",
 };
 
@@ -34,7 +35,7 @@ function MarketTags({ tags }: { tags: readonly string[] }) {
       {tags.map((tag) => (
         <li
           key={tag}
-          className="border-2 border-border bg-muted/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground transition-colors duration-300 group-hover:border-white/20 group-hover:bg-white/10 group-hover:text-white/80"
+          className="border-2 border-border bg-muted/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground transition-colors duration-300 group-hover:border-brand-sky/30 group-hover:bg-primary-dark group-hover:text-brand-sky"
         >
           {tag}
         </li>
@@ -47,7 +48,7 @@ export function UseCasesSection() {
   const { builders } = COPY;
 
   return (
-    <section className="bg-background py-24">
+    <section className="bg-background py-28 md:py-32">
       <div className={cn("mx-auto px-4 sm:px-6", PAGE_MAX)}>
         <motion.div
           initial="hidden"
@@ -66,7 +67,10 @@ export function UseCasesSection() {
             variants={fadeInUp}
             className="mt-3 text-3xl font-bold text-foreground sm:text-4xl"
           >
-            {builders.headline}
+            {builders.headlineRest}{" "}
+            <HighlightedText variant="sky" from="bottom" inView delay={0.08}>
+              {builders.headlineAccent}
+            </HighlightedText>
           </motion.h2>
           <motion.p
             variants={fadeInUp}
@@ -94,7 +98,7 @@ export function UseCasesSection() {
                 variants={fadeInUp}
                 transition={{ delay: index * 0.05 }}
                 className={cn(
-                  "group relative flex min-h-[168px] flex-col overflow-hidden border-2 border-charcoal bg-card p-5 shadow-soft transition-shadow duration-300 hover:shadow-card",
+                  "group relative flex min-h-[168px] flex-col overflow-hidden border-2 border-border bg-card p-5 shadow-soft transition-shadow duration-300 hover:shadow-card",
                   layout.className,
                 )}
               >
@@ -113,13 +117,13 @@ export function UseCasesSection() {
                     <Icon
                       size={26}
                       strokeWidth={1.5}
-                      className="shrink-0 text-primary transition-colors duration-300 group-hover:text-primary-bright"
+                      className="shrink-0 text-primary transition-colors duration-300 group-hover:text-brand-sky"
                     />
                     <div className="text-right">
                       <p className="text-xl font-bold leading-none text-primary transition-colors duration-300 group-hover:text-white">
                         {market.stat}
                       </p>
-                      <p className="mt-1 max-w-[120px] text-[10px] font-bold uppercase tracking-wide text-muted-foreground transition-colors duration-300 group-hover:text-primary-bright">
+                      <p className="mt-1 max-w-[120px] text-[10px] font-bold uppercase tracking-wide text-muted-foreground transition-colors duration-300 group-hover:text-brand-sky">
                         {market.statLabel}
                       </p>
                     </div>
@@ -129,14 +133,14 @@ export function UseCasesSection() {
                     {market.name}
                   </h3>
 
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground transition-colors duration-300 group-hover:text-white/80">
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground transition-colors duration-300 group-hover:text-brand-sky">
                     {market.body}
                   </p>
 
                   <MarketTags tags={market.tags} />
 
                   {isFeatured && (
-                    <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-colors duration-300 group-hover:text-primary-bright">
+                    <p className="mt-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground transition-colors duration-300 group-hover:text-brand-sky">
                       {builders.featuredNote}
                     </p>
                   )}

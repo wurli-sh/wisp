@@ -15,7 +15,7 @@ function MobileConnector({ metric }: { metric?: { value: string; label: string }
         <PipelineMetric value={metric.value} label={metric.label} className="mb-2" />
       )}
       <div className="h-6 w-px border-l-2 border-dashed border-primary/40" />
-      <div className="my-1 h-1.5 w-1.5 bg-primary-bright" />
+      <div className="my-1 h-1.5 w-1.5 bg-primary-dark" />
       <div className="h-6 w-px border-l-2 border-dashed border-primary/40" />
     </div>
   );

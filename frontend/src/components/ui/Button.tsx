@@ -10,9 +10,9 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "pill-gradient bg-primary text-primary-foreground shadow-pill hover:bg-primary-dark active:scale-[0.97]",
+    "border-2 border-charcoal bg-charcoal text-brand-foreground shadow-none hover:border-primary-dark hover:bg-primary-dark active:scale-[0.97]",
   secondary:
-    "pill-gradient bg-primary-bright text-primary-foreground shadow-blue-pill hover:opacity-90 active:scale-[0.97]",
+    "pill-gradient bg-brand-soft text-brand shadow-blue-pill hover:bg-brand/10 active:scale-[0.97]",
   outline:
     "border-2 border-border bg-background text-foreground shadow-soft hover:bg-muted active:scale-[0.97]",
   danger:
@@ -35,7 +35,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 font-semibold outline-none transition-all focus-visible:ring-2 focus-visible:ring-primary-bright focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100",
+        "inline-flex min-h-10 cursor-pointer items-center justify-center gap-2 font-semibold outline-none transition-all focus-visible:ring-2 focus-visible:ring-charcoal focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100",
         variantStyles[variant],
         sizeStyles[size],
         className,
