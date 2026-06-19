@@ -9,7 +9,7 @@ export function EngineSection() {
   const { engine } = COPY;
 
   return (
-    <section id="how-it-works" className="overflow-hidden py-20">
+    <section id="how-it-works" className="overflow-hidden py-28 md:py-32">
       <div className={cn("mx-auto max-w-6xl px-4 sm:px-6")}>
         <motion.div
           initial="hidden"
@@ -26,11 +26,11 @@ export function EngineSection() {
           </motion.p>
           <motion.h2
             variants={fadeInUp}
-            className="mt-3 text-3xl font-bold text-primary sm:text-4xl"
+            className="mt-3 text-3xl font-bold text-charcoal sm:text-4xl"
           >
-            Verify once. Prove anywhere.{" "}
-            <HighlightedText variant="primary" from="bottom" inView delay={0.08}>
-              Settle forever.
+            {engine.headlineLead}{" "}
+            <HighlightedText variant="sky" from="bottom" inView delay={0.08}>
+              {engine.headlineAccent}
             </HighlightedText>
           </motion.h2>
         </motion.div>

@@ -25,7 +25,7 @@ export function SdkSection() {
   };
 
   return (
-    <section className="bg-background py-24">
+    <section className="bg-background py-28 md:py-32">
       <div className={cn("mx-auto px-4 sm:px-6", PAGE_MAX)}>
         <motion.div
           initial="hidden"
@@ -45,7 +45,7 @@ export function SdkSection() {
             className="mt-4 text-3xl font-bold text-foreground sm:text-4xl"
           >
             {sdk.headlineLead}{" "}
-            <HighlightedText variant="bright" from="bottom" inView delay={0.05}>
+            <HighlightedText variant="sky" from="bottom" inView delay={0.05}>
               {sdk.headlineAccent}
             </HighlightedText>
           </motion.h2>
@@ -63,7 +63,7 @@ export function SdkSection() {
           viewport={scrollViewport}
           className="mx-auto mt-12 max-w-2xl overflow-hidden border-2 border-border bg-charcoal shadow-card"
         >
-          <div className="flex gap-0 overflow-x-auto border-b-2 border-white/10">
+          <div className="flex gap-0 overflow-x-auto border-b-2 border-inverse-border">
             {sdk.tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -73,13 +73,13 @@ export function SdkSection() {
                 className={cn(
                   "relative shrink-0 px-5 py-3.5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-charcoal",
                   activeTab === tab.id
-                    ? "text-white"
-                    : "text-white/40 hover:text-white/70",
+                    ? "text-inverse-foreground"
+                    : "text-inverse-muted hover:text-brand-sky",
                 )}
               >
                 {tab.label}
                 {activeTab === tab.id && (
-                  <span className="absolute inset-x-3 bottom-0 h-0.5 bg-primary-bright" />
+                  <span className="absolute inset-x-3 bottom-0 h-0.5 bg-brand-sky" />
                 )}
               </button>
             ))}
@@ -95,7 +95,7 @@ export function SdkSection() {
               type="button"
               aria-label={copied ? "Copied" : "Copy to clipboard"}
               onClick={handleCopy}
-              className="shrink-0 cursor-pointer border border-white/10 p-2 text-white/40 transition-colors hover:border-white/20 hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-charcoal"
+              className="shrink-0 cursor-pointer border border-inverse-border p-2 text-inverse-muted transition-colors hover:border-brand-sky hover:bg-charcoal-panel hover:text-inverse-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-charcoal"
             >
               {copied ? <Check size={15} strokeWidth={2.5} /> : <Copy size={15} strokeWidth={2} />}
             </button>
