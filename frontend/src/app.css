@@ -2,28 +2,44 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #00008A;
+  --color-brand: #2F6FE3;
+  --color-brand-dark: #255FD0;
+  --color-brand-soft: #E8F0FD;
+  --color-brand-foreground: #FFFFFF;
+  --color-brand-sky: #2F6FE3;
+  --color-primary: #141812;
   --color-primary-foreground: #FFFFFF;
-  --color-primary-bright: #4D4DFF;
-  --color-primary-soft: #E8E8FF;
-  --color-primary-dark: #000066;
+  --color-primary-soft: #E8F0FD;
+  --color-primary-dark: #0C100B;
 
-  --color-charcoal: #1A1A1A;
-  --color-charcoal-soft: #2C2C2C;
-  --color-background: #FFFFFF;
-  --color-foreground: #0A0A2E;
-  --color-card: #F7F7FF;
-  --color-card-foreground: #0A0A2E;
-  --color-border: #D4D4F0;
-  --color-border-strong: #B8B8E8;
-  --color-muted: #E8E8FF;
-  --color-muted-foreground: #4A4A7A;
-  --color-destructive: #dc2626;
+  --color-charcoal: #161914;
+  --color-charcoal-soft: #252A22;
+  --color-charcoal-panel: #0B0E09;
+  --color-charcoal-panel-soft: #131711;
+  --color-inverse-foreground: #F5F8ED;
+  --color-inverse-muted: #A7AF9A;
+  --color-inverse-border: #2D342B;
+  --color-background: #F6F7F1;
+  --color-foreground: #181C15;
+  --color-card: #FBFCF7;
+  --color-card-foreground: #181C15;
+  --color-border: #C8CEBB;
+  --color-border-strong: #A7AE98;
+  --color-muted: #ECEFE3;
+  --color-muted-foreground: #5A6251;
+  --color-destructive: #C63B33;
   --color-destructive-foreground: #ffffff;
-  --color-success: #059669;
-  --color-success-soft: #d1fae5;
-  --color-warning: #d97706;
-  --color-ring: #4D4DFF;
+  --color-success: #0F8A6A;
+  --color-success-soft: #D2F2E6;
+  --color-warning: #B66E1A;
+  --color-code-string: #E8F0FD;
+  --color-code-type: #C7D9FA;
+  --color-code-punct: #7D856F;
+  --color-code-plain: #F5F8ED;
+  --color-code-command: #E8F0FD;
+  --color-code-command-accent: #FFE39A;
+  --color-error-soft: #FCE3DF;
+  --color-ring: #2F6FE3;
   --radius: 0;
 
   --font-sans: 'Space Grotesk', system-ui, -apple-system, sans-serif;
@@ -48,11 +64,11 @@
     0 2px 4px oklch(0 0 0 / 0.08);
 
   --shadow-blue-pill:
-    inset 0 1px 0 oklch(1 0 0 / 0.35), inset 0 -1px 0 oklch(0 0 0 / 0.1),
-    inset 0 0 0 1px oklch(0 0 0 / 0.04), 0 1px 2px oklch(0 0 0 / 0.06),
-    0 0 10px oklch(0.45 0.25 270 / 0.2);
+    inset 0 1px 0 oklch(1 0 0 / 0.35), inset 0 -1px 0 oklch(0 0 0 / 0.12),
+    inset 0 0 0 1px oklch(0 0 0 / 0.06), 0 1px 2px oklch(0 0 0 / 0.08),
+    0 0 14px oklch(0.58 0.18 258 / 0.28);
 
-  --shadow-glow: 0 0 0 3px oklch(0.45 0.25 270 / 0.28);
+  --shadow-glow: 0 0 0 3px oklch(0.58 0.18 258 / 0.32);
 }
 
 @layer base {
@@ -109,17 +125,17 @@
   --normal-bg: var(--color-primary);
   --normal-text: var(--color-primary-foreground);
   --normal-border: var(--color-primary-dark);
-  --success-bg: var(--color-primary-bright);
-  --success-border: var(--color-primary);
-  --success-text: var(--color-primary-foreground);
-  --error-bg: #fee2e2;
+  --success-bg: var(--color-brand);
+  --success-border: var(--color-brand-dark);
+  --success-text: var(--color-brand-foreground);
+  --error-bg: var(--color-error-soft);
   --error-border: var(--color-destructive);
   --error-text: var(--color-destructive);
 }
 
 pre {
   background: var(--color-charcoal);
-  color: #ffffff;
+  color: var(--color-inverse-foreground);
   padding: 1rem;
   overflow-x: auto;
 }
@@ -162,7 +178,7 @@ pre {
   background: linear-gradient(
     90deg,
     currentColor 0%,
-    var(--color-primary-bright) 50%,
+    var(--color-brand) 50%,
     currentColor 100%
   );
   background-size: 200% 100%;

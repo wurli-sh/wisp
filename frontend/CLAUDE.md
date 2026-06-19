@@ -2,7 +2,7 @@
 
 Amoeba demo UI (`@amoeba_/web`) — Vite 6 + React 19 + Tailwind 4.
 
-**Routes:** `/` landing · `/demo` prove/settle/kyc console · `/compliance` (Proofs | Audit | Corridors tabs)
+**Routes:** `/` landing · `/demo` prove/settle/kyc console
 
 ## Commands
 
@@ -22,8 +22,7 @@ Amoeba demo UI (`@amoeba_/web`) — Vite 6 + React 19 + Tailwind 4.
 | `components/demo/DemoTransferPanel.tsx` | Transfer form + results display |
 | `components/demo/DemoKycPanel.tsx` | KYC verification UI |
 | `components/demo/KycOnboardingModal.tsx` | KYC onboarding modal flow |
-| `components/compliance/ComplianceHub.tsx` | Tabs: Proofs · Audit · Corridors |
-| `components/home/` | Landing page sections (Hero, Paradox, WhatItProves, SdkSection, etc.) |
+| `components/home/` | Hero, Paradox, Engine, ComplianceCard, UseCases, Sdk, CorridorGlobe, DeploymentCTA |
 | `components/layout/` | Navbar, MainLayout, Footer |
 | `components/ui/` | Badge, Button, DropdownPanel, Tabs, TextShimmer |
 | `components/spell/` | HighlightedText, TiltCard animated components |
@@ -40,7 +39,7 @@ Amoeba demo UI (`@amoeba_/web`) — Vite 6 + React 19 + Tailwind 4.
 
 ## Theme
 
-- Primary: `#00008A` blue / white
+- Primary: `#141812` ink with `#B7E7FF` sky-blue accents
 - `border-radius: 0` everywhere
 - Font: system-ui sans-serif stack
 

@@ -3,11 +3,11 @@
 Zero-knowledge compliance rail for cross-border Stellar stablecoin transfers.
 
 _Status: active_
-_Last updated: 2026-06-18_
+_Last updated: 2026-06-19_
 
 ## Brand summary
 
-Amoeba should read as regulated infrastructure, not consumer fintech. The product promise is simple: prove compliance without exposing customer data. The interface should feel strict, technical, and trustworthy, with a visible bias toward auditability over decoration.
+Amoeba should read as regulated infrastructure, not consumer fintech. The product promise is simple: prove compliance without exposing customer data. The interface should feel strict, technical, and trustworthy, with a visible bias toward auditability over decoration. The new color system keeps the restraint, but adds a sharper proof-led accent so the product feels more current and memorable.
 
 ## Positioning
 
@@ -23,24 +23,24 @@ Current source of truth: `frontend/src/app.css`
 
 | Token | Hex | Use |
 |---|---|---|
-| `--color-primary` | `#00008A` | Primary CTAs, key highlights |
-| `--color-primary-bright` | `#4D4DFF` | Active states, shimmer, focus emphasis |
-| `--color-primary-soft` | `#E8E8FF` | Soft panels, tags, low-emphasis fills |
-| `--color-primary-dark` | `#000066` | CTA borders, darker accents |
-| `--color-background` | `#FFFFFF` | Page background |
-| `--color-foreground` | `#0A0A2E` | Primary text |
-| `--color-card` | `#F7F7FF` | Card surfaces |
-| `--color-border` | `#D4D4F0` | Default borders |
-| `--color-border-strong` | `#B8B8E8` | Stronger separators |
-| `--color-muted-foreground` | `#4A4A7A` | Secondary text |
-| `--color-charcoal` | `#1A1A1A` | Console/code surfaces |
-| `--color-success` | `#059669` | Positive protocol state |
-| `--color-warning` | `#D97706` | Cautionary status |
-| `--color-destructive` | `#DC2626` | Failure/error states |
+| `--color-primary` | `#141812` | Primary text, high-importance labels, dark anchors |
+| `--color-brand-sky` | `#B7E7FF` | Punch accent for verified states, badges, and emphasis fills |
+| `--color-primary-soft` | `#F4FBFF` | Soft proof panels, tags, low-emphasis highlights |
+| `--color-primary-dark` | `#0C100B` | CTA backgrounds, heavy dividers, dark emphasis |
+| `--color-background` | `#F6F7F1` | Page background |
+| `--color-foreground` | `#181C15` | Primary text |
+| `--color-card` | `#FBFCF7` | Card surfaces |
+| `--color-border` | `#C8CEBB` | Default borders |
+| `--color-border-strong` | `#A7AE98` | Stronger separators |
+| `--color-muted-foreground` | `#5A6251` | Secondary text |
+| `--color-charcoal` | `#161914` | Console/code surfaces |
+| `--color-success` | `#0F8A6A` | Positive protocol state |
+| `--color-warning` | `#B66E1A` | Cautionary status |
+| `--color-destructive` | `#C63B33` | Failure/error states |
 
 ### Palette intent
 
-The palette is built around deep ledger blue on white. It should communicate institutional confidence, machine-verifiable rigor, and clean separation between sensitive data and public proof. Blue carries the trust layer; neutral whites and indigos keep the product from drifting into generic fintech green.
+The palette is built around near-black ink on pale stone, with a lighter sky-blue accent used narrowly for proof and active states. Ink carries the structural weight; the accent marks what is verified, active, or worth immediate attention. The result should feel like compliance infrastructure with better signal density, not a consumer crypto rebrand.
 
 ## Typography
 
@@ -98,17 +98,17 @@ Avoid: frictionless, magical, seamless, revolutionary, unlock, supercharge, deli
 
 ### Do
 
-- Use the blue palette consistently for trust-bearing actions and proof states
+- Use sky blue sparingly for trust-bearing actions and proof states
 - Keep sections high-contrast and easy to scan
 - Make compliance evidence feel concrete with labels, metrics, and protocol nouns
-- Use muted indigo text for secondary explanation instead of lowering clarity
+- Use muted olive-gray text for secondary explanation instead of lowering clarity
 
 ### Don't
 
-- Introduce soft consumer gradients or neon crypto styling
+- Introduce soft consumer gradients or flood the UI with blue
 - Over-round controls or cards
 - Hide critical protocol details behind vague copy
-- Use bright success greens as the primary brand color
+- Let the accent overwhelm ink as the structural color
 
 ## Implementation notes
 
@@ -119,4 +119,4 @@ Avoid: frictionless, magical, seamless, revolutionary, unlock, supercharge, deli
 
 ## Short directive for future UI work
 
-If a design choice makes Amoeba feel more like a bank compliance rail and less like a retail crypto app, it is probably correct.
+If a design choice makes Amoeba feel more like an operational compliance rail and less like a retail crypto app, it is probably correct.
