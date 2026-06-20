@@ -11,6 +11,12 @@ importers:
 
   .:
     devDependencies:
+      '@wisp_/issuer-sdk':
+        specifier: workspace:*
+        version: link:issuer-sdk
+      '@wisp_/sdk':
+        specifier: workspace:*
+        version: link:sdk
       snarkjs:
         specifier: ^0.7.0
         version: 0.7.6
