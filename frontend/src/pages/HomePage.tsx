@@ -5,6 +5,7 @@ import { UseCasesSection } from "@/components/home/UseCasesSection";
 import { ComplianceCardSection } from "@/components/home/ComplianceCardSection";
 import { SdkSection } from "@/components/home/SdkSection";
 import { DeploymentCTA } from "@/components/home/DeploymentCTA";
+import { FooterImageSection } from "@/components/home/FooterImageSection";
 
 export function HomePage() {
   return (
@@ -16,6 +17,7 @@ export function HomePage() {
       <UseCasesSection />
       <SdkSection />
       <DeploymentCTA />
+      <FooterImageSection />
     </div>
   );
 }

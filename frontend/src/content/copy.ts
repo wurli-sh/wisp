@@ -1,33 +1,33 @@
 export const COPY = {
   hero: {
     eyebrow: "ZK COMPLIANCE FOR STELLAR STABLECOINS",
-    headlineLead: "Prove every transfer.",
-    headlineAccent: "Expose nothing.",
-    sub: "ZK compliance rails for cross-border stablecoin payments, with a portable issuer SDK.",
+    headlineLead: "Stealth rails for",
+    headlineAccent: "stablecoin compliance.",
+    sub: "ZK compliance for cross-border Stellar stablecoins, with a portable SDK for any issuer.",
     ctas: {
       primary: { label: "Live demo →", href: "/demo" },
       secondary: { label: "How it works", href: "#how-it-works" },
     },
     showcase: [
       {
-        eyebrow: "CORE ANGLE",
-        title: "ZK compliance rails for cross-border stablecoin payments.",
-        body: "Policy checks, corridor rules, and proof-backed settlement stay in one rail.",
-        points: ["Cross-border corridors", "Proof-backed compliance", "Stellar settlement"],
+        eyebrow: "STEALTH LAYER",
+        title: "ZK compliance for cross-border Stellar stablecoins.",
+        body: "Corridor rules, sanctions checks, and settlement in one rail.",
+        points: ["Cross-border corridors", "ZK-backed compliance", "Stellar settlement"],
       },
       {
         eyebrow: "PORTABLE SDK",
-        title: "Plug-and-play issuer SDK built to travel.",
-        body: "Integrate issuer credentials, roots, and transfer flows without tying the stack to a single anchor.",
-        points: ["Issuer adapters", "Portable integration", "Browser prove + wallet settle"],
+        title: "Portable issuer SDK for any anchor.",
+        body: "Integrate credentials, roots, and transfers without issuer lock-in.",
+        points: ["Any issuer", "Portable integration", "Browser prove + wallet settle"],
       },
     ],
   },
 
   paradoxAct: {
-    eyebrow: "THE COMPLIANCE TRADEOFF",
-    headline: "Every transfer needs proof.",
-    headlineAccent: "Not paperwork.",
+    eyebrow: "PRIVATE BY DEFAULT",
+    headline: "Keep the proof.",
+    headlineAccent: "Drop the data.",
     withoutZk: {
       label: "Manual compliance",
       tagline: "Customer data follows the payment",
@@ -41,7 +41,7 @@ export const COPY = {
     },
     withZk: {
       label: "Wisp rail",
-      tagline: "Proof settles. Credentials stay off-chain.",
+      tagline: "Proof settles. Data stays off-chain.",
       rows: [
         { field: "Recipient", value: "GDKT…4H2P", revealed: true },
         { field: "Tax ID", value: "Groth16 membership", revealed: false },
@@ -49,19 +49,19 @@ export const COPY = {
         { field: "Amount", value: "$50,000.00 USDC", revealed: true },
       ],
       pill: "COMPLIANT · VERIFIED",
-      caption: "Both move money. One leaves reusable proof.",
+      // caption: "Both move money. One leaves reusable proof.",
     },
   },
 
   engine: {
-    eyebrow: "How it works",
-    headlineLead: "Verify once. Prove anywhere.",
-    headlineAccent: "Settle forever.",
+    eyebrow: "HOW WISP WORKS",
+    headlineLead: "From issuer root",
+    headlineAccent: "to compliant settlement.",
     pipeline: {
       issuer: {
         title: "Trusted Issuer",
         kicker: "identity intake",
-        caption: "Verify once. Publish the root. No documents with the payment.",
+        caption: "Issuer verifies the user and publishes a reusable root.",
         steps: [
           { label: "Verifying…", detail: "Document intake" },
           { label: "KYC complete", detail: "Credential issued" },
@@ -71,7 +71,7 @@ export const COPY = {
       compliance: {
         title: "Wisp",
         kicker: "compliance layer",
-        caption: "Browser proves sender, recipient, corridor, asset, and amount.",
+        caption: "Wisp packages corridor rules into one browser proof.",
         steps: [
           { label: "Awaiting credential", detail: "Idle" },
           { label: "Generating proof…", detail: "Groth16 · BN254" },
@@ -91,7 +91,7 @@ export const COPY = {
       receiver: {
         title: "Recipient",
         kicker: "on-chain settlement",
-        caption: "Soroban verifies proof, records nullifier, gates transfer.",
+        caption: "Soroban verifies the proof, records the nullifier, and settles.",
         steps: [
           { label: "Awaiting proof…", detail: "Pending" },
           { label: "Nullifier recorded", detail: "Verifying on Soroban" },
@@ -106,55 +106,55 @@ export const COPY = {
   },
 
   builders: {
-    eyebrow: "WHY BUILDERS CARE",
-    headlineRest: "Ship one rail across issuers,",
-    headlineAccent: "not one integration.",
-    sub: "Cross-border policy, issuer credentials, settlement, and audit trail in one portable compliance layer.",
+    eyebrow: "CROSS-BORDER FLOWS",
+    headlineRest: "Built for",
+    headlineAccent: "cross-border stablecoin flows.",
+    sub: "Wisp targets regulated corridors where issuers need compliant Stellar settlement.",
     featuredNote: "US→MX live on testnet",
     benefits: [
       {
-        name: "Faster integration",
-        stat: "1",
-        statLabel: "Shared rail",
-        body: "One compliance flow — not a rebuild per product.",
-        tags: ["SDK", "Demo"],
+        name: "Remittance corridors",
+        stat: "US→MX",
+        statLabel: "Live route",
+        body: "Move stablecoins across high-friction remittance corridors with proof-backed compliance.",
+        tags: ["Remittance", "Testnet"],
       },
       {
-        name: "Corridor logic included",
+        name: "Corridor policy built in",
         stat: "8",
         statLabel: "Checks per proof",
-        body: "Sender, recipient, corridor, asset, and amount in one proof.",
+        body: "Jurisdiction, sanctions, source, destination, asset, and amount are enforced in one proof.",
         tags: ["Travel rule", "Policy"],
       },
       {
-        name: "Less exposed data",
-        stat: "0",
-        statLabel: "Raw PII on-chain",
-        body: "Credentials off-chain. Compliance evidence on-chain.",
-        tags: ["Privacy", "GDPR"],
+        name: "Treasury payouts",
+        stat: "B2B",
+        statLabel: "Settlement",
+        body: "Run compliant supplier and treasury transfers without attaching customer files to payments.",
+        tags: ["Treasury", "Payouts"],
       },
       {
-        name: "Portable credentials",
+        name: "Issuer-ready corridors",
         stat: "1",
-        statLabel: "Issuer verification",
-        body: "Verify once. Reuse across transfers.",
-        tags: ["Anchors", "SEP-24"],
+        statLabel: "Shared rail",
+        body: "Multiple issuers can plug into the same corridor compliance model instead of rebuilding policy stacks.",
+        tags: ["Anchors", "SDK"],
       },
       {
-        name: "Audit-ready settlement",
+        name: "Regulated stablecoin movement",
         stat: "∞",
-        statLabel: "Replayable trail",
-        body: "Nullifiers and events — auditable without the documents.",
-        tags: ["Audit", "Soroban"],
+        statLabel: "Expansion paths",
+        body: "Open new corridors without changing the proof model or exposing more data.",
+        tags: ["Expansion", "Soroban"],
       },
     ],
   },
 
   sdk: {
-    eyebrow: "SDK",
+    eyebrow: "PORTABLE SDK",
     headlineLead: "Portable issuer SDK.",
-    headlineAccent: "Plug it into the rail.",
-    sub: "Designed to slot into issuer and payment flows: prove in the browser, settle with Freighter, replay audit events.",
+    headlineAccent: "Plug into any issuer.",
+    sub: "Integrate once, prove in the browser, and switch issuers without rewriting the stack.",
     tabs: [
       { id: "pnpm", label: "pnpm", command: "pnpm add @wisp_/sdk" },
       { id: "npm", label: "npm", command: "npm install @wisp_/sdk" },
@@ -175,10 +175,10 @@ await client.settleWithWallet(proven, pkg, wallet);`,
   },
 
   complianceCard: {
-    eyebrow: "ZK COMPLIANCE RAIL",
+    eyebrow: "TRANSFER LOGIC",
     headlineAccent: "Verify once.",
-    headlineRest: "Prove on every transfer.",
-    sub: "Each cross-border transfer gets a fresh proof while customer data stays off-chain.",
+    headlineRest: "Prove every transfer.",
+    sub: "One issuer credential. A fresh proof for every transfer.",
     card: {
       brand: "Wisp",
       network: "Stellar",
@@ -194,7 +194,7 @@ await client.settleWithWallet(proven, pkg, wallet);`,
       },
       {
         label: "Prove anywhere",
-        detail: "Fresh Groth16 proof in the browser for every compliant transfer.",
+        detail: "Generate a fresh Groth16 proof for each compliant transfer.",
       },
       {
         label: "Audit forever",
@@ -205,9 +205,9 @@ await client.settleWithWallet(proven, pkg, wallet);`,
 
   move: {
     closer: {
-      eyebrow: "GLOBAL CORRIDORS",
-      headline: "One proof. Every corridor.",
-      sub: "Five fields in. One Groth16 proof out. No PII on-chain.",
+      eyebrow: "LIVE RAILS",
+      headline: "Ready for live issuer rails.",
+      sub: "Portable zk compliance infrastructure for cross-border Stellar stablecoins.",
       ctas: {
         primary: { label: "Open demo →", href: "/demo" },
         secondary: { label: "View on GitHub", href: "https://github.com/amoeba-zk/amoeba" },
