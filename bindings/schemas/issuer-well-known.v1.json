@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://amoeba.dev/schemas/issuer-well-known.v1.json",
+  "$id": "https://wisp.dev/schemas/issuer-well-known.v1.json",
   "title": "IssuerWellKnown",
-  "description": "Discovery metadata at /.well-known/amoeba-issuer.json",
+  "description": "Discovery metadata at /.well-known/wisp-issuer.json",
   "type": "object",
   "required": [
     "api_version",

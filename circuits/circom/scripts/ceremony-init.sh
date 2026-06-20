@@ -44,7 +44,7 @@ sha256_file() {
   sha256sum "$1" | awk '{print $1}'
 }
 
-echo "=== Initializing Amoeba Groth16 phase 2 ceremony ==="
+echo "=== Initializing Wisp Groth16 phase 2 ceremony ==="
 snarkjs groth16 setup "$R1CS" "$PTAU_FINAL" "$INITIAL_ZKEY"
 snarkjs zkey verify "$R1CS" "$PTAU_FINAL" "$INITIAL_ZKEY"
 

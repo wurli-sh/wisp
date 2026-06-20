@@ -22,7 +22,7 @@ if [ ! -f "$PTAU_FINAL" ]; then
 
   echo "=== Step 2/5: Contribute to Powers of Tau ==="
   snarkjs powersoftau contribute pot"${POWER}"_0000.ptau pot"${POWER}"_0001.ptau \
-    --name="amoeba contribution" -v -e="$(date +%s%N)"
+    --name="wisp contribution" -v -e="$(date +%s%N)"
 
   echo "=== Step 3/5: Prepare Phase 2 ==="
   snarkjs powersoftau prepare phase2 pot"${POWER}"_0001.ptau "$PTAU_FINAL" -v
@@ -35,7 +35,7 @@ snarkjs groth16 setup compliance_corridor.r1cs "$PTAU_FINAL" compliance_corridor
 
 echo "=== Step 5/5: Contribute to zkey ==="
 snarkjs zkey contribute compliance_corridor_0000.zkey compliance_corridor_final.zkey \
-  --name="amoeba phase2" -v -e="$(date +%s%N)"
+  --name="wisp phase2" -v -e="$(date +%s%N)"
 
 echo "=== Done ==="
 ls -lh compliance_corridor_final.zkey

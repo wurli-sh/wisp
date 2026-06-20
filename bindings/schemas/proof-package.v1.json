@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://amoeba.dev/schemas/proof-package.v1.json",
+  "$id": "https://wisp.dev/schemas/proof-package.v1.json",
   "title": "ProofPackage",
-  "description": "Issuer handoff for client-side Groth16 proving (Amoeba Issuer API v1)",
+  "description": "Issuer handoff for client-side Groth16 proving (Wisp Issuer API v1)",
   "type": "object",
   "required": ["credential", "transfer", "roots", "paths", "witness_private", "public_inputs"],
   "properties": {

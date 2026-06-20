@@ -10,7 +10,7 @@ import {
   poseidon2Hash1,
   poseidon2Hash12,
   toString,
-} from "@amoeba_/js";
+} from "@wisp_/js";
 import {
   buildWitnessInput,
   CORRIDOR_ID,

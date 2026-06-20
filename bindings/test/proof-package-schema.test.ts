@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { PUBLIC_INPUT_FIELDS } from "@amoeba_/bindings/publicInputs";
+import { PUBLIC_INPUT_FIELDS } from "@wisp_/bindings/publicInputs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..", "..");
@@ -51,11 +51,11 @@ function tsInterfaceFields(source: string, interfaceName: string): string[] {
 }
 
 const rustSource = fs.readFileSync(
-  path.join(ROOT, "backend/crates/amoeba-types/src/proof_package.rs"),
+  path.join(ROOT, "backend/crates/wisp-types/src/proof_package.rs"),
   "utf8",
 );
 const tsSource = fs.readFileSync(
-  path.join(ROOT, "packages/amoeba-js/src/types.ts"),
+  path.join(ROOT, "packages/wisp-js/src/types.ts"),
   "utf8",
 );
 
@@ -100,11 +100,11 @@ test("proof-package schema version is 1", () => {
   assert.equal(proofPackageSchema.properties.schema_version.const, 1);
 });
 
-test("ProofPackage top-level fields match Rust amoeba-types", () => {
+test("ProofPackage top-level fields match Rust wisp-types", () => {
   assert.deepEqual([...rustProofPackage].sort(), [...schemaTopLevel].sort());
 });
 
-test("ProofPackage top-level fields match @amoeba_/js types", () => {
+test("ProofPackage top-level fields match @wisp_/js types", () => {
   assert.deepEqual([...tsProofPackage].sort(), [...schemaTopLevel].sort());
 });
 

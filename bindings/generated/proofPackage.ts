@@ -1,4 +1,4 @@
-/** Hand-maintained mirror of crates/amoeba-types ProofPackage JSON shape. */
+/** Hand-maintained mirror of crates/wisp-types ProofPackage JSON shape. */
 
 export interface Credential {
   wallet: string;

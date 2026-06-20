@@ -1,12 +1,12 @@
 {
-  "name": "@amoeba_/compliance",
-  "version": "0.1.0",
-  "description": "Generated Soroban client for the Amoeba compliance contract",
+  "name": "@wisp_/compliance",
+  "version": "0.2.0",
+  "description": "Generated Soroban client for the Wisp compliance contract",
   "license": "MIT",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wurli-sh/amoeba.git",
+    "url": "git+https://github.com/wurli-sh/wisp.git",
     "directory": "bindings/generated/compliance"
   },
   "publishConfig": {

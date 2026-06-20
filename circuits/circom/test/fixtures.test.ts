@@ -37,7 +37,7 @@ async function witnessFails(inputPath, outPath) {
 test("valid.us-mx.json generates a witness", async () => {
   await witnessSucceeds(
     join(DIR, "inputs", "valid.us-mx.json"),
-    "/tmp/amoeba-test-valid.wtns",
+    "/tmp/wisp-test-valid.wtns",
   );
 });
 
@@ -52,7 +52,7 @@ test("invalid fixtures fail witness generation", async () => {
   for (const fixture of invalid) {
     const ok = await witnessFails(
       join(DIR, "inputs", fixture),
-      `/tmp/amoeba-test-${fixture}`,
+      `/tmp/wisp-test-${fixture}`,
     );
     assert.ok(ok, `${fixture} should be rejected by the circuit`);
   }

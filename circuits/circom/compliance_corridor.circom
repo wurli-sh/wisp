@@ -58,7 +58,7 @@ template ComplianceCorridor() {
 
   // ── Check 2: Nullifier binding (domain-separated, includes corridor_id) ──
   component nullifier_domain = Poseidon2Hash1();
-  nullifier_domain.in <== 1204609112206068373041; // "AMOEBA_V1" domain tag
+  nullifier_domain.in <== 24568945153365553; // "WISP_V1" domain tag
   component nullifier_hash = Poseidon2Hash12();
   nullifier_hash.in[0] <== nullifier_domain.out;
   nullifier_hash.in[1] <== credential_secret;

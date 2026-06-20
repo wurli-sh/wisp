@@ -58,7 +58,7 @@ snarkjs zkey verify "$R1CS" "$PTAU_FINAL" "$INPUT_ZKEY"
 
 echo "=== Applying public beacon ==="
 snarkjs zkey beacon "$INPUT_ZKEY" "$BEACON_ZKEY" "$BEACON_HEX" "$BEACON_ROUNDS" \
-  -n="Amoeba final beacon"
+  -n="Wisp final beacon"
 
 echo "=== Verifying beaconed zkey ==="
 snarkjs zkey verify "$R1CS" "$PTAU_FINAL" "$BEACON_ZKEY"

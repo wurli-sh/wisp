@@ -1,9 +1,9 @@
 {
-  "name": "amoeba-circuit",
+  "name": "wisp-circuit",
   "private": true,
   "dependencies": {
-    "@amoeba_/bindings": "workspace:*",
-    "@amoeba_/js": "workspace:*",
+    "@wisp_/bindings": "workspace:*",
+    "@wisp_/js": "workspace:*",
     "ffjavascript": "^0.3.1",
     "snarkjs": "^0.7.6"
   },

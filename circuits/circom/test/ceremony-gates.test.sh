@@ -114,7 +114,7 @@ transcript.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
 
 contributors = [r["contributor"] for r in rows if r["kind"] == "contribution"]
 manifest = {
-    "ceremony_version": "amoeba-groth16-phase2-v1",
+    "ceremony_version": "wisp-groth16-phase2-v1",
     "circuit": "compliance_corridor",
     "r1cs_file": r1cs.name,
     "r1cs_sha256": sha256_file(r1cs),
@@ -379,7 +379,7 @@ fi
 
 echo "mainnet gate rejects unpublished manifest"
 build_valid_package "$TMP/gate" false false
-if AMOEBA_MAINNET_APPROVED=1 \
+if WISP_MAINNET_APPROVED=1 \
   CEREMONY_DIR="$TMP/gate" \
   CEREMONY_MANIFEST="$TMP/gate/manifest.json" \
   CEREMONY_FINAL_ZKEY="$TMP/gate/compliance_corridor_final.zkey" \

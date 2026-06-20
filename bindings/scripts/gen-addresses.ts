@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { addressToLimbs, toString } from "@amoeba_/js";
-import { strKeyToPayload } from "@amoeba_/js/strkey";
+import { addressToLimbs, toString } from "@wisp_/js";
+import { strKeyToPayload } from "@wisp_/js/strkey";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES = path.join(__dirname, "..", "fixtures");

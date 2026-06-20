@@ -1,6 +1,6 @@
 # bindings
 
-Canonical source of truth for the Amoeba 17-field public input ABI. Includes generated TypeScript/Rust contract clients, shared JSON fixtures, and drift-check scripts.
+Canonical source of truth for the Wisp 17-field public input ABI. Includes generated TypeScript/Rust contract clients, shared JSON fixtures, and drift-check scripts.
 
 ## Contents
 
@@ -26,4 +26,4 @@ ABI edits must be made in `public-inputs.json` — all generated code is derived
 
 ## npm packages
 
-Published from this tree as `@amoeba_/bindings`, `@amoeba_/compliance`, and `@amoeba_/verifier`. After `pnpm gen:bindings` or `soroban contract bindings ts`, run `scripts/patch-bindings.sh` and republish. See [scripts/publish/CLAUDE.md](../scripts/publish/CLAUDE.md).
+Published from this tree as `@wisp_/bindings`, `@wisp_/compliance`, and `@wisp_/verifier`. After `pnpm gen:bindings` or `soroban contract bindings ts`, run `scripts/patch-bindings.sh` and republish. See [scripts/publish/CLAUDE.md](../scripts/publish/CLAUDE.md).

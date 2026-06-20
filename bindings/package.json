@@ -1,12 +1,12 @@
 {
-  "name": "@amoeba_/bindings",
-  "version": "0.1.0",
-  "description": "Canonical Amoeba ABI bindings — public inputs, proof package types, contract metadata",
+  "name": "@wisp_/bindings",
+  "version": "0.2.0",
+  "description": "Canonical Wisp ABI bindings — public inputs, proof package types, contract metadata",
   "license": "MIT",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wurli-sh/amoeba.git",
+    "url": "git+https://github.com/wurli-sh/wisp.git",
     "directory": "bindings"
   },
   "publishConfig": {
@@ -34,7 +34,7 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@amoeba_/js": "workspace:*"
+    "@wisp_/js": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

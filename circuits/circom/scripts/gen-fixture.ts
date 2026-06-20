@@ -5,12 +5,12 @@ import {
   addressToLimbs,
   computeCorridorConfigHash,
   fieldToJson,
-} from "@amoeba_/js";
+} from "@wisp_/js";
 import {
   buildWitnessInput as buildWitnessCore,
   demoFromFixture,
-} from "@amoeba_/js/witness";
-import { PUBLIC_INPUT_FIELDS, PROTOCOL } from "@amoeba_/bindings/publicInputs";
+} from "@wisp_/js/witness";
+import { PUBLIC_INPUT_FIELDS, PROTOCOL } from "@wisp_/bindings/publicInputs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const INPUTS_DIR = path.join(__dirname, "..", "inputs");
@@ -21,7 +21,7 @@ export const CORRIDOR_ID = PROTOCOL.CORRIDOR_ID;
 export const NULLIFIER_DOMAIN_TAG_EXPORT = PROTOCOL.NULLIFIER_DOMAIN_TAG;
 export const CORRIDOR_DOMAIN_TAG = PROTOCOL.CORRIDOR_DOMAIN_TAG;
 
-const profile = process.env.AMOEBA_FIXTURE_PROFILE ?? "local";
+const profile = process.env.WISP_FIXTURE_PROFILE ?? "local";
 const fixtureName =
   profile === "testnet" ? "demo-transfer-testnet.json" : "demo-transfer.json";
 

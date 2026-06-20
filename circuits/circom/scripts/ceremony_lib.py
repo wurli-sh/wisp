@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-CEREMONY_VERSION = "amoeba-groth16-phase2-v1"
+CEREMONY_VERSION = "wisp-groth16-phase2-v1"
 CIRCUIT_NAME = "compliance_corridor"
 MIN_CONTRIBUTIONS = 3
 ZKEY_SUFFIX_RE = re.compile(r"^compliance_corridor_(\d{4})\.zkey$")

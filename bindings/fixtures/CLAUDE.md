@@ -1,6 +1,6 @@
 # bindings/fixtures
 
-Shared JSON fixtures used across the Amoeba stack (circuit scripts, bindings tests, Rust tests, dev scripts).
+Shared JSON fixtures used across the Wisp stack (circuit scripts, bindings tests, Rust tests, dev scripts).
 
 ## Files
 

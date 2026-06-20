@@ -1,4 +1,4 @@
-# Amoeba Bindings
+# Wisp Bindings
 
 Canonical ABI and encoding rules for the compliance corridor Groth16 circuit.
 
@@ -34,7 +34,7 @@ G1: 32-byte big-endian `x || y`. G2: `x_c1 || x_c0 || y_c1 || y_c0` per snarkjs 
 
 ### Domain-separated hashes
 
-See `@amoeba_/js` (`computeNullifier`, `computeCorridorConfigHash`).
+See `@wisp_/js` (`computeNullifier`, `computeCorridorConfigHash`).
 
 ## Fixtures
 
