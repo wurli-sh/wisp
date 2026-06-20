@@ -19,4 +19,5 @@ Circom pipeline scripts.
 | `ceremony-verify.sh` | Strict ceremony package validator |
 | `ceremony-publish.sh` | Publish ceremony evidence after verify + sync |
 | `ceremony_lib.py` | Transcript/manifest validation helpers |
+| `ceremony-paths.sh` | Ceremony path/environment configuration |
 | `compute-vk-hash.py` | SHA-256 digest from embedded vk.rs bytes |

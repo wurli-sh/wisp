@@ -26,9 +26,11 @@ Development and testnet verification scripts.
 | `patch-corridor-circle-asset.sh` | PATCH corridor `asset_hex` to Circle SAC via issuer API |
 | `phase3-testnet-settle.ts` | SDK settle + double-publish checks on testnet |
 | `load-amoeba-env.ts` | Load `.amoeba/*.env` files into process env (superseded by `@amoeba_/sdk` `env.ts`) |
-
 | `compliance-deploy-ledger.sh` | Deploy compliance contract with ledger key scan |
 | `issuer-conformance.ts` | Issuer API conformance test suite |
+| `bru.sh` | Quick bootstrap/reset utility |
+| `publish-roots-testnet-via-issuer.sh` | Publish roots to testnet via issuer API |
+| `seed-testnet-issuer.sh` | Seed issuer state on testnet |
 
 Dev `.ts` helpers run via `node --import tsx scripts/dev/<name>.ts` from repo root.
 

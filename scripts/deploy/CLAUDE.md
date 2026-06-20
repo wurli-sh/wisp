@@ -13,3 +13,4 @@ Stellar contract deployment scripts.
 | `ensure-circle-usdc-trustlines.sh` | Idempotent Circle USDC trustlines for CLI identities |
 | `publish-roots.sh` | Register issuer + corridor on deployed compliance contract from fixture data |
 | `ceremony-mainnet-gate.sh` | Gate check before mainnet ceremony publish |
+| `migrate-issuer-db.sh` | Run issuer Postgres migrations |

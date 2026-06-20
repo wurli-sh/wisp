@@ -22,11 +22,12 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 ## Architecture
 
 - **circuits/circom/** — BN254 Groth16 circuit with Poseidon2, 8 compliance checks, 17 public inputs
-- **backend/programs/** — Soroban smart contracts (verifier, compliance)
+- **backend/programs/** — Soroban smart contracts (verifier, compliance, mock-sac)
 - **backend/crates/** — Rust crates for off-chain crypto, types, and issuer service
 - **bindings/** — Canonical ABI, generated contract clients, shared JSON fixtures
 - **packages/amoeba-js/** — Shared JS crypto (`@amoeba_/js`: Poseidon2, Merkle, field ops, nullifier, witness)
 - **sdk/** — TypeScript SDK (`@amoeba_/sdk`) for proving, settling, and auditing compliant transfers
+- **issuer-sdk/** — Issuer-side TypeScript SDK (`@amoeba_/issuer-sdk`) for integration
 - **scripts/** — deploy, dev, fixture, and ceremony tooling
 - **frontend/** — Vite demo UI (`@amoeba_/web`: landing, `/demo`, `/compliance`)
 - **docs/** — Design notes, gap analyses, and planning documents
@@ -41,27 +42,34 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 | `pnpm gen:fixtures` | Generate witness fixtures |
 | `pnpm gen:bindings` | Regenerate ABI bindings from source |
 | `pnpm gen:crypto-fixtures` | Regenerate crypto/address fixtures |
+| `pnpm gen:testnet-fixture` | Generate testnet-specific fixture |
 | `pnpm prove` | Generate proof from input |
 | `pnpm verify` | Snarkjs local verification |
 | `pnpm test:circuit` | Node circuit tests |
 | `pnpm test:bindings` | Binding ABI + circuit-abi drift tests |
 | `pnpm test:witness` | `@amoeba_/js` witness tests |
 | `pnpm test:sdk` | SDK unit tests |
+| `pnpm test:js` | All JS tests (witness + sdk + bindings + issuer-sdk) |
+| `pnpm test:issuer-sdk` | Issuer SDK unit tests |
+| `pnpm test:issuer-conformance` | Issuer API conformance test suite |
+| `pnpm test:ceremony` | Ceremony gate tests |
+| `pnpm verify:phase3-blockers` | Phase 3 pre-flight blocker checks |
+| `pnpm demo:phase3` | Phase 3 demo (blockers + SDK prove) |
+| `pnpm demo:phase4` | Phase 4 gate: circuit artifacts + frontend build |
 | `./scripts/publish/publish-packages.sh --dry-run` | npm publish dry-run for all `@amoeba_/*` packages |
 | `./scripts/publish/publish-packages.sh` | npm publish (see `scripts/publish/CLAUDE.md`) |
 | `cargo test -p verifier -p compliance` | Contract unit tests |
 | `cargo test -p amoeba-crypto -p amoeba-types -p issuer-service` | Backend crate tests |
 | `./scripts/dev/demo-e2e.sh` | Full local E2E pipeline |
 | `./scripts/dev/demo-phase2.sh` | Full Phase 2 pipeline (bindings + issuer) |
-| `./scripts/dev/demo-phase3.sh` | Full Phase 3 local demo (blockers + SDK prove) |
-| `./scripts/dev/demo-phase4.sh` | Phase 4 gate: circuit artifacts + frontend build |
-| `pnpm dev:frontend` | Amoeba demo UI dev server |
-| `./scripts/dev/verify-phase3-testnet.sh` | Full Phase 3 testnet gate check |
 | `./scripts/dev/verify-testnet.sh` | Phase 0 gate check |
 | `./scripts/dev/verify-compliance-testnet.sh` | Phase 1 testnet gate |
-| `./circuits/circom/scripts/ceremony-init.sh` | Initialize multi-party ceremony |
-| `./circuits/circom/scripts/ceremony-contribute.sh` | Contribute entropy to ceremony |
-| `./circuits/circom/scripts/ceremony-finalize.sh` | Finalize ceremony with beacon |
+| `./scripts/dev/verify-phase3-testnet.sh` | Full Phase 3 testnet gate check |
+| `pnpm dev:frontend` | Amoeba demo UI dev server |
+| `pnpm ceremony:init` | Initialize multi-party ceremony |
+| `pnpm ceremony:verify` | Verify ceremony transcript |
+| `pnpm ceremony:sync` | Sync verifier from ceremony final zkey |
+| `pnpm ceremony:publish` | Publish ceremony evidence |
 | `./circuits/circom/scripts/compute-vk-hash.py` | Compute VK hash for drift check |
 
 ## Conventions

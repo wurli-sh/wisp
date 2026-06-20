@@ -25,13 +25,15 @@ Amoeba demo UI (`@amoeba_/web`) — Vite 6 + React 19 + Tailwind 4.
 | `components/home/` | Hero, Paradox, Engine, ComplianceCard, UseCases, Sdk, CorridorGlobe, DeploymentCTA |
 | `components/layout/` | Navbar, MainLayout, Footer |
 | `components/ui/` | Badge, Button, DropdownPanel, Tabs, TextShimmer |
-| `components/spell/` | HighlightedText, TiltCard animated components |
+| `components/spell/` | `code-highlight`, `highlighted-text`, `tilt-card` animated components |
 | `hooks/useAmoebaClient.ts` | SDK client integration |
 | `hooks/useDemoIssuerClient.ts` | Demo-specific issuer client hook |
+| `hooks/useEngineFlow.ts` | Engine pipeline animation flow |
 | `hooks/useWallet.ts` | Freighter wallet connection |
 | `lib/kyc.ts` | KYC flow state machine and types |
 | `lib/demoLog.ts` | Console-style step logging |
 | `lib/animations.ts` | GSAP / framer-motion animation helpers |
+| `lib/cn.ts` | Tailwind class merge utility |
 | `content/copy.ts` | All UI text content (single source of truth) |
 | `config/layout.ts` | Route and section registry |
 | `config/env.ts` | Environment config from `.env` |
@@ -39,9 +41,9 @@ Amoeba demo UI (`@amoeba_/web`) — Vite 6 + React 19 + Tailwind 4.
 
 ## Theme
 
-- Primary: `#141812` ink with `#B7E7FF` sky-blue accents
+- Primary: `#141812` ink with `#2F6FE3` brand-blue accents
 - `border-radius: 0` everywhere
-- Font: system-ui sans-serif stack
+- Font: `Space Grotesk`, system-ui sans-serif stack
 
 ## Env
 
