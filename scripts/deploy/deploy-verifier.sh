@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 NETWORK="${NETWORK:-testnet}"
 SOURCE="${SOURCE:-amoeba-admin}"
-DEPLOY_DIR="${ROOT}/.amoeba"
+DEPLOY_DIR="${ROOT}/.wisp"
 SCRIPT_DIR="$ROOT/circuits/circom/scripts"
 mkdir -p "$DEPLOY_DIR"
 

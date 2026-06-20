@@ -3,10 +3,10 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ADDR="${ISSUER_LISTEN_ADDR:-127.0.0.1:3000}"
-PIDFILE="${ROOT}/.amoeba/issuer-service.pid"
-LOGFILE="${ROOT}/.amoeba/issuer-service.log"
+PIDFILE="${ROOT}/.wisp/issuer-service.pid"
+LOGFILE="${ROOT}/.wisp/issuer-service.log"
 
-echo "=== Amoeba Phase 2 E2E (local) ==="
+echo "=== Wisp Phase 2 E2E (local) ==="
 
 cd "$ROOT"
 
@@ -20,7 +20,7 @@ pnpm gen:crypto-fixtures
 
 echo ""
 echo "3. Rust crate tests"
-cargo test -p amoeba-crypto -p amoeba-types -p issuer-service
+cargo test -p wisp-crypto -p wisp-types -p issuer-service
 
 echo ""
 echo "4. Bindings tests"
@@ -28,10 +28,10 @@ pnpm test:bindings
 
 echo ""
 echo "5. Start issuer-service"
-mkdir -p "${ROOT}/.amoeba"
-export ISSUER_STATE_PATH="${ISSUER_STATE_PATH:-${ROOT}/.amoeba/issuer-state.json}"
+mkdir -p "${ROOT}/.wisp"
+export ISSUER_STATE_PATH="${ISSUER_STATE_PATH:-${ROOT}/.wisp/issuer-state.json}"
 export ISSUER_API_TOKEN="${ISSUER_API_TOKEN:-demo-token}"
-export AMOEBA_FIXTURES_DIR="${ROOT}/bindings/fixtures"
+export WISP_FIXTURES_DIR="${ROOT}/bindings/fixtures"
 
 if [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
   kill "$(cat "$PIDFILE")" || true

@@ -1,6 +1,6 @@
 # scripts/publish
 
-npm publishing for the `@amoeba_/*` JavaScript packages.
+npm publishing for the `@wisp_/*` JavaScript packages.
 
 ## Script
 
@@ -24,14 +24,14 @@ Publish **must** follow this order — each layer depends on the previous:
 
 | # | Package | Path |
 |---|---------|------|
-| 1 | `@amoeba_/js` | `packages/amoeba-js/` |
-| 2 | `@amoeba_/compliance` | `bindings/generated/compliance/` |
-| 3 | `@amoeba_/verifier` | `bindings/generated/verifier/` |
-| 4 | `@amoeba_/bindings` | `bindings/` |
-| 5 | `@amoeba_/sdk` | `sdk/` |
-| 6 | `@amoeba_/issuer-sdk` | `issuer-sdk/` |
+| 1 | `@wisp_/js` | `packages/wisp-js/` |
+| 2 | `@wisp_/compliance` | `bindings/generated/compliance/` |
+| 3 | `@wisp_/verifier` | `bindings/generated/verifier/` |
+| 4 | `@wisp_/bindings` | `bindings/` |
+| 5 | `@wisp_/sdk` | `sdk/` |
+| 6 | `@wisp_/issuer-sdk` | `issuer-sdk/` |
 
-**Not published:** `@amoeba_/web` (`frontend/`) — demo app only. Root `amoeba` package stays `private`.
+**Not published:** `@wisp_/web` (`frontend/`) — demo app only. Root `wisp` package stays `private`.
 
 ## Prerequisites
 
@@ -68,7 +68,7 @@ Auth is stored in `~/.npmrc` on your machine.
 
 ### npm org
 
-Scoped packages publish under the **`@amoeba_`** org on npm (`amoeba_` — the unscoped `amoeba` org name was taken). Public packages are free. You must be an org member with publish rights.
+Scoped packages publish under the **`@wisp_`** org on npm (the unscoped `wisp` org name was taken). Public packages are free. You must be an org member with publish rights.
 
 ### Two-factor authentication (publish 403)
 
@@ -83,7 +83,7 @@ Your account has 2FA (`auth-and-writes`). CLI publish needs **one** of:
 **A. Granular token (recommended for scripts / CI)**
 
 1. npm → Access Tokens → Granular Access Token  
-2. Read and write on `@amoeba_` packages  
+2. Read and write on `@wisp_` packages  
 3. Enable **bypass two-factor authentication** for automation  
 4. `npm config set //registry.npmjs.org/:_authToken npm_xxxxxxxx`
 
@@ -94,7 +94,7 @@ export NPM_OTP=123456   # from authenticator app
 ./scripts/publish/publish-packages.sh
 ```
 
-Or single package: `pnpm --filter @amoeba_/js publish --access public --no-git-checks --otp=123456`
+Or single package: `pnpm --filter @wisp_/js publish --access public --no-git-checks --otp=123456`
 
 ## CI release (alternative to local script)
 
@@ -125,13 +125,13 @@ pnpm build:js
 
 ```bash
 # After dry-run or publish
-npm view @amoeba_/sdk version
+npm view @wisp_/sdk version
 
 # Install smoke test (outside repo)
-mkdir /tmp/amoeba-npm-test && cd /tmp/amoeba-npm-test
+mkdir /tmp/wisp-npm-test && cd /tmp/wisp-npm-test
 npm init -y
-npm install @amoeba_/sdk
-node -e "import('@amoeba_/sdk').then(m => console.log(Object.keys(m)))"
+npm install @wisp_/sdk
+node -e "import('@wisp_/sdk').then(m => console.log(Object.keys(m)))"
 ```
 
 ## Related
@@ -139,7 +139,7 @@ node -e "import('@amoeba_/sdk').then(m => console.log(Object.keys(m)))"
 | Path | Notes |
 |------|-------|
 | `package.json` → `build:js` | Build chain before publish |
-| `scripts/patch-bindings.sh` | After `soroban contract bindings ts`, re-patch and rebuild `@amoeba_/compliance` / `@amoeba_/verifier` |
+| `scripts/patch-bindings.sh` | After `soroban contract bindings ts`, re-patch and rebuild `@wisp_/compliance` / `@wisp_/verifier` |
 | `bindings/CLAUDE.md` | ABI source of truth |
-| `sdk/CLAUDE.md` | `@amoeba_/sdk` layout |
-| `packages/CLAUDE.md` | `@amoeba_/js` |
+| `sdk/CLAUDE.md` | `@wisp_/sdk` layout |
+| `packages/CLAUDE.md` | `@wisp_/js` |

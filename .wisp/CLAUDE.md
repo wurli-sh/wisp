@@ -1,6 +1,6 @@
-# .amoeba
+# .wisp
 
-Deployment state files for Amoeba contracts on Stellar testnet.
+Deployment state files for Wisp contracts on Stellar testnet.
 
 ## Files
 

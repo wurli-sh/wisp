@@ -4,8 +4,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-PIDFILE="${ROOT}/.amoeba/issuer-service.pid"
-LOGFILE="${ROOT}/.amoeba/issuer-service.log"
+PIDFILE="${ROOT}/.wisp/issuer-service.pid"
+LOGFILE="${ROOT}/.wisp/issuer-service.log"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 cd "$ROOT"
 
@@ -15,21 +15,21 @@ set -a
 # shellcheck disable=SC1091
 [[ -f "${ROOT}/.env" ]] && source "${ROOT}/.env"
 # shellcheck disable=SC1091
-[[ -f "${ROOT}/.amoeba/testnet-demo.env" ]] && source "${ROOT}/.amoeba/testnet-demo.env"
+[[ -f "${ROOT}/.wisp/testnet-demo.env" ]] && source "${ROOT}/.wisp/testnet-demo.env"
 # shellcheck disable=SC1091
-[[ -f "${ROOT}/.amoeba/compliance.env" ]] && source "${ROOT}/.amoeba/compliance.env"
+[[ -f "${ROOT}/.wisp/compliance.env" ]] && source "${ROOT}/.wisp/compliance.env"
 set +a
 
-if [[ -n "${SUPABASE_DB_POOLER_URL:-}" ]] && [[ "${AMOEBA_ENV:-}" == "production" || -n "${RENDER:-}" ]]; then
+if [[ -n "${SUPABASE_DB_POOLER_URL:-}" ]] && [[ "${WISP_ENV:-}" == "production" || -n "${RENDER:-}" ]]; then
   export SUPABASE_DB_URL="${SUPABASE_DB_POOLER_URL}"
   export DATABASE_URL="${SUPABASE_DB_POOLER_URL}"
 fi
 
 export ISSUER_LISTEN_ADDR="${ISSUER_LISTEN_ADDR:-127.0.0.1:3000}"
-export ISSUER_STATE_PATH="${ROOT}/.amoeba/issuer-state-testnet.json"
+export ISSUER_STATE_PATH="${ROOT}/.wisp/issuer-state-testnet.json"
 export ISSUER_API_TOKEN="${ISSUER_API_TOKEN:-demo-token}"
-export AMOEBA_FIXTURES_DIR="${AMOEBA_FIXTURES_DIR:-${ROOT}/bindings/fixtures}"
-export AMOEBA_FIXTURE_PROFILE="${AMOEBA_FIXTURE_PROFILE:-testnet}"
+export WISP_FIXTURES_DIR="${WISP_FIXTURES_DIR:-${ROOT}/bindings/fixtures}"
+export WISP_FIXTURE_PROFILE="${WISP_FIXTURE_PROFILE:-testnet}"
 export COMPLIANCE_CONTRACT_ID="${COMPLIANCE_ID:-${COMPLIANCE_CONTRACT_ID:-}}"
 export ISSUER_PUBLIC_KEY="${ISSUER_PUBLIC_KEY:-}"
 export PUBLISH_SOURCE_ACCOUNT="${PUBLISH_SOURCE_ACCOUNT:-amoeba-issuer}"
@@ -44,7 +44,7 @@ export RUST_LOG="${RUST_LOG:-issuer_service=info,tower_http=warn}"
 export PROVIDER_WEBHOOK_SECRETS="${PROVIDER_WEBHOOK_SECRETS:-fixture=demo-fixture-secret}"
 
 REQUIRE_DB=0
-if [[ "${ISSUER_REQUIRE_DB:-}" == "1" || "${AMOEBA_ENV:-}" == "production" || -n "${RENDER:-}" ]]; then
+if [[ "${ISSUER_REQUIRE_DB:-}" == "1" || "${WISP_ENV:-}" == "production" || -n "${RENDER:-}" ]]; then
   REQUIRE_DB=1
 fi
 
@@ -64,7 +64,7 @@ VITE_COMPLIANCE_CONTRACT_ID=${COMPLIANCE_CONTRACT_ID}
 VITE_SAC_CONTRACT_ID=${SAC_CONTRACT_ID:-}
 VITE_ISSUER_PUBLIC_KEY=${ISSUER_PUBLIC_KEY}
 VITE_ISSUER_URL=/issuer
-VITE_AMOEBA_FIXTURE_PROFILE=${AMOEBA_FIXTURE_PROFILE}
+VITE_WISP_FIXTURE_PROFILE=${WISP_FIXTURE_PROFILE}
 VITE_VALIDATE_START_LEDGER=${VALIDATE_START_LEDGER:-}
 EOF
 }
@@ -95,9 +95,9 @@ if [[ -n "${SUPABASE_DB_URL:-}" ]]; then
   fi
 fi
 
-mkdir -p "${ROOT}/.amoeba"
+mkdir -p "${ROOT}/.wisp"
 
-LAST_COMPLIANCE_FILE="${ROOT}/.amoeba/last-compliance-id"
+LAST_COMPLIANCE_FILE="${ROOT}/.wisp/last-compliance-id"
 REPUBLISH_ROOTS=0
 if [[ -n "${COMPLIANCE_CONTRACT_ID}" ]]; then
   if [[ -f "${LAST_COMPLIANCE_FILE}" ]] && [[ "$(tr -d '[:space:]' < "${LAST_COMPLIANCE_FILE}")" != "${COMPLIANCE_CONTRACT_ID}" ]]; then

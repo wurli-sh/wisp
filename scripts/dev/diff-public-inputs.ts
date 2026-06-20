@@ -4,21 +4,21 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import type { ProofPackage } from "@amoeba_/js";
+import type { ProofPackage } from "@wisp_/js";
 import {
   PUBLIC_INPUT_FIELDS,
   normalizeField,
   rebuildExpectedPublicInputsFromRoots,
   publicSignalsMatch,
-} from "@amoeba_/js";
+} from "@wisp_/js";
 import {
-  AmoebaClient,
+  WispClient,
   DemoIssuerClient,
   getLatestChainRoots,
-  loadAmoebaEnv,
+  loadWispEnv,
   rootsMatch,
   type ProvenTransfer,
-} from "@amoeba_/sdk";
+} from "@wisp_/sdk";
 
 interface CliArgs {
   provenPath?: string;
@@ -59,7 +59,7 @@ Options:
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  const env = loadAmoebaEnv();
+  const env = loadWispEnv();
   const args: CliArgs = {
     fetch: false,
     corridorId: 1,
@@ -257,7 +257,7 @@ function printRecommendations(input: {
 
 async function main(): Promise<void> {
   const cli = parseArgs(process.argv.slice(2));
-  const client = AmoebaClient.fromEnv({ ISSUER_URL: cli.issuerUrl });
+  const client = WispClient.fromEnv({ ISSUER_URL: cli.issuerUrl });
 
   let pkg: ProofPackage;
   if (cli.packagePath) {

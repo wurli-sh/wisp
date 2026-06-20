@@ -5,9 +5,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ADDR="${ISSUER_LISTEN_ADDR:-127.0.0.1:3000}"
-PIDFILE="${ROOT}/.amoeba/issuer-service.pid"
-LOGFILE="${ROOT}/.amoeba/issuer-service.log"
-RUN_TESTNET="${AMOEBA_RUN_TESTNET_BLOCKERS:-0}"
+PIDFILE="${ROOT}/.wisp/issuer-service.pid"
+LOGFILE="${ROOT}/.wisp/issuer-service.log"
+RUN_TESTNET="${WISP_RUN_TESTNET_BLOCKERS:-${AMOEBA_RUN_TESTNET_BLOCKERS:-0}}"
 
 echo "=== Phase 3 Blocker Gate ==="
 
@@ -23,7 +23,7 @@ pnpm test:witness
 
 echo ""
 echo "3. Local fixture generation (profile=local)"
-AMOEBA_FIXTURE_PROFILE=local node --import tsx circuits/circom/scripts/gen-fixture.ts
+WISP_FIXTURE_PROFILE=local node --import tsx circuits/circom/scripts/gen-fixture.ts
 
 echo ""
 echo "4. Phase 1 contract + circuit tests"
@@ -43,7 +43,7 @@ echo "5. Phase 2 pipeline"
 if [[ "${RUN_TESTNET}" != "1" ]]; then
   echo ""
   echo "=== Phase 3 Blocker Gate: PASSED (local) ==="
-  echo "Set AMOEBA_RUN_TESTNET_BLOCKERS=1 to run testnet prove + double publish checks."
+  echo "Set WISP_RUN_TESTNET_BLOCKERS=1 to run testnet prove + double publish checks."
   exit 0
 fi
 
@@ -54,7 +54,7 @@ if [[ ! -f "${ROOT}/bindings/fixtures/demo-transfer-testnet.json" ]]; then
   "${ROOT}/scripts/dev/bootstrap-testnet-demo.sh"
 fi
 
-export AMOEBA_FIXTURE_PROFILE=testnet
+export WISP_FIXTURE_PROFILE=testnet
 node --import tsx circuits/circom/scripts/gen-fixture.ts
 ./circuits/circom/scripts/prove.sh circuits/circom/inputs/valid.testnet.json
 node --import tsx scripts/dev/write-testnet-golden.ts
@@ -63,15 +63,15 @@ test -f bindings/fixtures/public-inputs.testnet.json
 
 echo ""
 echo "7. Issuer double publish (idempotent update_issuer_root --auth)"
-mkdir -p "${ROOT}/.amoeba"
-export ISSUER_STATE_PATH="${ISSUER_STATE_PATH:-${ROOT}/.amoeba/issuer-state-testnet.json}"
+mkdir -p "${ROOT}/.wisp"
+export ISSUER_STATE_PATH="${ISSUER_STATE_PATH:-${ROOT}/.wisp/issuer-state-testnet.json}"
 export ISSUER_API_TOKEN="${ISSUER_API_TOKEN:-demo-token}"
-export AMOEBA_FIXTURE_PROFILE=testnet
-export AMOEBA_FIXTURES_DIR="${ROOT}/bindings/fixtures"
+export WISP_FIXTURE_PROFILE=testnet
+export WISP_FIXTURES_DIR="${ROOT}/bindings/fixtures"
 # shellcheck disable=SC1091
-[[ -f "${ROOT}/.amoeba/compliance.env" ]] && source "${ROOT}/.amoeba/compliance.env"
+[[ -f "${ROOT}/.wisp/compliance.env" ]] && source "${ROOT}/.wisp/compliance.env"
 # shellcheck disable=SC1091
-[[ -f "${ROOT}/.amoeba/testnet-demo.env" ]] && source "${ROOT}/.amoeba/testnet-demo.env"
+[[ -f "${ROOT}/.wisp/testnet-demo.env" ]] && source "${ROOT}/.wisp/testnet-demo.env"
 
 export COMPLIANCE_CONTRACT_ID="${COMPLIANCE_ID:-${COMPLIANCE_CONTRACT_ID:-}}"
 export ISSUER_PUBLIC_KEY="${ISSUER_PUBLIC_KEY:-}"

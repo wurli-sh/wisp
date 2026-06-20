@@ -5,8 +5,8 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 NETWORK="${NETWORK:-testnet}"
 SOURCE="${SOURCE:-amoeba-admin}"
 ADDR="${ISSUER_LISTEN_ADDR:-127.0.0.1:3000}"
-PIDFILE="${ROOT}/.amoeba/issuer-service-testnet.pid"
-LOGFILE="${ROOT}/.amoeba/issuer-service-testnet.log"
+PIDFILE="${ROOT}/.wisp/issuer-service-testnet.pid"
+LOGFILE="${ROOT}/.wisp/issuer-service-testnet.log"
 
 echo "=== Phase 3 Testnet Gate ==="
 echo "Network: ${NETWORK}"
@@ -19,25 +19,25 @@ if [[ ! -f "${ROOT}/bindings/fixtures/demo-transfer-testnet.json" ]]; then
 fi
 
 # shellcheck disable=SC1091
-source "${ROOT}/.amoeba/testnet-demo.env"
+source "${ROOT}/.wisp/testnet-demo.env"
 # shellcheck disable=SC1091
-[[ -f "${ROOT}/.amoeba/compliance.env" ]] && source "${ROOT}/.amoeba/compliance.env"
+[[ -f "${ROOT}/.wisp/compliance.env" ]] && source "${ROOT}/.wisp/compliance.env"
 # shellcheck disable=SC1091
-[[ -f "${ROOT}/.amoeba/sac.env" ]] && source "${ROOT}/.amoeba/sac.env"
+[[ -f "${ROOT}/.wisp/sac.env" ]] && source "${ROOT}/.wisp/sac.env"
 
 echo ""
 echo "0. Ensure on-chain VK matches local vk.rs"
 export SOURCE="${SOURCE:-amoeba-admin}"
 "${ROOT}/scripts/dev/ensure-testnet-vk.sh"
 # shellcheck disable=SC1091
-source "${ROOT}/.amoeba/compliance.env"
+source "${ROOT}/.wisp/compliance.env"
 # shellcheck disable=SC1091
-source "${ROOT}/.amoeba/testnet-demo.env"
+source "${ROOT}/.wisp/testnet-demo.env"
 
 echo ""
 echo "1. Refresh testnet fixture epoch + reprove"
 node --import tsx "${ROOT}/scripts/dev/gen-testnet-fixture.ts"
-export AMOEBA_FIXTURE_PROFILE=testnet
+export WISP_FIXTURE_PROFILE=testnet
 node --import tsx "${ROOT}/circuits/circom/scripts/gen-fixture.ts"
 "${ROOT}/circuits/circom/scripts/prove.sh" \
   "${ROOT}/circuits/circom/inputs/valid.testnet.json"
@@ -47,10 +47,10 @@ node --import tsx "${ROOT}/scripts/dev/write-testnet-golden.ts"
 
 echo ""
 echo "2. Start issuer-service (testnet profile)"
-mkdir -p "${ROOT}/.amoeba"
-export ISSUER_STATE_PATH="${ROOT}/.amoeba/issuer-state-testnet.json"
+mkdir -p "${ROOT}/.wisp"
+export ISSUER_STATE_PATH="${ROOT}/.wisp/issuer-state-testnet.json"
 export ISSUER_API_TOKEN="${ISSUER_API_TOKEN:-demo-token}"
-export AMOEBA_FIXTURES_DIR="${ROOT}/bindings/fixtures"
+export WISP_FIXTURES_DIR="${ROOT}/bindings/fixtures"
 export COMPLIANCE_CONTRACT_ID="${COMPLIANCE_ID:-${COMPLIANCE_CONTRACT_ID:-}}"
 export ISSUER_PUBLIC_KEY="${ISSUER_PUBLIC_KEY:-}"
 export PUBLISH_SOURCE_ACCOUNT="${PUBLISH_SOURCE_ACCOUNT:-${SOURCE}}"
@@ -88,7 +88,7 @@ pnpm build:js
 
 SENDER_SECRET=$(stellar keys secret amoeba-sender)
 export SENDER_SECRET
-export AMOEBA_FIXTURE_PROFILE=testnet
+export WISP_FIXTURE_PROFILE=testnet
 
 echo ""
 echo "4. Prove → settle → audit → replay check"

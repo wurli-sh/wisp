@@ -6,8 +6,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { payloadToHex, strKeyToPayload } from "@amoeba_/js/strkey";
-import { loadAmoebaEnv } from "@amoeba_/sdk";
+import { payloadToHex, strKeyToPayload } from "@wisp_/js/strkey";
+import { loadWispEnv } from "@wisp_/sdk";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "../..");
@@ -33,7 +33,7 @@ function fetchEpoch(rpcUrl: string): number {
   return Math.floor(ts / EPOCH_LEN);
 }
 
-const env = { ...loadAmoebaEnv(ROOT), ...process.env };
+const env = { ...loadWispEnv(ROOT), ...process.env };
 const senderId = env.SENDER_IDENTITY ?? "amoeba-sender";
 const recipientId = env.RECIPIENT_IDENTITY ?? "amoeba-recipient";
 const issuerId = env.ISSUER_IDENTITY ?? "amoeba-issuer";
@@ -61,7 +61,7 @@ function circleSacId(): string {
 
 let assetStrkey = env.SAC_CONTRACT_ID ?? env.ASSET_ID;
 if (!assetStrkey) {
-  const sac = loadAmoebaEnv(ROOT);
+  const sac = loadWispEnv(ROOT);
   assetStrkey = sac.SAC_CONTRACT_ID ?? sac.ASSET_ID;
 }
 assetStrkey = assetStrkey ?? circleSacId();

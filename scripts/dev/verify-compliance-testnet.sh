@@ -6,7 +6,7 @@ set -euo pipefail
 NETWORK="${NETWORK:-testnet}"
 SOURCE="${SOURCE:-amoeba-admin}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-DEPLOY_DIR="${ROOT}/.amoeba"
+DEPLOY_DIR="${ROOT}/.wisp"
 FIXTURE_DIR="${ROOT}/scripts/fixtures/compliance-testnet"
 
 echo "=== Phase 1 Testnet Gate ==="
@@ -37,7 +37,7 @@ if [[ -f "${DEPLOY_DIR}/verifier.env" ]]; then
 fi
 
 if [[ -z "${VERIFIER_ID:-}" ]]; then
-  echo "2. Deploying verifier (no .amoeba/verifier.env)..."
+  echo "2. Deploying verifier (no .wisp/verifier.env)..."
   "${ROOT}/scripts/deploy/deploy-verifier.sh"
   # shellcheck disable=SC1091
   source "${DEPLOY_DIR}/verifier.env"

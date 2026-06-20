@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 CIRCOM="$ROOT/circuits/circom"
 
-echo "=== Amoeba Phase 1 E2E (local) ==="
+echo "=== Wisp Phase 1 E2E (local) ==="
 
 echo ""
 echo "1. Generate fixtures (if missing)"
@@ -57,5 +57,5 @@ echo "  ./scripts/deploy/deploy-compliance.sh"
 echo "  ./scripts/deploy/setup-sac.sh"
 echo "  ./scripts/deploy/publish-roots.sh"
 echo ""
-echo "SAC bypass caveat: direct SAC transfers can bypass Amoeba unless issuer"
+echo "SAC bypass caveat: direct SAC transfers can bypass Wisp unless issuer"
 echo "authorization is configured. The demo proves a compliant transfer rail."

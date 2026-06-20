@@ -3,13 +3,13 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ADDR="${ISSUER_LISTEN_ADDR:-127.0.0.1:3000}"
-PIDFILE="${ROOT}/.amoeba/issuer-service.pid"
-LOGFILE="${ROOT}/.amoeba/issuer-service.log"
+PIDFILE="${ROOT}/.wisp/issuer-service.pid"
+LOGFILE="${ROOT}/.wisp/issuer-service.log"
 ARTIFACTS="${ROOT}/circuits/circom/artifacts"
 PUBLIC_CIRCUITS="${ROOT}/frontend/public/circuits"
 PUBLIC_FIXTURES="${ROOT}/frontend/public/fixtures"
 
-echo "=== Amoeba Phase 4 Frontend Gate ==="
+echo "=== Wisp Phase 4 Frontend Gate ==="
 cd "$ROOT"
 
 echo ""
@@ -55,17 +55,17 @@ elif [[ ! -f "${PUBLIC_FIXTURES}/demo-transfer-testnet.json" ]]; then
 fi
 
 echo ""
-echo "2. Build JS packages (@amoeba_/js + @amoeba_/sdk)"
+echo "2. Build JS packages (@wisp_/js + @wisp_/sdk)"
 pnpm build:js
 
 echo ""
 echo "3. Optional: start issuer-service"
-START_ISSUER="${AMOEBA_START_ISSUER:-0}"
+START_ISSUER="${WISP_START_ISSUER:-${AMOEBA_START_ISSUER:-0}}"
 if [[ "$START_ISSUER" == "1" ]]; then
-  mkdir -p "${ROOT}/.amoeba"
-  export ISSUER_STATE_PATH="${ISSUER_STATE_PATH:-${ROOT}/.amoeba/issuer-state.json}"
+  mkdir -p "${ROOT}/.wisp"
+  export ISSUER_STATE_PATH="${ISSUER_STATE_PATH:-${ROOT}/.wisp/issuer-state.json}"
   export ISSUER_API_TOKEN="${ISSUER_API_TOKEN:-demo-token}"
-  export AMOEBA_FIXTURES_DIR="${ROOT}/bindings/fixtures"
+  export WISP_FIXTURES_DIR="${ROOT}/bindings/fixtures"
 
   if [[ -f "$PIDFILE" ]] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
     kill "$(cat "$PIDFILE")" || true
@@ -90,4 +90,4 @@ echo "Dev server:"
 echo "  pnpm dev:frontend"
 echo ""
 echo "With issuer (demo prove package fetch):"
-echo "  AMOEBA_START_ISSUER=1 ./scripts/dev/demo-phase4.sh && pnpm dev:frontend"
+echo "  WISP_START_ISSUER=1 ./scripts/dev/demo-phase4.sh && pnpm dev:frontend"

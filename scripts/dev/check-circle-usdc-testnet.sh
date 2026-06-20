@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 NETWORK="${NETWORK:-testnet}"
 CIRCLE_JSON="${ROOT}/bindings/fixtures/circle-testnet-usdc.json"
 FIXTURE="${ROOT}/bindings/fixtures/demo-transfer-testnet.json"
-DEPLOY_DIR="${ROOT}/.amoeba"
+DEPLOY_DIR="${ROOT}/.wisp"
 
 if [[ ! -f "${CIRCLE_JSON}" ]]; then
   echo "ERROR: missing ${CIRCLE_JSON}" >&2

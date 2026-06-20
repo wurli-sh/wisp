@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Circle testnet USDC: trustline helper + pinned SAC env for Amoeba demo.
+# Circle testnet USDC: trustline helper + pinned SAC env for Wisp demo.
 # Usage: ./scripts/deploy/setup-circle-usdc-testnet.sh [--all-demo-accounts] [sender_identity]
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 NETWORK="${NETWORK:-testnet}"
 CIRCLE_JSON="${ROOT}/bindings/fixtures/circle-testnet-usdc.json"
-DEPLOY_DIR="${ROOT}/.amoeba"
+DEPLOY_DIR="${ROOT}/.wisp"
 ALL_DEMO=0
 SENDER_IDENTITY="${SENDER_IDENTITY:-amoeba-sender}"
 

@@ -16,7 +16,7 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadAmoebaEnv } from "@amoeba_/sdk";
+import { loadWispEnv } from "@wisp_/sdk";
 import { runIssuerConformance } from "../../issuer-sdk/src/index.ts";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -87,7 +87,7 @@ function issuerListenAddr(issuerUrl: string): string {
 
 async function main(): Promise<void> {
   const cli = parseArgs(process.argv.slice(2));
-  const env = loadAmoebaEnv();
+  const env = loadWispEnv();
   const issuerUrl = env.ISSUER_URL ?? "http://127.0.0.1:3000";
   const issuerPk = env.ISSUER_PUBLIC_KEY;
   if (!issuerPk) {

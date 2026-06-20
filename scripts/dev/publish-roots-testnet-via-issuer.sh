@@ -4,23 +4,23 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ADDR="${ISSUER_LISTEN_ADDR:-127.0.0.1:3000}"
-LOGFILE="${ROOT}/.amoeba/issuer-publish-roots.log"
-PIDFILE="${ROOT}/.amoeba/issuer-publish-roots.pid"
+LOGFILE="${ROOT}/.wisp/issuer-publish-roots.log"
+PIDFILE="${ROOT}/.wisp/issuer-publish-roots.pid"
 
 log_publish() { echo "[publish-roots] $*"; }
 
 # shellcheck disable=SC1091
 [[ -f "${ROOT}/.env" ]] && source "${ROOT}/.env"
 # shellcheck disable=SC1091
-[[ -f "${ROOT}/.amoeba/testnet-demo.env" ]] && source "${ROOT}/.amoeba/testnet-demo.env"
+[[ -f "${ROOT}/.wisp/testnet-demo.env" ]] && source "${ROOT}/.wisp/testnet-demo.env"
 # shellcheck disable=SC1091
-[[ -f "${ROOT}/.amoeba/compliance.env" ]] && source "${ROOT}/.amoeba/compliance.env"
+[[ -f "${ROOT}/.wisp/compliance.env" ]] && source "${ROOT}/.wisp/compliance.env"
 
 export ISSUER_LISTEN_ADDR="${ADDR}"
-export ISSUER_STATE_PATH="${ISSUER_STATE_PATH:-${ROOT}/.amoeba/issuer-state-testnet.json}"
+export ISSUER_STATE_PATH="${ISSUER_STATE_PATH:-${ROOT}/.wisp/issuer-state-testnet.json}"
 export ISSUER_API_TOKEN="${ISSUER_API_TOKEN:-demo-token}"
-export AMOEBA_FIXTURES_DIR="${AMOEBA_FIXTURES_DIR:-${ROOT}/bindings/fixtures}"
-export AMOEBA_FIXTURE_PROFILE="${AMOEBA_FIXTURE_PROFILE:-testnet}"
+export WISP_FIXTURES_DIR="${WISP_FIXTURES_DIR:-${ROOT}/bindings/fixtures}"
+export WISP_FIXTURE_PROFILE="${WISP_FIXTURE_PROFILE:-testnet}"
 export COMPLIANCE_CONTRACT_ID="${COMPLIANCE_ID:-${COMPLIANCE_CONTRACT_ID:-}}"
 export ISSUER_PUBLIC_KEY="${ISSUER_PUBLIC_KEY:-}"
 export PUBLISH_SOURCE_ACCOUNT="${PUBLISH_SOURCE_ACCOUNT:-amoeba-issuer}"

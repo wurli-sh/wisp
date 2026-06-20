@@ -1,1 +1,1 @@
-export { loadAmoebaEnv } from "@amoeba_/sdk";
+export { loadWispEnv } from "@wisp_/sdk";

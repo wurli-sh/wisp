@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Re-apply Amoeba-specific fixes after soroban-verifier-gen overwrites the crate.
+# Re-apply Wisp-specific fixes after soroban-verifier-gen overwrites the crate.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 LIB="$ROOT/backend/programs/verifier/src/lib.rs"
@@ -123,4 +123,4 @@ if [[ ! -f "$TEST" ]]; then
   echo "WARN: $TEST missing — keep the existing compliance fixture tests in verifier."
 fi
 
-echo "Patched verifier for Amoeba (SDK 25 workspace, Fr, vk.rs, vk_hash)."
+echo "Patched verifier for Wisp (SDK 25 workspace, Fr, vk.rs, vk_hash)."

@@ -10,8 +10,8 @@ VK_JSON="${CEREMONY_VK_JSON:-$CEREMONY_DIR/verification_key.json}"
 VK_HASH_TXT="${CEREMONY_VK_HASH_TXT:-$CEREMONY_DIR/vk_hash.txt}"
 SCRIPT_DIR="$ROOT/circuits/circom/scripts"
 
-if [[ "${AMOEBA_MAINNET_APPROVED:-}" != "1" ]]; then
-  echo "ERROR: mainnet deploy requires AMOEBA_MAINNET_APPROVED=1 after clearing the repo's mainnet blocker checklist and ceremony evidence gate."
+if [[ "${WISP_MAINNET_APPROVED:-}" != "1" ]]; then
+  echo "ERROR: mainnet deploy requires WISP_MAINNET_APPROVED=1 after clearing the repo's mainnet blocker checklist and ceremony evidence gate."
   exit 1
 fi
 

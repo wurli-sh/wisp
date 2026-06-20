@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Re-apply Amoeba-specific fixes after `soroban contract bindings ts` overwrites clients.
+# Re-apply Wisp-specific fixes after `soroban contract bindings ts` overwrites clients.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -13,4 +13,4 @@ for pkg in compliance verifier; do
   echo "patched $src"
 done
 
-pnpm --filter @amoeba_/compliance --filter @amoeba_/verifier run build
+pnpm --filter @wisp_/compliance --filter @wisp_/verifier run build

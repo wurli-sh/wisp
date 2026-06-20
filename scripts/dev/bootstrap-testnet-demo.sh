@@ -6,7 +6,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 NETWORK="${NETWORK:-testnet}"
 SOURCE="${SOURCE:-amoeba-admin}"
-DEPLOY_DIR="${ROOT}/.amoeba"
+DEPLOY_DIR="${ROOT}/.wisp"
 mkdir -p "$DEPLOY_DIR"
 
 echo "[bootstrap] testnet demo"
@@ -61,7 +61,7 @@ if [[ ! -f "${ROOT}/circuits/circom/artifacts/compliance_corridor_final.zkey" ]]
 fi
 
 echo "[bootstrap] 4/6 prove"
-export AMOEBA_FIXTURE_PROFILE=testnet
+export WISP_FIXTURE_PROFILE=testnet
 node --import tsx "${ROOT}/circuits/circom/scripts/gen-fixture.ts"
 "${ROOT}/circuits/circom/scripts/prove.sh" \
   "${ROOT}/circuits/circom/inputs/valid.testnet.json"

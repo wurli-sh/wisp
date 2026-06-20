@@ -5,7 +5,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { serializeSnarkjsProof, type SnarkjsProof } from "@amoeba_/sdk";
+import { serializeSnarkjsProof, type SnarkjsProof } from "@wisp_/sdk";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "../..");

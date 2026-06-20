@@ -2,12 +2,12 @@
 /**
  * Phase 3 testnet: prove → settle → audit → replay rejection.
  */
-import { AmoebaClient, DemoIssuerClient, loadAmoebaEnv } from "@amoeba_/sdk";
+import { WispClient, DemoIssuerClient, loadWispEnv } from "@wisp_/sdk";
 
 async function main() {
-  const env = loadAmoebaEnv();
-  const client = AmoebaClient.fromEnv({
-    AMOEBA_FIXTURE_PROFILE: "testnet",
+  const env = loadWispEnv();
+  const client = WispClient.fromEnv({
+    WISP_FIXTURE_PROFILE: "testnet",
     ISSUER_PUBLIC_KEY: env.ISSUER_PUBLIC_KEY,
     COMPLIANCE_CONTRACT_ID: env.COMPLIANCE_ID ?? env.COMPLIANCE_CONTRACT_ID,
   });

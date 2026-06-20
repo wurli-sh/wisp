@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Publish @amoeba_/* packages to npm in dependency order.
+# Publish @wisp_/* packages to npm in dependency order.
 # Full runbook: scripts/publish/CLAUDE.md
-# Prerequisites: npm login or granular token, @amoeba_ org access, Node 25 (see .nvmrc).
+# Prerequisites: npm login or granular token, @wisp_ org access, Node 25 (see .nvmrc).
 # Optional: NPM_OTP=123456 for 2FA auth-and-writes accounts.
 # Usage: ./scripts/publish/publish-packages.sh [--dry-run]
 set -euo pipefail
@@ -23,12 +23,12 @@ echo "Building all publishable packages…"
 pnpm build:js
 
 PACKAGES=(
-  "@amoeba_/js"
-  "@amoeba_/compliance"
-  "@amoeba_/verifier"
-  "@amoeba_/bindings"
-  "@amoeba_/sdk"
-  "@amoeba_/issuer-sdk"
+  "@wisp_/js"
+  "@wisp_/compliance"
+  "@wisp_/verifier"
+  "@wisp_/bindings"
+  "@wisp_/sdk"
+  "@wisp_/issuer-sdk"
 )
 
 for pkg in "${PACKAGES[@]}"; do

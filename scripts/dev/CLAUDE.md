@@ -25,7 +25,7 @@ Development and testnet verification scripts.
 | `check-circle-usdc-testnet.sh` | Circle USDC trustline + balance gate for demo settle |
 | `patch-corridor-circle-asset.sh` | PATCH corridor `asset_hex` to Circle SAC via issuer API |
 | `phase3-testnet-settle.ts` | SDK settle + double-publish checks on testnet |
-| `load-amoeba-env.ts` | Load `.amoeba/*.env` files into process env (superseded by `@amoeba_/sdk` `env.ts`) |
+| `load-wisp-env.ts` | Load `.wisp/*.env` files into process env (superseded by `@wisp_/sdk` `env.ts`) |
 | `compliance-deploy-ledger.sh` | Deploy compliance contract with ledger key scan |
 | `issuer-conformance.ts` | Issuer API conformance test suite |
 | `bru.sh` | Quick bootstrap/reset utility |

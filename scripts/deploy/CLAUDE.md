@@ -6,9 +6,9 @@ Stellar contract deployment scripts.
 
 | Script | Purpose |
 |--------|---------|
-| `deploy-verifier.sh` | Build + deploy Groth16 verifier. Writes `.amoeba/verifier.env`. |
-| `deploy-compliance.sh` | Build + deploy compliance contract, `initialize()`. Reads verifier env, writes `.amoeba/compliance.env`. |
-| `setup-sac.sh` | Circle testnet USDC SAC (trustlines + `.amoeba/sac.env`) |
+| `deploy-verifier.sh` | Build + deploy Groth16 verifier. Writes `.wisp/verifier.env`. |
+| `deploy-compliance.sh` | Build + deploy compliance contract, `initialize()`. Reads verifier env, writes `.wisp/compliance.env`. |
+| `setup-sac.sh` | Circle testnet USDC SAC (trustlines + `.wisp/sac.env`) |
 | `setup-circle-usdc-testnet.sh` | Circle USDC trustline helper + pinned SAC env |
 | `ensure-circle-usdc-trustlines.sh` | Idempotent Circle USDC trustlines for CLI identities |
 | `publish-roots.sh` | Register issuer + corridor on deployed compliance contract from fixture data |

@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 NETWORK="${NETWORK:-testnet}"
 SOURCE="${SOURCE:-amoeba-issuer}"
 FIXTURE="${FIXTURE:-${ROOT}/circuits/circom/inputs/valid.us-mx.json}"
-DEPLOY_DIR="${ROOT}/.amoeba"
+DEPLOY_DIR="${ROOT}/.wisp"
 ISSUER_PUBLIC_URL="${ISSUER_PUBLIC_URL:-${ISSUER_URL:-http://127.0.0.1:3000}}"
 
 if [[ -f "$DEPLOY_DIR/compliance.env" ]]; then
@@ -52,7 +52,7 @@ source_jurisdiction_root=$(read_field source_jurisdiction_root)
 dest_address_root=$(read_field dest_address_root)
 
 ISSUER="${ISSUER:-$SOURCE}"
-METADATA_URI="${METADATA_URI:-${ISSUER_PUBLIC_URL%/}/.well-known/amoeba-issuer.json}"
+METADATA_URI="${METADATA_URI:-${ISSUER_PUBLIC_URL%/}/.well-known/wisp-issuer.json}"
 
 echo "=== Publishing issuer + corridor roots ==="
 echo "Compliance: ${COMPLIANCE_ID}"
