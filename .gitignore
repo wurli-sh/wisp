@@ -11,7 +11,7 @@ reference/
 # Build artifacts
 target/
 node_modules/
-packages/amoeba-js/dist/
+packages/wisp-js/dist/
 sdk/dist/
 bindings/dist/
 issuer-sdk/dist/
@@ -44,7 +44,7 @@ circuits/**/*.wtns
 *.swo
 
 # Local issuer state
-.amoeba/issuer-state.json
-.amoeba/issuer-state-testnet.json
-.amoeba/issuer-service.pid
-.amoeba/issuer-service.log
+.wisp/issuer-state.json
+.wisp/issuer-state-testnet.json
+.wisp/issuer-service.pid
+.wisp/issuer-service.log

@@ -23,9 +23,9 @@ importers:
 
   bindings:
     dependencies:
-      '@amoeba_/js':
+      '@wisp_/js':
         specifier: workspace:*
-        version: link:../packages/amoeba-js
+        version: link:../packages/wisp-js
     devDependencies:
       '@types/node':
         specifier: ^22.10.0
@@ -62,12 +62,12 @@ importers:
 
   circuits/circom:
     dependencies:
-      '@amoeba_/bindings':
+      '@wisp_/bindings':
         specifier: workspace:*
         version: link:../../bindings
-      '@amoeba_/js':
+      '@wisp_/js':
         specifier: workspace:*
-        version: link:../../packages/amoeba-js
+        version: link:../../packages/wisp-js
       ffjavascript:
         specifier: ^0.3.1
         version: 0.3.1
@@ -81,18 +81,18 @@ importers:
 
   frontend:
     dependencies:
-      '@amoeba_/js':
-        specifier: workspace:*
-        version: link:../packages/amoeba-js
-      '@amoeba_/sdk':
-        specifier: workspace:*
-        version: link:../sdk
       '@paper-design/shaders-react':
         specifier: ^0.0.76
         version: 0.0.76(@types/react@19.2.17)(react@19.2.7)
       '@stellar/freighter-api':
         specifier: ^5.0.0
         version: 5.0.0
+      '@wisp_/js':
+        specifier: workspace:*
+        version: link:../packages/wisp-js
+      '@wisp_/sdk':
+        specifier: workspace:*
+        version: link:../sdk
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -154,18 +154,18 @@ importers:
 
   issuer-sdk:
     dependencies:
-      '@amoeba_/compliance':
-        specifier: workspace:*
-        version: link:../bindings/generated/compliance
-      '@amoeba_/js':
-        specifier: workspace:*
-        version: link:../packages/amoeba-js
-      '@amoeba_/sdk':
-        specifier: workspace:*
-        version: link:../sdk
       '@stellar/stellar-sdk':
         specifier: ^14.5.0
         version: 14.6.1
+      '@wisp_/compliance':
+        specifier: workspace:*
+        version: link:../bindings/generated/compliance
+      '@wisp_/js':
+        specifier: workspace:*
+        version: link:../packages/wisp-js
+      '@wisp_/sdk':
+        specifier: workspace:*
+        version: link:../sdk
     devDependencies:
       '@types/node':
         specifier: ^22.10.0
@@ -177,7 +177,7 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
-  packages/amoeba-js:
+  packages/wisp-js:
     dependencies:
       ffjavascript:
         specifier: ^0.3.1
@@ -195,21 +195,21 @@ importers:
 
   sdk:
     dependencies:
-      '@amoeba_/bindings':
-        specifier: workspace:*
-        version: link:../bindings
-      '@amoeba_/compliance':
-        specifier: workspace:*
-        version: link:../bindings/generated/compliance
-      '@amoeba_/js':
-        specifier: workspace:*
-        version: link:../packages/amoeba-js
-      '@amoeba_/verifier':
-        specifier: workspace:*
-        version: link:../bindings/generated/verifier
       '@stellar/stellar-sdk':
         specifier: ^14.5.0
         version: 14.6.1
+      '@wisp_/bindings':
+        specifier: workspace:*
+        version: link:../bindings
+      '@wisp_/compliance':
+        specifier: workspace:*
+        version: link:../bindings/generated/compliance
+      '@wisp_/js':
+        specifier: workspace:*
+        version: link:../packages/wisp-js
+      '@wisp_/verifier':
+        specifier: workspace:*
+        version: link:../bindings/generated/verifier
       ajv:
         specifier: ^8.17.1
         version: 8.20.0

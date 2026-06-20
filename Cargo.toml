@@ -3,8 +3,8 @@ resolver = "2"
 members = [
     "backend/programs/verifier",
     "backend/programs/compliance",
-    "backend/crates/amoeba-crypto",
-    "backend/crates/amoeba-types",
+    "backend/crates/wisp-crypto",
+    "backend/crates/wisp-types",
     "backend/crates/issuer-service",
 ]
 

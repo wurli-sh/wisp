@@ -1,136 +1,143 @@
-<img src="docs/amoeba-banner.png" width="100%" alt="Amoeba" />
+<img src="docs/wisp-banner.png" width="100%" alt="Wisp" />
 
-ZK compliance infrastructure for Stellar stablecoins and RWAs.
 
-Verify users once with a trusted issuer, publish compliance roots on-chain, and let apps generate fresh client-side Groth16 proofs for every transfer. Soroban verifies the proof, records the nullifier, and gates settlement — without putting customer documents on-chain.
-
-> **Amoeba is not an anonymity rail.** Sender, recipient, asset, and amount remain public on-chain. The ZK proof shows the transfer is *compliant* without exposing the sender's identity data.
+Verify users once with a trusted issuer, publish compliance roots on-chain, and generate client-side Groth16 proofs per transfer. Soroban verifies the proof, records the nullifier, and gates settlement — no customer documents on-chain.
 
 ---
 
-## Deployed on Stellar Testnet
+## Deployments
+
+### Contracts (Stellar Testnet)
 
 | Resource | Value |
 | -------- | ----- |
-| **Network** | Stellar Testnet (`Test SDF Network ; September 2015`) |
-| **RPC** | `https://soroban-testnet.stellar.org` |
-| **Explorer** | [stellar.expert/explorer/testnet](https://stellar.expert/explorer/testnet) |
-| **Verifier** | `CDOGTUWS2UUAO3QEPDTCJTITSICBFRHRYUO7NH54YYIQXJFELARPW6UQ` |
-| **Compliance** | `CDRMPTRCZWP5BHYDKCHTCVNN4Y7MOYQ6MEGKY2DWX5N4GLZJWUZ6DCVL` |
-| **Circle USDC SAC** | `CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA` |
-| **VK hash** | `c127f452225fb4101464e2dc7e54ab3940ccf17197654dc1a0e95fef65c94875` |
+| Network | `Test SDF Network ; September 2015` |
+| RPC | `https://soroban-testnet.stellar.org` |
+| Explorer | [stellar.expert/testnet](https://stellar.expert/explorer/testnet) |
+| Verifier | `CDOGTUWS2UUAO3QEPDTCJTITSICBFRHRYUO7NH54YYIQXJFELARPW6UQ` |
+| Compliance | `CDRMPTRCZWP5BHYDKCHTCVNN4Y7MOYQ6MEGKY2DWX5N4GLZJWUZ6DCVL` |
+| Circle USDC SAC | `CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA` |
+| VK hash | `c127f452225fb4101464e2dc7e54ab3940ccf17197654dc1a0e95fef65c94875` |
 
-Contract IDs are written to `.amoeba/*.env` after deploy. See [`scripts/deploy/`](scripts/deploy/) for redeploy.
+IDs are written to `.wisp/*.env` after deploy. Redeploy: [`scripts/deploy/`](scripts/deploy/).
+
+### Frontend
+
+| Target | URL / command |
+| ------ | ------------- |
+| **Live** | [amoeba-zk.vercel.app](https://amoeba-zk.vercel.app/) |
+| Local | `pnpm dev:frontend` → `:5173` |
+
+Routes: `/` landing · `/demo` prove/settle console · `/compliance` proofs/audit/corridors. Config: [`frontend/.env.example`](frontend/.env.example).
+
+### Backend (issuer-service)
+
+| Target | URL / command |
+| ------ | ------------- |
+| **Live** | [amoeba-issuer.onrender.com](https://amoeba-issuer.onrender.com) |
+| Local | `cargo run -p issuer-service` → `:3000` |
+
+Production uses Postgres (`SUPABASE_DB_URL`), `WISP_ENV=production`. API and env: [Issuer setup](#issuer-setup) · [`backend/crates/issuer-service/`](backend/crates/issuer-service/).
 
 ---
 
-## Architecture
+## SDK Packages
 
-### Compliance Proof Flow
+Plug-and-play npm packages — install, configure env, run.
+
+| Package | Purpose | README |
+| ------- | ------- | ------ |
+| `@wisp_/js` | Poseidon2, Merkle, nullifier, witness builder | [`packages/wisp-js/README.md`](packages/wisp-js/README.md) |
+| `@wisp_/sdk` | Prove, settle, audit compliant transfers | [`sdk/README.md`](sdk/README.md) |
+| `@wisp_/issuer-sdk` | Register issuers, publish roots on-chain | [`issuer-sdk/README.md`](issuer-sdk/README.md) |
+
+Also: [`@wisp_/bindings`](bindings/README.md) (canonical 17-field ABI) · [`@wisp_/web`](frontend/) (demo UI, workspace-only).
+
+Publish dry-run: `./scripts/publish/publish-packages.sh --dry-run`
+
+## Core Architecture
 
 ```
-Trusted issuer
-  |-- verifies user once (off-chain KYC)
-  |-- publishes merkle / sanctions / jurisdiction / corridor roots on-chain
-  v
-Browser prover
-  |-- fetches proof package from issuer-service
-  |-- builds witness via @amoeba_/js
-  |-- generates Groth16 proof (BN254, 17 public inputs)
-  v
+Issuer (off-chain KYC)
+  → publishes merkle / sanctions / jurisdiction / corridor roots on-chain
+Browser / Node prover
+  → fetches proof package → witness (@wisp_/js) → Groth16 (17 public inputs)
 Soroban compliance contract
-  |-- rebinds 17 public inputs to transfer params
-  |-- verifies Groth16 proof via verifier contract
-  |-- records nullifier (anti-replay)
-  |-- executes compliant SAC transfer
+  → rebinds public inputs → verifies via verifier → nullifier → SAC transfer
 ```
 
-### Frontend → SDK → Contracts
-
 ```
-Frontend (React 19 + Vite + Tailwind 4)
-  |  /           landing — prove once, settle forever
-  |  /demo       11-step prove → settle → audit console
-  |  /compliance Proofs · Audit · Corridors tabs
-  v
-@amoeba_/sdk (TypeScript)
-  |-- issuer client → proof package + merkle paths
-  |-- witness + Groth16 prove (snarkjs, browser or Node)
-  |-- SAC approve + compliant_transfer settle
-  |-- nullifier audit + root event parsing
-  v
-issuer-service (Rust, :3000)
-  |-- GET  /v1/fixtures/demo-transfer
-  |-- GET  /v1/merkle-path/:wallet
-  |-- POST /v1/admin/roots/publish
-  v
-Soroban contracts (Rust no_std)
-  verifier (Groth16 verify) → compliance (nullifier + SAC gate)
+frontend/          React demo UI
+  ↓
+@wisp_/sdk       issuer client · prove · settle · audit
+  ↓
+issuer-service     proof packages · merkle paths · root publish
+  ↓
+Soroban            verifier (Groth16) → compliance (nullifier + SAC gate)
 ```
 
-### What One Proof Covers (8 checks)
-
-| # | Check | Purpose |
-|---|-------|---------|
-| 1 | Merkle membership | Sender is in the issuer KYC tree |
-| 2 | Nullifier binding | Each transfer is anti-replay bound |
-| 3 | Sanctions exclusion | Sender is not in the sanctions tree |
-| 4 | Jurisdiction | Sender jurisdiction is allowed |
-| 5 | Credential expiry | KYC credential is still valid |
-| 6 | Corridor source | Sender fits corridor source rules (e.g. US) |
-| 7 | Corridor destination | Recipient is in corridor destination registry (e.g. MX) |
-| 8 | Corridor binding | Corridor config hash matches on-chain state |
-
-### Proof Cascade
-
 ```
-issuer-service.getDemoTransfer()
-     |
-     v
-@amoeba_/js buildWitnessInput (Poseidon2, Merkle, nullifier)
-     |
-     v
-snarkjs Groth16 prove (compliance_corridor.wasm + zkey)
-     |
-     v
-compliance.compliant_transfer(proof, 17 public inputs)
-     |-- verifier.verify_proof()
-     |-- nullifier.insert(nullifier)  [reject if seen]
-     |-- sac.transfer_from(sender, recipient, amount)
-     |
-     v
-audit(nullifier) — on-chain attestation lookup
+wisp/
+├── backend/           Soroban contracts + issuer-service
+├── circuits/circom/   Circom circuit + ceremony
+├── bindings/          Canonical ABI + generated clients
+├── packages/wisp-js/
+├── sdk/
+├── issuer-sdk/
+├── frontend/
+└── scripts/           dev · deploy · ceremony
 ```
 
-**8 compliance checks** · **17 public inputs** · **Groth16 BN254** · **Poseidon2 t=4** · **20-level Merkle/SMT**
+---
 
-### Directory Structure
+## ZK Implementation
+
+**Stack:** Groth16 · BN254 · Poseidon2 t=4 · 20-level Merkle/SMT · **17 public inputs**
 
 ```
-amoeba/
-├── backend/
-│   ├── programs/         # Soroban verifier + compliance contracts
-│   └── crates/           # amoeba-crypto, amoeba-types, issuer-service
-├── circuits/circom/      # Circom circuit, fixtures, ceremony tooling
-├── bindings/             # Canonical ABI, generated clients, JSON fixtures
-├── packages/amoeba-js/   # @amoeba_/js — Poseidon2, Merkle, witness
-├── sdk/                  # @amoeba_/sdk — prove, settle, audit
-├── issuer-sdk/           # @amoeba_/issuer-sdk — issuer-side client
-├── frontend/             # @amoeba_/web — landing, demo, compliance hub
-├── scripts/              # dev, deploy, ceremony, publish
-└── docs/                 # Banner and design docs
+circuits/circom/compliance_corridor.circom
+┌──────────────────────────────────────────────────────────────────────────┐
+│                           ComplianceCorridor()                           │
+│  PUBLIC (17)               │  PRIVATE                                    │
+│  roots · nullifier         │  credential_secret · transfer_nonce         │
+│  sender/recipient/asset    │  merkle paths + indices (×5 trees)          │
+│  amount · epoch · corridor │  jurisdiction · sanctions_leaf              │
+├──────────────────────────────────────────────────────────────────────────┤
+│  components/  poseidon2 · merkle · smt.circom                            │
+├──────────────────────────────────────────────────────────────────────────┤
+│ Merkle membership          │ Poseidon2(sender) → MerklePath → root       │
+│ Nullifier binding          │ Poseidon2Hash12(domain+transfer ctx)        │
+│ Sanctions exclusion        │ SparseMerkleExclusion(sender) → root        │
+│ Jurisdiction               │ Poseidon2(jurisdiction) → MerklePath        │
+│ Credential expiry          │ timestamp ≤ credential_expiry               │
+│ Corridor source            │ jurisdiction → source_jurisdiction_root     │
+│ Corridor destination       │ Poseidon2(recipient) → dest_address_root    │
+│ Corridor binding           │ corridor_config_hash ↔ on-chain corridor    │
+└──────────────────────────────────────────────────────────────────────────┘
+                                     │
+          proof package ───────────────────────┼─────── @wisp_/js buildWitnessInput
+                                     ▼
+               witness.json → compliance_corridor.wasm + zkey
+                                     │
+                                     ▼ snarkjs Groth16.prove (BN254)
+                     π_a, π_b, π_c  +  17 public signals
+                                     │
+                                     ▼ Soroban verifier.verify_proof()
+               compliance.compliant_transfer → nullifier → SAC settle
 ```
+
+Canonical field order: [`bindings/public-inputs.json`](bindings/public-inputs.json) · [`bindings/README.md`](bindings/README.md)
 
 ---
 
 ## Key Features
 
-- **Verify once, prove per transfer** — issuer KYC tree + client-side Groth16; no PII on-chain
-- **8-in-1 compliance circuit** — sanctions, jurisdiction, expiry, corridor binding in one proof
-- **Soroban-native verifier** — Groth16 verified in-contract; nullifier anti-replay
+- **Verify once, prove per transfer** — KYC tree + client-side Groth16; no PII on-chain
+- **8-in-1 circuit** — sanctions, jurisdiction, expiry, corridor binding in one proof
+- **Soroban-native verifier** — Groth16 in-contract; nullifier anti-replay
 - **Travel-rule corridors** — US→MX and extensible corridor config hashes
-- **Full TypeScript stack** — `@amoeba_/js`, `@amoeba_/sdk`, `@amoeba_/issuer-sdk`
-- **Ceremony-ready** — multi-party trusted setup scripts + VK drift checks in CI
+- **Full TypeScript stack** — `@wisp_/js`, `@wisp_/sdk`, `@wisp_/issuer-sdk`
+- **Ceremony-ready** — multi-party setup scripts + VK drift checks in CI
 
 ---
 
@@ -138,43 +145,40 @@ amoeba/
 
 | Layer | Stack |
 | ----- | ----- |
-| **Frontend** | Vite 6, React 19, Tailwind 4, framer-motion, GSAP |
-| **Contracts** | Soroban SDK 25, Rust `no_std`, release LTO |
-| **ZK** | Circom 2.2.3, snarkjs, Groth16, BN254, Poseidon2 |
-| **Backend** | Rust issuer-service (Axum) |
-| **SDKs** | `@amoeba_/js`, `@amoeba_/sdk`, `@amoeba_/issuer-sdk` |
-| **Settlement** | Stellar SAC + Soroban `compliant_transfer` |
-| **Design** | Font: Space Grotesk. Primary: `#141812`, Accent: `#B7E7FF` |
+| Frontend | Vite 6, React 19, Tailwind 4, framer-motion, GSAP |
+| Contracts | Soroban SDK 25, Rust `no_std`, release LTO |
+| ZK | Circom 2.2.3, snarkjs, Groth16, BN254, Poseidon2 |
+| Backend | Rust issuer-service (Axum) |
+| SDKs | `@wisp_/js`, `@wisp_/sdk`, `@wisp_/issuer-sdk` |
+| Settlement | Stellar SAC + `compliant_transfer` |
+| Design | Space Grotesk · `#141812` · `#B7E7FF` |
 
 ---
 
 ## Local Development
 
-### Prerequisites
-
-- Rust 1.94+
-- Node 25+
-- `pnpm`
-- Stellar CLI 25+
-- circom 2.2.3
-- snarkjs 0.7+
-- `cargo install soroban-verifier-gen`
-
-### Key commands
+**Prerequisites:** Rust 1.94+ · Node 25+ · pnpm · Stellar CLI 25+ · circom 2.2.3 · snarkjs 0.7+ · `cargo install soroban-verifier-gen`
 
 | Command | Description |
 | ------- | ----------- |
 | `pnpm compile:circuit` | Compile Circom circuit |
 | `pnpm setup:circuit` | One-person trusted setup |
+| `pnpm build:js` | Build `@wisp_/js` + `@wisp_/sdk` |
 | `pnpm gen:bindings` | Regenerate ABI bindings |
-| `pnpm gen:crypto-fixtures` | Regenerate crypto/address fixtures |
-| `pnpm prove` / `pnpm verify` | Local prove + snarkjs verify |
-| `pnpm build:frontend` | Production frontend build |
-| `pnpm ceremony:init` | Initialize multi-party ceremony |
+| `pnpm prove` / `pnpm verify` | Local prove + verify |
+| `pnpm dev:frontend` | Demo UI dev server |
+| `pnpm test:js` | JS test suite |
+| `cargo test -p verifier -p compliance` | Contract tests |
+| `cargo run -p issuer-service` | Issuer API |
+| `./scripts/dev/demo-e2e.sh` | Full local E2E |
 
-### Environment
+---
 
-**Frontend** (`frontend/.env` — copy from `frontend/.env.example`):
+## Env Setup
+
+Shared deploy state lives in `.wisp/*.env`. SDKs load via `loadWispEnv()`.
+
+**Frontend** — copy [`frontend/.env.example`](frontend/.env.example) → `frontend/.env`:
 
 ```bash
 VITE_STELLAR_RPC_URL=https://soroban-testnet.stellar.org
@@ -185,19 +189,22 @@ VITE_ISSUER_PUBLIC_KEY=
 VITE_ISSUER_URL=/issuer          # dev proxy → localhost:3000
 ```
 
-**Issuer service**:
+**SDK / scripts** — key vars:
 
 ```bash
-export ISSUER_STATE_PATH=.amoeba/issuer-state.json
-export ISSUER_API_TOKEN=demo-token
-cargo run -p issuer-service       # :3000
+STELLAR_RPC_URL=...
+COMPLIANCE_CONTRACT_ID=...
+VERIFIER_CONTRACT_ID=...
+SAC_CONTRACT_ID=...
+ISSUER_PUBLIC_KEY=...
+ISSUER_URL=http://127.0.0.1:3000
+WISP_FIXTURE_PROFILE=testnet    # or local
 ```
 
-**Testnet deploy** (requires funded `amoeba-admin` identity):
+**Testnet deploy** (funded `amoeba-admin` identity):
 
 ```bash
-export NETWORK=testnet
-export SOURCE=amoeba-admin
+export NETWORK=testnet SOURCE=amoeba-admin
 ./scripts/deploy/deploy-verifier.sh
 ./scripts/deploy/deploy-compliance.sh
 ./scripts/deploy/setup-sac.sh
@@ -206,101 +213,47 @@ export SOURCE=amoeba-admin
 
 ---
 
-## SDK Usage
+## Issuer Setup
 
-```ts
-import { AmoebaClient, DemoIssuerClient } from "@amoeba_/sdk";
+**Run locally:**
 
-const client = AmoebaClient.fromEnv();
-const demoIssuer = new DemoIssuerClient(client.cfg.issuerUrl);
-const pkg = await demoIssuer.getDemoTransfer();
-
-await client.validatePackage(pkg, {
-  issuerPublicKey: process.env.ISSUER_PUBLIC_KEY!,
-  corridorId: Number(pkg.transfer?.corridor_id ?? 1),
-});
-
-const proven = await client.prove({ package: pkg });
-await client.approveSacForComplianceWithKeypair(pkg, senderSecret);
-await client.settleWithKeypair(proven, pkg, senderSecret);
-await client.audit(proven.nullifier, senderPublicKey);
+```bash
+export ISSUER_STATE_PATH=.wisp/issuer-state.json
+export ISSUER_API_TOKEN=demo-token
+export COMPLIANCE_CONTRACT_ID=<from .wisp/compliance.env>
+export ISSUER_PUBLIC_KEY=<issuer G-address>
+cargo run -p issuer-service
 ```
 
-Testnet fixtures: `AMOEBA_FIXTURE_PROFILE=testnet` and `bindings/fixtures/demo-transfer-testnet.json`.
-
----
-
-## Public Inputs (17 fields)
-
-Canonical ABI: [`bindings/public-inputs.json`](bindings/public-inputs.json). See [`bindings/README.md`](bindings/README.md).
-
-| Index | Field |
-| ----: | ----- |
-| 0 | merkle_root |
-| 1 | nullifier |
-| 2–3 | asset_lo, asset_hi |
-| 4–5 | sender_lo, sender_hi |
-| 6 | epoch |
-| 7–8 | recipient_lo, recipient_hi |
-| 9 | amount |
-| 10 | sanctions_root |
-| 11 | jurisdiction_root |
-| 12 | timestamp (= epoch × 86400) |
-| 13 | corridor_id |
-| 14 | corridor_config_hash |
-| 15 | source_jurisdiction_root |
-| 16 | dest_address_root |
-
-Address limbs: `hi = bytes[0..16]`, `lo = bytes[16..32]` as big-endian field elements.
-
-**snarkjs → Soroban encoding:** G1 uses 32-byte big-endian `x || y` (no ark flags). G2 uses `x_c1 || x_c0 || y_c1 || y_c0` per snarkjs `pi_b` rows. Verifier negates `pi_a` internally.
-
----
-
-## Issuer Service
+**Key endpoints:**
 
 | Method | Path |
 | ------ | ---- |
 | GET | `/health` |
 | GET | `/v1/fixtures/demo-transfer` |
 | GET | `/v1/merkle-path/:wallet` |
-| POST | `/v1/admin/roots/publish` (Bearer token) |
+| POST | `/v1/admin/roots/publish` (Bearer) |
+
+**Publish roots:**
 
 ```bash
 export ISSUER_API_TOKEN=...
 ./scripts/dev/publish-roots-via-service.sh
 ```
 
+**On-chain issuer ops** (register issuer, publish roots via contract): see [`issuer-sdk/README.md`](issuer-sdk/README.md).
+
+Production: set `SUPABASE_DB_URL`, `WISP_ENV=production`, `ISSUER_REQUIRE_DB=1`.
+
 ---
 
 ## Trust & Security
 
-- **Regulated compliance, not privacy** — transfer parties and amounts are public; proof attests compliance without PII
-- **Nullifier anti-replay** — each proof binds a unique nullifier recorded on-chain
+- **Regulated compliance, not privacy** — parties and amounts are public; proof attests compliance without PII
+- **Nullifier anti-replay** — unique nullifier recorded on-chain per proof
 - **VK drift checks** — CI verifies verifier hash matches ceremony artifacts
 - **Admin-guarded contracts** — pausable, event-emitting Soroban programs
-- **SAC bypass caveat** — direct SAC transfers can bypass Amoeba unless issuer authorization is configured; demo uses approve + `transfer_from` via compliance contract
-- **Mainnet ceremony gate** — `setup.sh` is not a mainnet ceremony; requires multi-party phase 2 with `published: true` and `verifier_contract_synced: true` in `circuits/circom/artifacts/ceremony/manifest.json`
+- **SAC bypass caveat** — direct SAC transfers can bypass Wisp unless issuer authorization is enforced; demo uses approve + `transfer_from`
+- **Mainnet ceremony gate** — requires multi-party phase 2 with `published: true` and `verifier_contract_synced: true` in ceremony manifest
 
-Launch runbooks: [`scripts/deploy/`](scripts/deploy/) and [`scripts/dev/`](scripts/dev/).
-
----
-
-## Packages
-
-| Package | Description |
-| ------- | ----------- |
-| [`@amoeba_/js`](packages/amoeba-js/) | Poseidon2, Merkle, nullifier, witness builder |
-| [`@amoeba_/sdk`](sdk/) | Prove, settle, audit on Stellar |
-| [`@amoeba_/issuer-sdk`](issuer-sdk/) | Issuer-side HTTP client |
-| [`@amoeba_/web`](frontend/) | Demo UI (private workspace package) |
-
-```bash
-./scripts/publish/publish-packages.sh --dry-run
-```
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+Runbooks: [`scripts/deploy/`](scripts/deploy/) · [`scripts/dev/`](scripts/dev/)

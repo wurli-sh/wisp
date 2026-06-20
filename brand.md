@@ -1,4 +1,4 @@
-# Brand — Amoeba
+# Brand — Wisp
 
 Zero-knowledge compliance rail for cross-border Stellar stablecoin transfers.
 
@@ -7,7 +7,7 @@ _Last updated: 2026-06-19_
 
 ## Brand summary
 
-Amoeba should read as regulated infrastructure, not consumer fintech. The product promise is simple: prove compliance without exposing customer data. The interface should feel strict, technical, and trustworthy, with a visible bias toward auditability over decoration. The new color system keeps the restraint, but adds a sharper proof-led accent so the product feels more current and memorable.
+Wisp should read as regulated infrastructure, not consumer fintech. The product promise is simple: prove compliance without exposing customer data. The interface should feel strict, technical, and trustworthy, with a visible bias toward auditability over decoration. The new color system keeps the restraint, but adds a sharper proof-led accent so the product feels more current and memorable.
 
 ## Positioning
 
@@ -119,4 +119,4 @@ Avoid: frictionless, magical, seamless, revolutionary, unlock, supercharge, deli
 
 ## Short directive for future UI work
 
-If a design choice makes Amoeba feel more like an operational compliance rail and less like a retail crypto app, it is probably correct.
+If a design choice makes Wisp feel more like an operational compliance rail and less like a retail crypto app, it is probably correct.

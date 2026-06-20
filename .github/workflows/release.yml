@@ -1,7 +1,7 @@
-# Publish @amoeba_/* to npm on version tags.
+# Publish @wisp_/* to npm on version tags.
 # Paused: manual dispatch only until re-enabled.
 # Deploy is elsewhere: Vercel (frontend), Render (issuer-service).
-# Requires GitHub secret NPM_TOKEN (granular token with bypass 2FA + @amoeba_ publish).
+# Requires GitHub secret NPM_TOKEN (granular token with bypass 2FA + @wisp_ publish).
 name: release
 
 on:

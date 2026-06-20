@@ -1,6 +1,6 @@
 packages:
   - "frontend"
-  - "packages/amoeba-js"
+  - "packages/wisp-js"
   - "sdk"
   - "issuer-sdk"
   - "bindings"

@@ -12,11 +12,11 @@ services:
         value: 10000
       - key: ISSUER_REQUIRE_DB
         value: "1"
-      - key: AMOEBA_ENV
+      - key: WISP_ENV
         value: production
-      - key: AMOEBA_FIXTURE_PROFILE
+      - key: WISP_FIXTURE_PROFILE
         value: testnet
-      - key: AMOEBA_FIXTURES_DIR
+      - key: WISP_FIXTURES_DIR
         value: /app/bindings/fixtures
       - key: KYC_MODE
         value: sep10

@@ -64,10 +64,10 @@ jobs:
 
       - name: SDK prove integration (issuer-service)
         run: |
-          mkdir -p .amoeba
-          export ISSUER_STATE_PATH="$PWD/.amoeba/issuer-state-ci.json"
+          mkdir -p .wisp
+          export ISSUER_STATE_PATH="$PWD/.wisp/issuer-state-ci.json"
           export ISSUER_API_TOKEN=demo-token
-          export AMOEBA_FIXTURES_DIR="$PWD/bindings/fixtures"
+          export WISP_FIXTURES_DIR="$PWD/bindings/fixtures"
           cargo build -p issuer-service
           ./target/debug/issuer-service &
           ISSUER_PID=$!
@@ -76,7 +76,7 @@ jobs:
           kill "$ISSUER_PID" || true
 
       - name: Phase 2 crate tests
-        run: cargo test -p amoeba-crypto -p amoeba-types -p issuer-service
+        run: cargo test -p wisp-crypto -p wisp-types -p issuer-service
 
       - name: Dependency audits
         run: |

@@ -30,26 +30,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
-name = "amoeba-crypto"
-version = "0.1.0"
-dependencies = [
- "ark-bn254 0.6.0",
- "ark-ff 0.6.0",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "amoeba-types"
-version = "0.1.0"
-dependencies = [
- "amoeba-crypto",
- "ark-bn254 0.6.0",
- "serde",
- "serde_json",
-]
-
-[[package]]
 name = "android_system_properties"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1384,8 +1364,6 @@ checksum = "8e04e2fd2b8188ea827b32ef11de88377086d690286ab35747ef7f9bf3ccb590"
 name = "issuer-service"
 version = "0.1.0"
 dependencies = [
- "amoeba-crypto",
- "amoeba-types",
  "ark-bn254 0.6.0",
  "ark-ff 0.6.0",
  "axum",
@@ -1407,6 +1385,8 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
+ "wisp-crypto",
+ "wisp-types",
 ]
 
 [[package]]
@@ -3272,6 +3252,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc"
 dependencies = [
  "windows-link",
+]
+
+[[package]]
+name = "wisp-crypto"
+version = "0.1.0"
+dependencies = [
+ "ark-bn254 0.6.0",
+ "ark-ff 0.6.0",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "wisp-types"
+version = "0.1.0"
+dependencies = [
+ "ark-bn254 0.6.0",
+ "serde",
+ "serde_json",
+ "wisp-crypto",
 ]
 
 [[package]]
