@@ -43,6 +43,8 @@ Production uses Postgres (`SUPABASE_DB_URL`), `WISP_ENV=production`. API and env
 
 ## SDK Packages
 
+<img src="docs/portable-sdk.png" width="100%" alt="Wisp works alongside your issuer." />
+
 Plug-and-play npm packages — install, configure env, run.
 
 | Package | Purpose | README |
