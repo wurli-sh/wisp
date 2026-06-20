@@ -1,0 +1,58 @@
+{
+  "next_user_id": 1,
+  "next_credential_id": 1,
+  "next_destination_id": 1,
+  "next_snapshot_id": 0,
+  "next_webhook_id": 0,
+  "users": [
+    {
+      "id": 1,
+      "wallet": "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301",
+      "jurisdiction": "US",
+      "jurisdiction_code": 840,
+      "credential_expiry": 2000000000,
+      "sanctions_clear": true,
+      "enabled": true,
+      "provider": "fixture",
+      "provider_ref": "demo",
+      "metadata": {
+        "corridor_eligibility": [
+          1
+        ]
+      }
+    }
+  ],
+  "credentials": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "credential_secret": "424242",
+      "enabled": true
+    }
+  ],
+  "corridors": [
+    {
+      "id": 1,
+      "name": "US-MX",
+      "source_country": "US",
+      "dest_country": "MX",
+      "enabled": true,
+      "asset_hex": "ffeeddccbbaa998877665544332211000123456789abcdeffedcba9876543210",
+      "issuer_strkey": null,
+      "travel_rule_threshold": "0"
+    }
+  ],
+  "destinations": [
+    {
+      "id": 1,
+      "corridor_id": 1,
+      "address": "102132435465768798a9babbdcedfe0f0f1e2d3c4b5a69788796a5b4c3d2e1f0",
+      "enabled": true,
+      "metadata": null
+    }
+  ],
+  "root_snapshots": [],
+  "webhook_events": [],
+  "mock_kyc_challenges": [],
+  "mock_kyc_last_request": {}
+}
