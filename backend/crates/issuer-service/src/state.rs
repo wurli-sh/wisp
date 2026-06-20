@@ -971,12 +971,15 @@ impl AppState {
             Some(_) => MockKycLifecycleStatus::Rejected,
         };
 
+        let mut sender_corridor_ready = false;
         if kyc_status != MockKycLifecycleStatus::Approved {
             missing.push(MockKycMissing::Kyc);
         } else if let (Some(corridor), Some(sender)) = (&target_corridor, &user) {
             let eligible = sender_corridor_eligibility(sender, &corridors);
             if !eligible.contains(&corridor.id) {
                 missing.push(MockKycMissing::SenderCorridor);
+            } else {
+                sender_corridor_ready = true;
             }
         }
 
@@ -995,11 +998,43 @@ impl AppState {
             }
         }
 
-        let (roots_status, roots_message) = if let Some(corridor) = &target_corridor {
+        let (mut roots_status, mut roots_message) = if let Some(corridor) = &target_corridor {
             self.current_roots_status(cfg, corridor).await?
         } else {
             (MockKycRootsStatus::Missing, None)
         };
+        if let Some(corridor) = &target_corridor {
+            let can_publish_roots = cfg.compliance_id.is_some()
+                && cfg.issuer_public_key.is_some()
+                && cfg.publish_source_account().is_some();
+            if kyc_status == MockKycLifecycleStatus::Approved
+                && sender_corridor_ready
+                && corridor.enabled
+                && roots_status == MockKycRootsStatus::Missing
+                && can_publish_roots
+            {
+                let state = self.clone();
+                let publish_cfg = cfg.clone();
+                let corridor_id = corridor.id;
+                tokio::spawn(async move {
+                    if let Err(err) = state
+                        .ensure_roots_published(&publish_cfg, corridor_id)
+                        .await
+                    {
+                        tracing::warn!(
+                            corridor_id,
+                            error = %err,
+                            "mock kyc: status-triggered root publish failed"
+                        );
+                    }
+                });
+                roots_status = MockKycRootsStatus::Publishing;
+                roots_message = Some(format!(
+                    "Issuer is publishing roots for corridor {}.",
+                    corridor.id
+                ));
+            }
+        }
         if !matches!(roots_status, MockKycRootsStatus::Active) {
             missing.push(MockKycMissing::RootsPublished);
         }
