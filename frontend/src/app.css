@@ -109,12 +109,14 @@
   );
 }
 
-.shadow-soft { box-shadow: var(--shadow-soft); }
-.shadow-card { box-shadow: var(--shadow-card); }
-.shadow-elev { box-shadow: var(--shadow-elev); }
-.shadow-pill { box-shadow: var(--shadow-pill); }
-.shadow-blue-pill { box-shadow: var(--shadow-blue-pill); }
-.shadow-glow { box-shadow: var(--shadow-glow); }
+@layer utilities {
+  .shadow-soft { box-shadow: var(--shadow-soft); }
+  .shadow-card { box-shadow: var(--shadow-card); }
+  .shadow-elev { box-shadow: var(--shadow-elev); }
+  .shadow-pill { box-shadow: var(--shadow-pill); }
+  .shadow-blue-pill { box-shadow: var(--shadow-blue-pill); }
+  .shadow-glow { box-shadow: var(--shadow-glow); }
+}
 
 .console-mono {
   font-size: 12px;
