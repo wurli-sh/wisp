@@ -1,5 +1,5 @@
 export function mkdtempSync(): string {
-  return "/tmp/amoeba-browser";
+  return "/tmp/wisp-browser";
 }
 
 export default { mkdtempSync };

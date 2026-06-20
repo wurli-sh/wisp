@@ -7,6 +7,7 @@ import { COPY } from "@/content/copy";
 import { stellarExplorerAccount } from "@/config/env";
 import { useWallet } from "@/hooks/useWallet";
 import { DropdownPanel } from "@/components/ui/DropdownPanel";
+import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/cn";
 
 export function Navbar() {
@@ -26,10 +27,10 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-40 flex w-full justify-center px-4">
       <div className={cn("mt-4 grid h-14 w-full grid-cols-[1fr_auto_1fr] items-center border-2 border-border bg-brand-soft/60 px-4 shadow-soft backdrop-blur-md sm:px-6", PAGE_MAX)}>
-        <Link to="/" className="group flex select-none items-center gap-2">
-          <div className="flex size-4 items-center justify-center bg-brand shadow-blue-pill" />
+        <Link to="/" className="group flex select-none items-center gap-2.5">
+          <Logo size="sm" tone="dark" className="transition-opacity group-hover:opacity-80" />
           <span className="text-base font-bold tracking-tight text-primary transition-colors group-hover:text-charcoal">
-            Amoeba
+            Wisp
           </span>
         </Link>
 

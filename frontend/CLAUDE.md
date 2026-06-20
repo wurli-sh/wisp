@@ -1,6 +1,6 @@
 # frontend
 
-Amoeba demo UI (`@amoeba_/web`) — Vite 6 + React 19 + Tailwind 4.
+Wisp demo UI (`@wisp_/web`) — Vite 6 + React 19 + Tailwind 4.
 
 **Routes:** `/` landing · `/demo` prove/settle/kyc console
 
@@ -26,7 +26,7 @@ Amoeba demo UI (`@amoeba_/web`) — Vite 6 + React 19 + Tailwind 4.
 | `components/layout/` | Navbar, MainLayout, Footer |
 | `components/ui/` | Badge, Button, DropdownPanel, Tabs, TextShimmer |
 | `components/spell/` | `code-highlight`, `highlighted-text`, `tilt-card` animated components |
-| `hooks/useAmoebaClient.ts` | SDK client integration |
+| `hooks/useWispClient.ts` | SDK client integration |
 | `hooks/useDemoIssuerClient.ts` | Demo-specific issuer client hook |
 | `hooks/useEngineFlow.ts` | Engine pipeline animation flow |
 | `hooks/useWallet.ts` | Freighter wallet connection |

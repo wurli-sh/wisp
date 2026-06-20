@@ -19,7 +19,7 @@ function read(key: string): string | undefined {
 }
 
 export const env: FrontendEnv = {
-  profile: read("VITE_AMOEBA_FIXTURE_PROFILE") ?? "testnet",
+  profile: read("VITE_WISP_FIXTURE_PROFILE") ?? "testnet",
   rpcUrl: read("VITE_STELLAR_RPC_URL") ?? "https://soroban-testnet.stellar.org",
   networkPassphrase:
     read("VITE_NETWORK_PASSPHRASE") ?? "Test SDF Network ; September 2015",
@@ -33,16 +33,16 @@ export const env: FrontendEnv = {
     : read("VITE_COMPLIANCE_DEPLOY_LEDGER")
       ? Number(read("VITE_COMPLIANCE_DEPLOY_LEDGER"))
       : undefined,
-  wasmUrl: read("VITE_AMOEBA_WASM_URL") ?? "/circuits/compliance_corridor.wasm",
+  wasmUrl: read("VITE_WISP_WASM_URL") ?? "/circuits/compliance_corridor.wasm",
   zkeyUrl:
-    read("VITE_AMOEBA_ZKEY_URL") ?? "/circuits/compliance_corridor_final.zkey",
+    read("VITE_WISP_ZKEY_URL") ?? "/circuits/compliance_corridor_final.zkey",
   demoFixtureUrl:
-    read("VITE_AMOEBA_DEMO_FIXTURE_URL") ?? "/fixtures/demo-transfer-testnet.json",
+    read("VITE_WISP_DEMO_FIXTURE_URL") ?? "/fixtures/demo-transfer-testnet.json",
 };
 
-export function getAmoebaConfigOverrides(): Record<string, string | undefined> {
+export function getWispConfigOverrides(): Record<string, string | undefined> {
   return {
-    AMOEBA_FIXTURE_PROFILE: env.profile,
+    WISP_FIXTURE_PROFILE: env.profile,
     STELLAR_RPC_URL: env.rpcUrl,
     NETWORK_PASSPHRASE: env.networkPassphrase,
     VERIFIER_CONTRACT_ID: env.verifierId,
@@ -52,13 +52,13 @@ export function getAmoebaConfigOverrides(): Record<string, string | undefined> {
     ISSUER_URL: env.issuerUrl,
     VALIDATE_START_LEDGER:
       env.validateStartLedger != null ? String(env.validateStartLedger) : undefined,
-    AMOEBA_WASM_URL: env.wasmUrl,
-    AMOEBA_ZKEY_URL: env.zkeyUrl,
-    AMOEBA_DEMO_FIXTURE_URL: env.demoFixtureUrl,
-    AMOEBA_ARTIFACT_DIR: "/circuits",
-    AMOEBA_ZKEY_PATH: env.zkeyUrl,
-    AMOEBA_WASM_PATH: env.wasmUrl,
-    AMOEBA_WITNESS_GEN: "",
+    WISP_WASM_URL: env.wasmUrl,
+    WISP_ZKEY_URL: env.zkeyUrl,
+    WISP_DEMO_FIXTURE_URL: env.demoFixtureUrl,
+    WISP_ARTIFACT_DIR: "/circuits",
+    WISP_ZKEY_PATH: env.zkeyUrl,
+    WISP_WASM_PATH: env.wasmUrl,
+    WISP_WITNESS_GEN: "",
   };
 }
 

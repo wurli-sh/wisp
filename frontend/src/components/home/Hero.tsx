@@ -4,6 +4,7 @@ import { Dithering } from "@paper-design/shaders-react";
 import { COPY } from "@/content/copy";
 import { HighlightedText } from "@/components/spell/highlighted-text";
 import { Button } from "@/components/ui/Button";
+import { Logo } from "@/components/ui/Logo";
 import {
   buttonHover,
   buttonTap,
@@ -13,37 +14,58 @@ import {
 
 const TRUST_CHIPS = ["Stellar testnet", "Groth16 BN254", "8 checks · 1 proof"] as const;
 
+const DITHER_PROPS = {
+  colorBack: "#F4FBFF",
+  colorFront: "#0C100B",
+  shape: "simplex" as const,
+  type: "4x4" as const,
+  scale: 0.42,
+  speed: 0.018,
+};
+
+function HeroDitherSide({ side }: { side: "left" | "right" }) {
+  const isLeft = side === "left";
+  const maskImage = isLeft
+    ? "linear-gradient(to right, black 22%, rgba(0,0,0,0.78) 40%, transparent 100%)"
+    : "linear-gradient(to left, black 22%, rgba(0,0,0,0.78) 40%, transparent 100%)";
+
+  return (
+    <motion.div
+      className={`pointer-events-none absolute inset-y-0 z-0 w-[34%] max-w-md opacity-80 sm:w-[30%] sm:max-w-lg md:w-[26%] ${
+        isLeft ? "left-0" : "right-0"
+      }`}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 0.8 }}
+      transition={{ duration: 2, delay: 0.1 }}
+    >
+      <div
+        className="h-full w-full overflow-hidden"
+        style={{
+          maskImage,
+          WebkitMaskImage: maskImage,
+        }}
+      >
+        <Dithering
+          className="h-full w-full"
+          style={{
+            height: "100%",
+            width: "100%",
+            transform: isLeft ? undefined : "scaleX(-1)",
+          }}
+          {...DITHER_PROPS}
+        />
+      </div>
+    </motion.div>
+  );
+}
+
 export function Hero() {
   const { hero } = COPY;
 
   return (
     <section className="relative flex min-h-[calc(100dvh-5.5rem)] items-center justify-center overflow-hidden bg-background py-28 md:py-32">
-      <motion.div
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-0 mx-auto h-[24%] w-full max-w-5xl px-4 opacity-80 sm:h-[28%] sm:px-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.8 }}
-        transition={{ duration: 2, delay: 0.1 }}
-      >
-        <div
-          className="h-full w-full overflow-hidden"
-          style={{
-            maskImage: "linear-gradient(to top, black 18%, rgba(0,0,0,0.82) 45%, transparent 100%)",
-            WebkitMaskImage:
-              "linear-gradient(to top, black 18%, rgba(0,0,0,0.82) 45%, transparent 100%)",
-          }}
-        >
-          <Dithering
-            className="h-full w-full"
-            style={{ height: "100%", width: "100%" }}
-            colorBack="#F4FBFF"
-            colorFront="#0C100B"
-            shape="simplex"
-            type="4x4"
-            scale={0.42}
-            speed={0.018}
-          />
-        </div>
-      </motion.div>
+      <HeroDitherSide side="left" />
+      <HeroDitherSide side="right" />
 
       <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center px-4 text-center sm:px-6">
         <motion.div
@@ -52,6 +74,10 @@ export function Hero() {
           initial="hidden"
           animate="visible"
         >
+          <motion.div variants={fadeInUp} className="mb-5">
+            <Logo size="hero" tone="dark" className="mx-auto" />
+          </motion.div>
+
           <motion.div
             className="mb-6 inline-flex items-center gap-2.5 border-2 border-brand/15 bg-brand-soft px-3.5 py-2 text-sm font-medium text-primary"
             variants={fadeInUp}

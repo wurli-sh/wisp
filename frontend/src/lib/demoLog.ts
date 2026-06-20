@@ -1,8 +1,8 @@
-import type { ProofPackage } from "@amoeba_/js";
-import type { ProvenTransfer } from "@amoeba_/sdk";
+import type { ProofPackage } from "@wisp_/js";
+import type { ProvenTransfer } from "@wisp_/sdk";
 import { env } from "@/config/env";
 
-const PREFIX = "[amoeba:demo]";
+const PREFIX = "[wisp:demo]";
 
 export interface DemoFixtureStrkeys {
   sender_strkey?: string;
@@ -15,8 +15,8 @@ export interface DemoFixtureStrkeys {
 let fixtureCache: DemoFixtureStrkeys | null = null;
 
 function enabled(): boolean {
-  if (import.meta.env.VITE_AMOEBA_DEBUG === "1") {
-    (globalThis as { __AMOEBA_DEBUG__?: boolean }).__AMOEBA_DEBUG__ = true;
+  if (import.meta.env.VITE_WISP_DEBUG === "1") {
+    (globalThis as { __WISP_DEBUG__?: boolean }).__WISP_DEBUG__ = true;
     return true;
   }
   return false;

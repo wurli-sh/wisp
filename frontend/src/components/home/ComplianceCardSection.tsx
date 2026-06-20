@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
-import { ShieldCheck } from "lucide-react";
 import { PAGE_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
 import { cn } from "@/lib/cn";
+import { Logo } from "@/components/ui/Logo";
 import { TiltCard } from "@/components/spell/tilt-card";
 import { HighlightedText } from "@/components/spell/highlighted-text";
 import { fadeInUp, scrollViewport, staggerContainer } from "@/lib/animations";
@@ -39,7 +39,7 @@ function ComplianceVisaCard() {
         <div className="relative z-10 flex h-full flex-col justify-between">
           <div className="flex items-start justify-between">
             <div className="space-y-3">
-              <ShieldCheck size={18} className="text-inverse-muted" strokeWidth={1.5} />
+              <Logo size="sm" tone="light" />
               <p className="text-lg font-bold italic tracking-tight text-primary-soft">
                 {card.brand}
               </p>

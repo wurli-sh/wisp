@@ -4,6 +4,7 @@ import { PAGE_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/Button";
+import { Logo } from "@/components/ui/Logo";
 import { CorridorGlobe } from "@/components/home/CorridorGlobe";
 import { buttonHover, buttonTap, fadeInUp, scrollViewport, staggerContainer } from "@/lib/animations";
 
@@ -39,6 +40,7 @@ export function DeploymentCTA() {
             <CorridorGlobe />
           </motion.div>
           <motion.div variants={fadeInUp} className="flex flex-col text-center md:text-left">
+            <Logo size="lg" tone="dark" className="mx-auto mb-6 md:mx-0" />
             <h2 className="text-3xl font-bold text-primary sm:text-4xl lg:text-5xl">
               {closer.headline}
             </h2>

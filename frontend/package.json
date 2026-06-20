@@ -1,5 +1,5 @@
 {
-  "name": "@amoeba_/web",
+  "name": "@wisp_/web",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -10,8 +10,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@amoeba_/js": "workspace:*",
-    "@amoeba_/sdk": "workspace:*",
+    "@wisp_/js": "workspace:*",
+    "@wisp_/sdk": "workspace:*",
     "@paper-design/shaders-react": "^0.0.76",
     "@stellar/freighter-api": "^5.0.0",
     "clsx": "^2.1.1",

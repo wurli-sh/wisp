@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { DemoIssuerClient } from "@amoeba_/sdk/demo";
+import { DemoIssuerClient } from "@wisp_/sdk/demo";
 import { env } from "@/config/env";
 
 export function useDemoIssuerClient() {

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { CorridorOption, DemoTransferRequest, ProofPackage } from "@amoeba_/js";
-import type { MockKycStatusResponse, ProvenTransfer, AmoebaClient } from "@amoeba_/sdk";
+import type { CorridorOption, DemoTransferRequest, ProofPackage } from "@wisp_/js";
+import type { MockKycStatusResponse, ProvenTransfer, WispClient } from "@wisp_/sdk";
 import { COPY } from "@/content/copy";
-import { useAmoebaClient } from "@/hooks/useAmoebaClient";
+import { useWispClient } from "@/hooks/useWispClient";
 import { useDemoIssuerClient } from "@/hooks/useDemoIssuerClient";
 import { env } from "@/config/env";
 import { useWallet } from "@/hooks/useWallet";
@@ -12,6 +12,7 @@ import { KycOnboardingModal } from "@/components/demo/KycOnboardingModal";
 import { DemoTransferPanel } from "@/components/demo/DemoTransferPanel";
 import { DemoProgressSidebar } from "@/components/demo/DemoProgressSidebar";
 import { Badge } from "@/components/ui/Badge";
+import { Logo } from "@/components/ui/Logo";
 import {
   checkWalletSender,
   configCheckpoint,
@@ -44,7 +45,7 @@ function tamperProof(proven: ProvenTransfer): ProvenTransfer {
   };
 }
 
-function extractTxHash(result: Awaited<ReturnType<AmoebaClient["settleWithWallet"]>>): string {
+function extractTxHash(result: Awaited<ReturnType<WispClient["settleWithWallet"]>>): string {
   return (
     result.getTransactionResponse?.txHash ??
     result.sendTransactionResponse?.hash ??
@@ -116,7 +117,7 @@ function reconcileCorridorSelection(
 }
 
 export function DemoPage() {
-  const client = useAmoebaClient();
+  const client = useWispClient();
   const demoIssuer = useDemoIssuerClient();
   const { isConnected, isConnecting, connect, walletSigner, address } = useWallet();
 
@@ -639,9 +640,12 @@ export function DemoPage() {
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 py-8 lg:gap-8 lg:py-12">
       <header className="flex flex-col items-center gap-3 border-2 border-border bg-brand-soft/80 px-5 py-5 text-center shadow-none sm:items-start sm:px-6 sm:text-left">
-        <Badge variant={isConnected ? "brand" : "warning"} className="self-center sm:self-start">
-          {isConnected ? "Wallet connected" : "Wallet disconnected"}
-        </Badge>
+        <div className="flex w-full flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <Logo size="md" tone="dark" className="self-center sm:self-start" />
+          <Badge variant={isConnected ? "brand" : "warning"} className="self-center sm:self-start">
+            {isConnected ? "Wallet connected" : "Wallet disconnected"}
+          </Badge>
+        </div>
         <div>
           <h1 className="text-2xl font-bold text-primary sm:text-3xl">{COPY.demo.title}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{COPY.demo.honesty}</p>

@@ -40,7 +40,7 @@ export const COPY = {
       pill: "HIGH RISK · FRAGMENTED AUDIT",
     },
     withZk: {
-      label: "Amoeba rail",
+      label: "Wisp rail",
       tagline: "Proof settles. Credentials stay off-chain.",
       rows: [
         { field: "Recipient", value: "GDKT…4H2P", revealed: true },
@@ -69,7 +69,7 @@ export const COPY = {
         ],
       },
       compliance: {
-        title: "Amoeba",
+        title: "Wisp",
         kicker: "compliance layer",
         caption: "Browser proves sender, recipient, corridor, asset, and amount.",
         steps: [
@@ -156,15 +156,15 @@ export const COPY = {
     headlineAccent: "Plug it into the rail.",
     sub: "Designed to slot into issuer and payment flows: prove in the browser, settle with Freighter, replay audit events.",
     tabs: [
-      { id: "pnpm", label: "pnpm", command: "pnpm add @amoeba_/sdk" },
-      { id: "npm", label: "npm", command: "npm install @amoeba_/sdk" },
-      { id: "yarn", label: "yarn", command: "yarn add @amoeba_/sdk" },
-      { id: "bun", label: "bun", command: "bun add @amoeba_/sdk" },
+      { id: "pnpm", label: "pnpm", command: "pnpm add @wisp_/sdk" },
+      { id: "npm", label: "npm", command: "npm install @wisp_/sdk" },
+      { id: "yarn", label: "yarn", command: "yarn add @wisp_/sdk" },
+      { id: "bun", label: "bun", command: "bun add @wisp_/sdk" },
       { id: "quickstart", label: "quickstart", command: "" },
     ],
-    snippet: `import { AmoebaClient } from "@amoeba_/sdk";
+    snippet: `import { WispClient } from "@wisp_/sdk";
 
-const client = AmoebaClient.fromEnv();
+const client = WispClient.fromEnv();
 const proven = await client.prove({ package, browser: true });
 await client.settleWithWallet(proven, pkg, wallet);`,
     stats: [
@@ -180,7 +180,7 @@ await client.settleWithWallet(proven, pkg, wallet);`,
     headlineRest: "Prove on every transfer.",
     sub: "Each cross-border transfer gets a fresh proof while customer data stays off-chain.",
     card: {
-      brand: "Amoeba",
+      brand: "Wisp",
       network: "Stellar",
       holder: "verified-sender",
       pan: "4532 •••• •••• 0420",

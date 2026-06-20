@@ -7,7 +7,7 @@ export function readFileSync(): string {
 }
 
 export function mkdtempSync(): string {
-  return "/tmp/amoeba-browser";
+  return "/tmp/wisp-browser";
 }
 
 export function writeFileSync(): void {

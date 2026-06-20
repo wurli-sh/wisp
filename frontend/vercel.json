@@ -2,7 +2,7 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
   "installCommand": "cd .. && corepack enable && pnpm install",
-  "buildCommand": "cd .. && pnpm build:js && pnpm --filter @amoeba_/web build",
+  "buildCommand": "cd .. && pnpm build:js && pnpm --filter @wisp_/web build",
   "outputDirectory": "dist",
   "rewrites": [
     {

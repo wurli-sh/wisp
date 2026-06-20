@@ -1,11 +1,11 @@
 import { useMemo } from "react";
-import { AmoebaClient } from "@amoeba_/sdk";
+import { WispClient } from "@wisp_/sdk";
 import { env } from "@/config/env";
 
-export function useAmoebaClient() {
+export function useWispClient() {
   return useMemo(
     () =>
-      new AmoebaClient({
+      new WispClient({
         profile: env.profile,
         rpcUrl: env.rpcUrl,
         networkPassphrase: env.networkPassphrase,
