@@ -1,12 +1,12 @@
-# Amoeba
+# Wisp
 
 ZK compliance infrastructure for Stellar stablecoins and RWAs. Groth16 proofs verified in Soroban contracts.
 
 Users complete KYC once with a trusted issuer, then generate client-side Groth16 proofs that simultaneously prove: KYC completion, non-sanctions status, jurisdiction eligibility, credential validity, corridor-specific travel rule conformance (e.g. US→MX), and recipient eligibility — all without exposing any PII on-chain.
 
-**This is NOT anonymous/private transfers.** Amoeba enforces regulated compliance. The sender, recipient, asset, and amount are public on-chain. The ZK proof shows these parameters are *compliant* without revealing the sender's identity data. Optional privacy pools add hidden amounts/addresses after compliance is proven.
+**This is NOT anonymous/private transfers.** Wisp enforces regulated compliance. The sender, recipient, asset, and amount are public on-chain. The ZK proof shows these parameters are *compliant* without revealing the sender's identity data. Optional privacy pools add hidden amounts/addresses after compliance is proven.
 
-## What Amoeba Proves (8 checks in one circuit)
+## What Wisp Proves (8 checks in one circuit)
 
 | # | Check | Purpose |
 |---|-------|---------|
@@ -25,11 +25,11 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 - **backend/programs/** — Soroban smart contracts (verifier, compliance, mock-sac)
 - **backend/crates/** — Rust crates for off-chain crypto, types, and issuer service
 - **bindings/** — Canonical ABI, generated contract clients, shared JSON fixtures
-- **packages/amoeba-js/** — Shared JS crypto (`@amoeba_/js`: Poseidon2, Merkle, field ops, nullifier, witness)
-- **sdk/** — TypeScript SDK (`@amoeba_/sdk`) for proving, settling, and auditing compliant transfers
-- **issuer-sdk/** — Issuer-side TypeScript SDK (`@amoeba_/issuer-sdk`) for integration
+- **packages/wisp-js/** — Shared JS crypto (`@wisp_/js`: Poseidon2, Merkle, field ops, nullifier, witness)
+- **sdk/** — TypeScript SDK (`@wisp_/sdk`) for proving, settling, and auditing compliant transfers
+- **issuer-sdk/** — Issuer-side TypeScript SDK (`@wisp_/issuer-sdk`) for integration
 - **scripts/** — deploy, dev, fixture, and ceremony tooling
-- **frontend/** — Vite demo UI (`@amoeba_/web`: landing, `/demo`, `/compliance`)
+- **frontend/** — Vite demo UI (`@wisp_/web`: landing, `/demo`, `/compliance`)
 - **docs/** — Design notes, gap analyses, and planning documents
 
 ## Key Commands
@@ -38,7 +38,7 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 |---------|-------------|
 | `pnpm compile:circuit` | Compile Circom circuit |
 | `pnpm setup:circuit` | One-person trusted setup |
-| `pnpm build:js` | Build compliance client, `@amoeba_/js`, `@amoeba_/sdk` |
+| `pnpm build:js` | Build compliance client, `@wisp_/js`, `@wisp_/sdk` |
 | `pnpm gen:fixtures` | Generate witness fixtures |
 | `pnpm gen:bindings` | Regenerate ABI bindings from source |
 | `pnpm gen:crypto-fixtures` | Regenerate crypto/address fixtures |
@@ -47,7 +47,7 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 | `pnpm verify` | Snarkjs local verification |
 | `pnpm test:circuit` | Node circuit tests |
 | `pnpm test:bindings` | Binding ABI + circuit-abi drift tests |
-| `pnpm test:witness` | `@amoeba_/js` witness tests |
+| `pnpm test:witness` | `@wisp_/js` witness tests |
 | `pnpm test:sdk` | SDK unit tests |
 | `pnpm test:js` | All JS tests (witness + sdk + bindings + issuer-sdk) |
 | `pnpm test:issuer-sdk` | Issuer SDK unit tests |
@@ -56,16 +56,16 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 | `pnpm verify:phase3-blockers` | Phase 3 pre-flight blocker checks |
 | `pnpm demo:phase3` | Phase 3 demo (blockers + SDK prove) |
 | `pnpm demo:phase4` | Phase 4 gate: circuit artifacts + frontend build |
-| `./scripts/publish/publish-packages.sh --dry-run` | npm publish dry-run for all `@amoeba_/*` packages |
+| `./scripts/publish/publish-packages.sh --dry-run` | npm publish dry-run for all `@wisp_/*` packages |
 | `./scripts/publish/publish-packages.sh` | npm publish (see `scripts/publish/CLAUDE.md`) |
 | `cargo test -p verifier -p compliance` | Contract unit tests |
-| `cargo test -p amoeba-crypto -p amoeba-types -p issuer-service` | Backend crate tests |
+| `cargo test -p wisp-crypto -p wisp-types -p issuer-service` | Backend crate tests |
 | `./scripts/dev/demo-e2e.sh` | Full local E2E pipeline |
 | `./scripts/dev/demo-phase2.sh` | Full Phase 2 pipeline (bindings + issuer) |
 | `./scripts/dev/verify-testnet.sh` | Phase 0 gate check |
 | `./scripts/dev/verify-compliance-testnet.sh` | Phase 1 testnet gate |
 | `./scripts/dev/verify-phase3-testnet.sh` | Full Phase 3 testnet gate check |
-| `pnpm dev:frontend` | Amoeba demo UI dev server |
+| `pnpm dev:frontend` | Wisp demo UI dev server |
 | `pnpm ceremony:init` | Initialize multi-party ceremony |
 | `pnpm ceremony:verify` | Verify ceremony transcript |
 | `pnpm ceremony:sync` | Sync verifier from ceremony final zkey |
@@ -76,7 +76,7 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 
 - Rust: `#![no_std]`, Soroban SDK 25.1.0, release profile with LTO
 - Circom: BN254, Poseidon2 t=4, 20-level Merkle/SMT depth
-- TypeScript: strict `tsc` → `dist/` for `@amoeba_/js` and `@amoeba_/sdk`; dev scripts via `tsx`
+- TypeScript: strict `tsc` → `dist/` for `@wisp_/js` and `@wisp_/sdk`; dev scripts via `tsx`
 - Node 25 for CI and local JS builds (see `.nvmrc`)
 - Tests: Rust doc tests + snapshot tests, Node `.test.ts`, shell fixture validation
 - Git: meaningful commits, no build artifacts committed
