@@ -16,13 +16,13 @@ Wisp demo UI (`@wisp_/web`) — Vite 6 + React 19 + Tailwind 4.
 
 | Path | Purpose |
 |------|---------|
-| `pages/HomePage.tsx` | Landing page (7 sections) |
+| `pages/HomePage.tsx` | Landing page (8 sections) |
 | `pages/DemoPage.tsx` | 11-step prove → settle → audit console |
 | `components/demo/DemoProgressSidebar.tsx` | Step progress indicator |
 | `components/demo/DemoTransferPanel.tsx` | Transfer form + results display |
 | `components/demo/DemoKycPanel.tsx` | KYC verification UI |
 | `components/demo/KycOnboardingModal.tsx` | KYC onboarding modal flow |
-| `components/home/` | Hero, Paradox, Engine, ComplianceCard, UseCases, Sdk, CorridorGlobe, DeploymentCTA |
+| `components/home/` | Hero, Paradox, Engine, ComplianceCard, UseCases, Sdk, CorridorGlobe, DeploymentCTA, FooterImageSection |
 | `components/layout/` | Navbar, MainLayout, Footer |
 | `components/ui/` | Badge, Button, DropdownPanel, Tabs, TextShimmer |
 | `components/spell/` | `code-highlight`, `highlighted-text`, `tilt-card` animated components |
@@ -37,6 +37,7 @@ Wisp demo UI (`@wisp_/web`) — Vite 6 + React 19 + Tailwind 4.
 | `content/copy.ts` | All UI text content (single source of truth) |
 | `config/layout.ts` | Route and section registry |
 | `config/env.ts` | Environment config from `.env` |
+| `config/brand.ts` | Brand asset paths (logo, images) |
 | `config/circle-testnet-usdc.json` | Circle USDC testnet asset config for compliance demo |
 
 ## Theme
