@@ -37,9 +37,9 @@ services:
       - key: ISSUER_PUBLIC_KEY
         value: GA2R4CVM7W2R62S7ZXTPPMSPAUPSSHAS2VRI4BHUPALAQGQDQLVDY7BX
       - key: ISSUER_PUBLIC_URL
-        value: https://wisp-issuer.onrender.com
+        value: https://wisp-issuer-vekn.onrender.com
       - key: WEB_AUTH_DOMAIN
-        value: wisp-issuer.onrender.com
+        value: wisp-issuer-vekn.onrender.com
       # Set in Render dashboard (secrets):
       # SUPABASE_DB_URL — Session pooler URI (not db.*.supabase.co — IPv6 fails on Render)
       # Supabase → Connect → Session pooler → URI + ?sslmode=require

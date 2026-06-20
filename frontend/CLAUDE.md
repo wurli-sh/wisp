@@ -53,7 +53,7 @@ See `frontend/.env.example` (local) and `.wisp/production.env` (Vercel `VITE_*` 
 | Context | `VITE_ISSUER_URL` |
 |---------|-------------------|
 | Local dev | `/issuer` (Vite proxy → `localhost:3000`) |
-| Vercel (`wisp-zk`) | `https://wisp-issuer.onrender.com` |
+| Vercel (`wisp-zk`) | `https://wisp-issuer-vekn.onrender.com` |
 
 All config keys use `VITE_WISP_*` (legacy `VITE_AMOEBA_*` still read in `config/env.ts`).
 

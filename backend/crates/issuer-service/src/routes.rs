@@ -29,7 +29,10 @@ pub fn router(cfg: Config, state: AppState) -> Router {
         .route("/.well-known/wisp-issuer.json", get(well_known_issuer))
         .route("/v1/credential/{wallet}", get(get_credential))
         .route("/v1/merkle-path/{wallet}", get(merkle_path))
-        .route("/v1/jurisdiction-path/{jurisdiction}", get(jurisdiction_path))
+        .route(
+            "/v1/jurisdiction-path/{jurisdiction}",
+            get(jurisdiction_path),
+        )
         .route("/v1/sanctions-path/{wallet}", get(sanctions_path))
         .route("/v1/dest-path/{corridor_id}/{address}", get(dest_path))
         .route("/v1/corridor/{id}", get(get_corridor))
@@ -88,8 +91,15 @@ async fn well_known_issuer(axum::Extension(cfg): axum::Extension<Config>) -> imp
     }))
 }
 
-async fn demo_transfer(State(state): State<AppState>) -> Result<Json<ProofPackage>, StatusCode> {
-    state.proof_package().await.map(Json).ok_or(StatusCode::NOT_FOUND)
+async fn demo_transfer(
+    axum::Extension(cfg): axum::Extension<Config>,
+    State(state): State<AppState>,
+) -> Result<Json<ProofPackage>, StatusCode> {
+    state
+        .demo_proof_package(&cfg)
+        .await
+        .map(Json)
+        .ok_or(StatusCode::NOT_FOUND)
 }
 
 async fn create_demo_transfer(
@@ -416,7 +426,10 @@ fn validate_webhook_secret(
     headers: &HeaderMap,
 ) -> Result<(), (StatusCode, String)> {
     let Some(expected) = cfg.webhook_secret_for(provider) else {
-        return Err((StatusCode::UNAUTHORIZED, format!("webhook secret not configured for {provider}")));
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            format!("webhook secret not configured for {provider}"),
+        ));
     };
     let provided = headers
         .get("x-webhook-secret")
@@ -434,7 +447,12 @@ fn provider_event_key(headers: &HeaderMap, payload: &Value) -> String {
         .get("x-provider-event-id")
         .and_then(|value| value.to_str().ok())
         .map(str::to_string)
-        .or_else(|| payload.get("id").and_then(Value::as_str).map(str::to_string))
+        .or_else(|| {
+            payload
+                .get("id")
+                .and_then(Value::as_str)
+                .map(str::to_string)
+        })
         .unwrap_or_else(|| format!("anonymous-{}", payload))
 }
 
@@ -492,7 +510,10 @@ mod tests {
         let state = AppState::load(&cfg).await;
         seed_demo_user(&state).await;
         let _ = state
-            .create_proof_package(&cfg, &state.bootstrap_request(&cfg).await.expect("bootstrap"))
+            .create_proof_package(
+                &cfg,
+                &state.bootstrap_request(&cfg).await.expect("bootstrap"),
+            )
             .await
             .expect("bootstrap package");
         let app = router(cfg, state);

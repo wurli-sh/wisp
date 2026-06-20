@@ -34,7 +34,7 @@ Routes: `/` landing · `/demo` prove/settle console · `/compliance` proofs/audi
 
 | Target | URL / command |
 | ------ | ------------- |
-| **Live** | [wisp-issuer.onrender.com](https://wisp-issuer.onrender.com) |
+| **Live** | [wisp-issuer-vekn.onrender.com](https://wisp-issuer-vekn.onrender.com) |
 | Local | `cargo run -p issuer-service` → `:3000` |
 
 Production uses Postgres (`SUPABASE_DB_URL`), `WISP_ENV=production`. API and env: [Issuer setup](#issuer-setup) · [`backend/crates/issuer-service/`](backend/crates/issuer-service/).

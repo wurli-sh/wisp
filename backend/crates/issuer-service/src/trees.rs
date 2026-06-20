@@ -152,10 +152,7 @@ pub fn build_dynamic_demo_fixture(
         return Err("amount must be greater than zero".into());
     }
 
-    let epoch = template
-        .epoch
-        .parse::<u64>()
-        .unwrap_or_else(|_| current_epoch());
+    let epoch = current_epoch();
     let jurisdiction_code = country_code(users, &req.source_country)?;
 
     Ok(DemoTransferFixture {
