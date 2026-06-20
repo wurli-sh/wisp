@@ -4,7 +4,7 @@ FROM rust:1-bookworm AS builder
 WORKDIR /app
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends pkg-config libssl-dev libdbus-1-dev \
+  && apt-get install -y --no-install-recommends pkg-config libssl-dev libdbus-1-dev libudev-dev \
   && rm -rf /var/lib/apt/lists/*
 
 COPY Cargo.toml Cargo.lock ./
@@ -17,7 +17,7 @@ RUN cargo install --locked stellar-cli --version 25.2.0
 FROM debian:bookworm-slim
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates libssl3 postgresql-client \
+  && apt-get install -y --no-install-recommends ca-certificates libssl3 libdbus-1-3 libudev1 postgresql-client \
   && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
