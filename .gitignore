@@ -20,9 +20,17 @@ frontend/test-results/
 bindings/generated/**/package-lock.json
 bindings/generated/**/dist/
 bindings/generated/publicInputs.mjs
+# Local env secrets — never commit (templates stay tracked via ! exceptions)
 .env
 .env.local
+**/.env
+!**/.env.example
 .env.*
+!.env.example
+!**/.env.example
+
+# Wisp deploy reference envs (public on-chain IDs / URLs only — safe to commit):
+#   .wisp/compliance.env, .wisp/verifier.env, .wisp/sac.env, .wisp/testnet-demo.env, .wisp/production.env
 
 # Proving artifacts (too large for git)
 circuits/**/artifacts/*.zkey

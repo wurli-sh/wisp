@@ -7,7 +7,7 @@ Low-level building block; most apps should use [`@wisp_/sdk`](../../sdk/README.m
 ## Install
 
 ```bash
-npm install @wisp_/js
+npm install @wisp_/js@0.2.0
 ```
 
 ## Quick start

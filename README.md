@@ -25,7 +25,7 @@ IDs are written to `.wisp/*.env` after deploy. Redeploy: [`scripts/deploy/`](scr
 
 | Target | URL / command |
 | ------ | ------------- |
-| **Live** | [amoeba-zk.vercel.app](https://amoeba-zk.vercel.app/) |
+| **Live** | [wisp-zk.vercel.app](https://wisp-zk.vercel.app/) |
 | Local | `pnpm dev:frontend` → `:5173` |
 
 Routes: `/` landing · `/demo` prove/settle console · `/compliance` proofs/audit/corridors. Config: [`frontend/.env.example`](frontend/.env.example).
@@ -34,26 +34,33 @@ Routes: `/` landing · `/demo` prove/settle console · `/compliance` proofs/audi
 
 | Target | URL / command |
 | ------ | ------------- |
-| **Live** | [amoeba-issuer.onrender.com](https://amoeba-issuer.onrender.com) |
+| **Live** | [wisp-issuer.onrender.com](https://wisp-issuer.onrender.com) |
 | Local | `cargo run -p issuer-service` → `:3000` |
 
 Production uses Postgres (`SUPABASE_DB_URL`), `WISP_ENV=production`. API and env: [Issuer setup](#issuer-setup) · [`backend/crates/issuer-service/`](backend/crates/issuer-service/).
 
 ---
 
-## SDK Packages
+## Published Packages
 
 <img src="docs/portable-sdk.png" width="100%" alt="Wisp works alongside your issuer." />
 
 Plug-and-play npm packages — install, configure env, run.
 
-| Package | Purpose | README |
-| ------- | ------- | ------ |
-| `@wisp_/js` | Poseidon2, Merkle, nullifier, witness builder | [`packages/wisp-js/README.md`](packages/wisp-js/README.md) |
-| `@wisp_/sdk` | Prove, settle, audit compliant transfers | [`sdk/README.md`](sdk/README.md) |
-| `@wisp_/issuer-sdk` | Register issuers, publish roots on-chain | [`issuer-sdk/README.md`](issuer-sdk/README.md) |
+| Package | Version | Purpose | README |
+| ------- | ------- | ------- | ------ |
+| `@wisp_/js` | `0.2.0` | Poseidon2, Merkle, nullifier, witness builder | [`packages/wisp-js/README.md`](packages/wisp-js/README.md) |
+| `@wisp_/compliance` | `0.2.0` | Generated client for the compliance contract | [`bindings/README.md`](bindings/README.md) |
+| `@wisp_/verifier` | `0.2.0` | Generated client for the Groth16 verifier contract | [`bindings/README.md`](bindings/README.md) |
+| `@wisp_/bindings` | `0.2.0` | Canonical proof package + public input ABI | [`bindings/README.md`](bindings/README.md) |
+| `@wisp_/sdk` | `0.2.0` | Prove, settle, audit compliant transfers | [`sdk/README.md`](sdk/README.md) |
+| `@wisp_/issuer-sdk` | `0.2.0` | Register issuers, publish roots on-chain | [`issuer-sdk/README.md`](issuer-sdk/README.md) |
 
-Also: [`@wisp_/bindings`](bindings/README.md) (canonical 17-field ABI) · [`@wisp_/web`](frontend/) (demo UI, workspace-only).
+Demo UI remains workspace-only: [`@wisp_/web`](frontend/).
+
+```bash
+npm install @wisp_/sdk@0.2.0 @wisp_/js@0.2.0
+```
 
 Publish dry-run: `./scripts/publish/publish-packages.sh --dry-run`
 
@@ -165,7 +172,7 @@ Canonical field order: [`bindings/public-inputs.json`](bindings/public-inputs.js
 | ------- | ----------- |
 | `pnpm compile:circuit` | Compile Circom circuit |
 | `pnpm setup:circuit` | One-person trusted setup |
-| `pnpm build:js` | Build `@wisp_/js` + `@wisp_/sdk` |
+| `pnpm build:js` | Build all publishable TypeScript packages |
 | `pnpm gen:bindings` | Regenerate ABI bindings |
 | `pnpm prove` / `pnpm verify` | Local prove + verify |
 | `pnpm dev:frontend` | Demo UI dev server |

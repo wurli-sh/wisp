@@ -2,6 +2,20 @@
 
 Canonical ABI and encoding rules for the compliance corridor Groth16 circuit.
 
+## Published packages
+
+```bash
+npm install @wisp_/bindings@0.2.0
+npm install @wisp_/compliance@0.2.0
+npm install @wisp_/verifier@0.2.0
+```
+
+| Package | Purpose |
+| ------- | ------- |
+| `@wisp_/bindings` | Canonical proof package schema + public input helpers |
+| `@wisp_/compliance` | Generated Soroban client for the compliance contract |
+| `@wisp_/verifier` | Generated Soroban client for the verifier contract |
+
 ## Public inputs (17 fields)
 
 Field order is defined in [`public-inputs.json`](public-inputs.json) and generated into:

@@ -5,7 +5,7 @@ TypeScript SDK for operating an Wisp issuer — register on-chain, manage corrid
 ## Install
 
 ```bash
-npm install @wisp_/issuer-sdk @wisp_/sdk @wisp_/js
+npm install @wisp_/issuer-sdk@0.2.0 @wisp_/sdk@0.2.0 @wisp_/js@0.2.0
 ```
 
 ## Quick start
@@ -114,4 +114,5 @@ pnpm --filter @wisp_/issuer-sdk test
 
 - End-user prove/settle: [`@wisp_/sdk`](../sdk/README.md)
 - Witness/crypto: [`@wisp_/js`](../packages/wisp-js/README.md)
+- Contract clients: `@wisp_/compliance@0.2.0`, `@wisp_/verifier@0.2.0`
 - Issuer HTTP service: [`backend/crates/issuer-service/`](../backend/crates/issuer-service/)

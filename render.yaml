@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: amoeba-issuer
+    name: wisp-issuer
     runtime: docker
     plan: free
     region: singapore
@@ -28,13 +28,21 @@ services:
         value: https://horizon-testnet.stellar.org
       - key: PROVIDER_WEBHOOK_SECRETS
         value: fixture=demo-fixture-secret
+      - key: VERIFIER_CONTRACT_ID
+        value: CDOGTUWS2UUAO3QEPDTCJTITSICBFRHRYUO7NH54YYIQXJFELARPW6UQ
+      - key: COMPLIANCE_CONTRACT_ID
+        value: CDRMPTRCZWP5BHYDKCHTCVNN4Y7MOYQ6MEGKY2DWX5N4GLZJWUZ6DCVL
+      - key: EXPECTED_VK_HASH
+        value: c127f452225fb4101464e2dc7e54ab3940ccf17197654dc1a0e95fef65c94875
+      - key: ISSUER_PUBLIC_KEY
+        value: GA2R4CVM7W2R62S7ZXTPPMSPAUPSSHAS2VRI4BHUPALAQGQDQLVDY7BX
+      - key: ISSUER_PUBLIC_URL
+        value: https://wisp-issuer.onrender.com
+      - key: WEB_AUTH_DOMAIN
+        value: wisp-issuer.onrender.com
       # Set in Render dashboard (secrets):
       # SUPABASE_DB_URL — Session pooler URI (not db.*.supabase.co — IPv6 fails on Render)
       # Supabase → Connect → Session pooler → URI + ?sslmode=require
-      # ISSUER_API_TOKEN
-      # ISSUER_PUBLIC_KEY
-      # ISSUER_SECRET_KEY (or PUBLISH_SOURCE_ACCOUNT)
-      # COMPLIANCE_CONTRACT_ID
-      # VERIFIER_CONTRACT_ID
-      # ISSUER_PUBLIC_URL — https://amoeba-issuer.onrender.com
-      # WEB_AUTH_DOMAIN — amoeba-issuer.onrender.com
+      # ISSUER_API_TOKEN — Bearer token for /v1/admin/*
+      # ISSUER_SECRET_KEY — wisp-issuer Stellar secret (root publish); or PUBLISH_SOURCE_ACCOUNT
+      # ADMIN_PUBLIC_KEY — amoeba-admin G-address (optional, for admin-signed publish)

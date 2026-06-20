@@ -25,7 +25,7 @@ export const COPY = {
   },
 
   paradoxAct: {
-    eyebrow: "PRIVATE BY DEFAULT",
+    eyebrow: "PRIVACY MOAT",
     headline: "Keep the proof.",
     headlineAccent: "Drop the data.",
     withoutZk: {
@@ -54,7 +54,7 @@ export const COPY = {
   },
 
   engine: {
-    eyebrow: "HOW WISP WORKS",
+    eyebrow: "WORKFLOW MOAT",
     headlineLead: "From issuer root",
     headlineAccent: "to compliant settlement.",
     pipeline: {
@@ -106,7 +106,7 @@ export const COPY = {
   },
 
   builders: {
-    eyebrow: "CROSS-BORDER FLOWS",
+    eyebrow: "CORRIDOR MOAT",
     headlineRest: "Built for",
     headlineAccent: "cross-border stablecoin flows.",
     sub: "Wisp targets regulated corridors where issuers need compliant Stellar settlement.",
@@ -151,7 +151,7 @@ export const COPY = {
   },
 
   sdk: {
-    eyebrow: "PORTABLE SDK",
+    eyebrow: "PORTABILITY MOAT",
     headlineLead: "Portable issuer SDK.",
     headlineAccent: "Plug into any issuer.",
     sub: "Integrate once, prove in the browser, and switch issuers without rewriting the stack.",
@@ -175,7 +175,7 @@ await client.settleWithWallet(proven, pkg, wallet);`,
   },
 
   complianceCard: {
-    eyebrow: "TRANSFER LOGIC",
+    eyebrow: "TRANSFER MOAT",
     headlineAccent: "Verify once.",
     headlineRest: "Prove every transfer.",
     sub: "One issuer credential. A fresh proof for every transfer.",
@@ -205,7 +205,7 @@ await client.settleWithWallet(proven, pkg, wallet);`,
 
   move: {
     closer: {
-      eyebrow: "LIVE RAILS",
+      eyebrow: "DEPLOYMENT MOAT",
       headline: "Ready for live issuer rails.",
       sub: "Portable zk compliance infrastructure for cross-border Stellar stablecoins.",
       ctas: {

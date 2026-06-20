@@ -5,7 +5,7 @@ TypeScript SDK for proving, settling, and auditing Wisp compliant transfers on S
 ## Install
 
 ```bash
-npm install @wisp_/sdk @wisp_/js
+npm install @wisp_/sdk@0.2.0 @wisp_/js@0.2.0
 ```
 
 Peer deps are bundled; you also need circuit artifacts (WASM + zkey) for proving.
@@ -97,4 +97,5 @@ pnpm --filter @wisp_/sdk test
 
 - Crypto primitives: [`@wisp_/js`](../packages/wisp-js/README.md)
 - Issuer operations: [`@wisp_/issuer-sdk`](../issuer-sdk/README.md)
-- Public input ABI: [`bindings/README.md`](../bindings/README.md)
+- Public input ABI: [`@wisp_/bindings`](../bindings/README.md)
+- Contract clients: `@wisp_/compliance@0.2.0`, `@wisp_/verifier@0.2.0`
