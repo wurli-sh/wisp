@@ -23,22 +23,22 @@ function ComparisonRow({
   return (
     <li
       className={cn(
-        "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b px-4 py-3 last:border-b-0",
+        "grid h-11 grid-cols-[4.75rem_minmax(0,1fr)_5rem] items-center gap-x-2 px-4 last:border-b-0",
         isDanger ? "border-destructive/15" : "border-primary/10",
       )}
     >
       <span className="text-xs font-medium text-muted-foreground">{field}</span>
-      <div className="flex items-center gap-2">
-        <span
-          className={cn(
-            "max-w-[180px] truncate text-right text-xs font-semibold tabular-nums sm:max-w-none",
-            isDanger && "text-destructive",
-            !isDanger && status === "public" && "text-foreground",
-            !isDanger && status === "proven" && "text-primary",
-          )}
-        >
-          {value}
-        </span>
+      <span
+        className={cn(
+          "truncate text-right text-xs font-semibold tabular-nums",
+          isDanger && "text-destructive",
+          !isDanger && status === "public" && "text-foreground",
+          !isDanger && status === "proven" && "text-primary",
+        )}
+      >
+        {value}
+      </span>
+      <div className="flex w-20 items-center justify-end">
         {status === "exposed" && (
           <span className="inline-flex shrink-0 items-center gap-1 border border-destructive/25 bg-destructive/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-destructive">
             <Eye size={10} strokeWidth={2.5} aria-hidden />
@@ -53,6 +53,105 @@ function ComparisonRow({
         )}
       </div>
     </li>
+  );
+}
+
+const COMPARISON_LIST_CLASS =
+  "mt-6 overflow-hidden border-2 bg-background shadow-soft";
+
+type ComparisonRowData = {
+  readonly field: string;
+  readonly value: string;
+  readonly revealed?: boolean;
+};
+
+function ComparisonCard({
+  tone,
+  icon,
+  label,
+  tagline,
+  pill,
+  badgeVariant,
+  rows,
+  motionX,
+  delay = 0,
+}: {
+  tone: "danger" | "safe";
+  icon: React.ReactNode;
+  label: string;
+  tagline: string;
+  pill: string;
+  badgeVariant: "danger" | "success";
+  rows: readonly ComparisonRowData[];
+  motionX: number;
+  delay?: number;
+}) {
+  const isDanger = tone === "danger";
+
+  return (
+    <motion.article
+      initial={{ opacity: 0, x: motionX }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={scrollViewport}
+      transition={{ delay }}
+      className={cn(
+        "flex h-full flex-col border-2 bg-linear-to-b to-background",
+        isDanger
+          ? "border-destructive/20 from-destructive/[0.07] shadow-soft"
+          : "border-primary/20 from-primary-soft/80 shadow-card",
+      )}
+    >
+      <div className="flex flex-1 flex-col p-6 sm:p-4">
+        <div className="flex h-[5.5rem] items-start gap-3">
+          <span
+            className={cn(
+              "inline-flex h-9 w-9 shrink-0 items-center justify-center border-2",
+              isDanger
+                ? "border-destructive/25 bg-destructive/10 text-destructive"
+                : "border-primary/25 bg-primary-soft text-primary",
+            )}
+          >
+            {icon}
+          </span>
+          <div className="min-w-0">
+            <h3
+              className={cn(
+                "text-sm font-bold uppercase tracking-wider",
+                isDanger ? "text-destructive" : "text-primary",
+              )}
+            >
+              {label}
+            </h3>
+            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+              {tagline}
+            </p>
+          </div>
+        </div>
+
+        <ul
+          className={cn(
+            COMPARISON_LIST_CLASS,
+            isDanger ? "border-destructive/15" : "border-primary/15",
+          )}
+        >
+          {rows.map((row) => (
+            <ComparisonRow
+              key={row.field}
+              field={row.field}
+              value={row.value}
+              tone={tone}
+              status={
+                isDanger ? "exposed" : row.revealed ? "public" : "proven"
+              }
+            />
+          ))}
+        </ul>
+
+        <div className="mt-auto pt-6">
+          <Badge variant={badgeVariant}>{pill}</Badge>
+        </div>
+      </div>
+    </motion.article>
   );
 }
 
@@ -107,100 +206,29 @@ export function ParadoxSection() {
             </span>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
-            <motion.article
-              initial={{ opacity: 0, x: -16 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={scrollViewport}
-              className="flex flex-col border-2 border-destructive/20 bg-linear-to-b from-destructive/[0.07] to-background shadow-soft"
-            >
-              <div className="h-1 bg-destructive" aria-hidden />
-              <div className="flex flex-1 flex-col p-6 sm:p-7">
-                <div className="flex items-start gap-3">
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center border-2 border-destructive/25 bg-destructive/10 text-destructive">
-                    <Eye size={16} strokeWidth={2} aria-hidden />
-                  </span>
-                  <div>
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-destructive">
-                      {paradoxAct.withoutZk.label}
-                    </h3>
-                    <p className="mt-1 text-xs text-muted-foreground">{paradoxAct.withoutZk.tagline}</p>
-                  </div>
-                </div>
+          <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch lg:gap-8">
+            <ComparisonCard
+              tone="danger"
+              icon={<Eye size={16} strokeWidth={2} aria-hidden />}
+              label={paradoxAct.withoutZk.label}
+              tagline={paradoxAct.withoutZk.tagline}
+              pill={paradoxAct.withoutZk.pill}
+              badgeVariant="danger"
+              rows={paradoxAct.withoutZk.rows}
+              motionX={-16}
+            />
 
-                <ul className="mt-6 overflow-hidden border-2 border-destructive/15 bg-background/90 shadow-soft">
-                  {paradoxAct.withoutZk.rows.map((row, i) => (
-                    <motion.li
-                      key={row.field}
-                      initial={{ opacity: 0, x: -8 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={scrollViewport}
-                      transition={{ delay: i * 0.05 }}
-                    >
-                      <ComparisonRow
-                        field={row.field}
-                        value={row.value}
-                        tone="danger"
-                        status="exposed"
-                      />
-                    </motion.li>
-                  ))}
-                </ul>
-
-                <div className="mt-6">
-                  <Badge variant="danger">{paradoxAct.withoutZk.pill}</Badge>
-                </div>
-              </div>
-            </motion.article>
-
-            <motion.article
-              initial={{ opacity: 0, x: 16 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={scrollViewport}
-              transition={{ delay: 0.08 }}
-              className="flex flex-col border-2 border-primary/20 bg-linear-to-b from-primary-soft/80 to-background shadow-card"
-            >
-              <div className="h-1 bg-primary" aria-hidden />
-              <div className="flex flex-1 flex-col p-6 sm:p-7">
-                <div className="flex items-start gap-3">
-                  <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center border-2 border-primary/25 bg-primary-soft text-primary">
-                    <ShieldCheck size={16} strokeWidth={2} aria-hidden />
-                  </span>
-                  <div>
-                    <h3 className="text-sm font-bold uppercase tracking-wider text-primary">
-                      {paradoxAct.withZk.label}
-                    </h3>
-                    <p className="mt-1 text-xs text-muted-foreground">{paradoxAct.withZk.tagline}</p>
-                  </div>
-                </div>
-
-                <ul className="mt-6 overflow-hidden border-2 border-primary/15 bg-background shadow-card">
-                  {paradoxAct.withZk.rows.map((row, i) => (
-                    <motion.li
-                      key={row.field}
-                      initial={{ opacity: 0, x: 8 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={scrollViewport}
-                      transition={{ delay: i * 0.05 }}
-                    >
-                      <ComparisonRow
-                        field={row.field}
-                        value={row.value}
-                        tone="safe"
-                        status={row.revealed ? "public" : "proven"}
-                      />
-                    </motion.li>
-                  ))}
-                </ul>
-
-                <div className="mt-6 space-y-3">
-                  <Badge variant="success">{paradoxAct.withZk.pill}</Badge>
-                  <p className="text-pretty text-sm leading-relaxed text-muted-foreground">
-                    {paradoxAct.withZk.caption}
-                  </p>
-                </div>
-              </div>
-            </motion.article>
+            <ComparisonCard
+              tone="safe"
+              icon={<ShieldCheck size={16} strokeWidth={2} aria-hidden />}
+              label={paradoxAct.withZk.label}
+              tagline={paradoxAct.withZk.tagline}
+              pill={paradoxAct.withZk.pill}
+              badgeVariant="success"
+              rows={paradoxAct.withZk.rows}
+              motionX={16}
+              delay={0.08}
+            />
           </div>
         </div>
       </div>

@@ -40,7 +40,7 @@ export function DeploymentCTA() {
             <CorridorGlobe />
           </motion.div>
           <motion.div variants={fadeInUp} className="flex flex-col text-center md:text-left">
-            <Logo size="lg" tone="dark" className="mx-auto mb-6 md:mx-0" />
+            <Logo size="lg" tone="dark" className="mb-6 self-start" />
             <h2 className="text-3xl font-bold text-primary sm:text-4xl lg:text-5xl">
               {closer.headline}
             </h2>

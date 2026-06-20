@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Copy } from "lucide-react";
+import { PORTABLE_SDK_SRC } from "@/config/brand";
 import { PAGE_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
 import { InstallCommand, TypeScriptSnippet } from "@/components/spell/code-highlight";
@@ -58,10 +59,24 @@ export function SdkSection() {
         </motion.div>
 
         <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={scrollViewport}
+          className="mx-auto mt-12 max-w-4xl overflow-hidden border-2 border-border shadow-card"
+        >
+          <img
+            src={PORTABLE_SDK_SRC}
+            alt="Wisp works alongside your issuer."
+            className="block h-auto w-full"
+            loading="lazy"
+          />
+        </motion.div>
+
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={scrollViewport}
-          className="mx-auto mt-12 max-w-2xl overflow-hidden border-2 border-border bg-charcoal shadow-card"
+          className="mx-auto mt-10 max-w-2xl overflow-hidden border-2 border-border bg-charcoal shadow-card"
         >
           <div className="flex gap-0 overflow-x-auto border-b-2 border-inverse-border">
             {sdk.tabs.map((tab) => (

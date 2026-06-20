@@ -4,7 +4,7 @@ import { Dithering } from "@paper-design/shaders-react";
 import { COPY } from "@/content/copy";
 import { HighlightedText } from "@/components/spell/highlighted-text";
 import { Button } from "@/components/ui/Button";
-import { Logo } from "@/components/ui/Logo";
+// import { Logo } from "@/components/ui/Logo";
 import {
   buttonHover,
   buttonTap,
@@ -12,7 +12,7 @@ import {
   staggerContainer,
 } from "@/lib/animations";
 
-const TRUST_CHIPS = ["Stellar testnet", "Groth16 BN254", "8 checks · 1 proof"] as const;
+// const TRUST_CHIPS = ["Stellar testnet", "Groth16 BN254", "8 checks · 1 proof"] as const;
 
 const DITHER_PROPS = {
   colorBack: "#F4FBFF",
@@ -26,8 +26,8 @@ const DITHER_PROPS = {
 function HeroDitherSide({ side }: { side: "left" | "right" }) {
   const isLeft = side === "left";
   const maskImage = isLeft
-    ? "linear-gradient(to right, black 22%, rgba(0,0,0,0.78) 40%, transparent 100%)"
-    : "linear-gradient(to left, black 22%, rgba(0,0,0,0.78) 40%, transparent 100%)";
+    ? "linear-gradient(to right, black 10%, rgba(0,0,0,0.78) 20%, transparent 100%)"
+    : "linear-gradient(to left, black 10%, rgba(0,0,0,0.78) 20%, transparent 100%)";
 
   return (
     <motion.div
@@ -74,16 +74,16 @@ export function Hero() {
           initial="hidden"
           animate="visible"
         >
-          <motion.div variants={fadeInUp} className="mb-5">
+          {/* <motion.div variants={fadeInUp} className="mb-5">
             <Logo size="hero" tone="dark" className="mx-auto" />
-          </motion.div>
+          </motion.div> */}
 
-          <motion.div
+          {/* <motion.div
             className="mb-6 inline-flex items-center gap-2.5 border-2 border-brand/15 bg-brand-soft px-3.5 py-2 text-sm font-medium text-primary"
             variants={fadeInUp}
           >
             {hero.eyebrow}
-          </motion.div>
+          </motion.div> */}
 
           <motion.h1
             className="text-balance text-4xl font-bold leading-[1.1] tracking-tight text-charcoal sm:text-5xl lg:text-6xl"
@@ -122,7 +122,7 @@ export function Hero() {
             </a>
           </motion.div>
 
-          <motion.ul
+          {/* <motion.ul
             className="mt-8 flex flex-wrap items-center justify-center gap-2"
             variants={fadeInUp}
           >
@@ -134,7 +134,7 @@ export function Hero() {
                 {chip}
               </li>
             ))}
-          </motion.ul>
+          </motion.ul> */}
 
         </motion.div>
       </div>
