@@ -14,10 +14,11 @@ Verify users once with a trusted issuer, publish compliance roots on-chain, and 
 | Network | `Test SDF Network ; September 2015` |
 | RPC | `https://soroban-testnet.stellar.org` |
 | Explorer | [stellar.expert/testnet](https://stellar.expert/explorer/testnet) |
-| Verifier | `CDOGTUWS2UUAO3QEPDTCJTITSICBFRHRYUO7NH54YYIQXJFELARPW6UQ` |
-| Compliance | `CDRMPTRCZWP5BHYDKCHTCVNN4Y7MOYQ6MEGKY2DWX5N4GLZJWUZ6DCVL` |
+| Verifier | `CBOQVGV7SIFNBDM26GFFAHWQ6DKUBAX4K2OR44KEWJJCYQH4SJL3G2AG` |
+| Compliance | `CBN7EJWN6BDGBAKT3MMSHLMTXCKDLXRSPD2XMQYSR3KWCUBRU5PT5CH4` |
 | Circle USDC SAC | `CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA` |
-| VK hash | `c127f452225fb4101464e2dc7e54ab3940ccf17197654dc1a0e95fef65c94875` |
+| VK hash | `3325bfff94f2c530d199c35575dc45cd3e27f752d9402d17e6d64341d3f3f6ae` |
+| Deploy ledger | `3188535` |
 
 IDs are written to `.wisp/*.env` after deploy. Redeploy: [`scripts/deploy/`](scripts/deploy/).
 

@@ -1,9 +1,9 @@
 {
-  "next_user_id": 1,
-  "next_credential_id": 1,
+  "next_user_id": 2,
+  "next_credential_id": 2,
   "next_destination_id": 1,
-  "next_snapshot_id": 0,
-  "next_webhook_id": 0,
+  "next_snapshot_id": 1,
+  "next_webhook_id": 1,
   "users": [
     {
       "id": 1,
@@ -20,12 +20,42 @@
           1
         ]
       }
+    },
+    {
+      "id": 2,
+      "wallet": "1bb92559f99a7ae045bff1bbcc687e536f3cec8d17fa0c143b21f2a28f1a8250",
+      "jurisdiction": "US",
+      "jurisdiction_code": 840,
+      "credential_expiry": 1813475763,
+      "sanctions_clear": true,
+      "enabled": true,
+      "provider": "mock",
+      "provider_ref": "0fe001b1-550c-47cf-a1b5-2212f2b79fc3",
+      "metadata": {
+        "approved_at": 1781939763,
+        "corridor_eligibility": [
+          1
+        ],
+        "country_numeric": 840,
+        "jurisdiction": "US",
+        "kyc_mode": "sep10",
+        "kyc_status": "approved",
+        "sanctions_clear": true,
+        "submitted_at": 1781939763,
+        "wallet_strkey": "GAN3SJKZ7GNHVYCFX7Y3XTDIPZJW6PHMRUL7UDAUHMQ7FIUPDKBFARBC"
+      }
     }
   ],
   "credentials": [
     {
       "id": 1,
       "user_id": 1,
+      "credential_secret": "424242",
+      "enabled": true
+    },
+    {
+      "id": 2,
+      "user_id": 2,
       "credential_secret": "424242",
       "enabled": true
     }
@@ -51,8 +81,49 @@
       "metadata": null
     }
   ],
-  "root_snapshots": [],
-  "webhook_events": [],
-  "mock_kyc_challenges": [],
-  "mock_kyc_last_request": {}
+  "root_snapshots": [
+    {
+      "id": 1,
+      "corridor_id": 1,
+      "merkle_root": "3971575794000682032494028459449494279285311428267528926117650311454808279146",
+      "sanctions_root": "1804918163634406073089572474391902529558147701065997558174519078702534722897",
+      "jurisdiction_root": "15747081405397950994009100545509269567019879529492433417025164853663745180121",
+      "source_jurisdiction_root": "15747081405397950994009100545509269567019879529492433417025164853663745180121",
+      "dest_address_root": "21761759828477126588423743090521855180500596907393201182812493233774395133429",
+      "corridor_config_hash": "11633055520934652106039815928941600487289301531080035696156976379431771848313",
+      "publish_status": "failed",
+      "publish_message": "COMPLIANCE_CONTRACT_ID not set",
+      "compliance_contract_id": null,
+      "created_at": 1781939763,
+      "activated_at": null
+    }
+  ],
+  "webhook_events": [
+    {
+      "id": 1,
+      "provider": "mock",
+      "event_key": "0fe001b1-550c-47cf-a1b5-2212f2b79fc3",
+      "payload": {
+        "approval_ok": true,
+        "challenge_id": "0fe001b1-550c-47cf-a1b5-2212f2b79fc3",
+        "kyc_mode": "sep10",
+        "wallet": "GAN3SJKZ7GNHVYCFX7Y3XTDIPZJW6PHMRUL7UDAUHMQ7FIUPDKBFARBC"
+      },
+      "processed": true
+    }
+  ],
+  "mock_kyc_challenges": [
+    {
+      "id": "0fe001b1-550c-47cf-a1b5-2212f2b79fc3",
+      "wallet_hex": "1bb92559f99a7ae045bff1bbcc687e536f3cec8d17fa0c143b21f2a28f1a8250",
+      "wallet_strkey": "GAN3SJKZ7GNHVYCFX7Y3XTDIPZJW6PHMRUL7UDAUHMQ7FIUPDKBFARBC",
+      "challenge_xdr": "AAAAAgAAAAAbuSVZ+Zp64EW/8bvMaH5TbzzsjRf6DBQ7IfKijxqCUAAAAGQAL211AAAAHAAAAAEAAAAAAAAAAAAAAABqNj9dAAAAAAAAAAEAAAAAAAAACgAAAA5sb2NhbGhvc3QgYXV0aAAAAAAAAQAAAEBiNjlmMWIzMWE0YWIwODZkY2ZkMjQwMjI4NjkwYWRhNGEwNGI2MGFiZjI0YzcwOTQ0NTI2OGUwMTJjMTFmN2QxAAAAAAAAAAA=",
+      "nonce": "b69f1b31a4ab086dcfd240228690ada4a04b60abf24c709445268e012c11f7d1",
+      "expires_at": 1781940061,
+      "consumed_at": 1781939763
+    }
+  ],
+  "mock_kyc_last_request": {
+    "1bb92559f99a7ae045bff1bbcc687e536f3cec8d17fa0c143b21f2a28f1a8250": 1781939759
+  }
 }
