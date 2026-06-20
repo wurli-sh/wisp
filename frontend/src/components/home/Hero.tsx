@@ -56,7 +56,6 @@ export function Hero() {
             className="mb-6 inline-flex items-center gap-2.5 border-2 border-brand/15 bg-brand-soft px-3.5 py-2 text-sm font-medium text-primary"
             variants={fadeInUp}
           >
-            <div className="size-3 shrink-0 bg-primary/80" />
             {hero.eyebrow}
           </motion.div>
 

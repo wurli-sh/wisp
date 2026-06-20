@@ -1,6 +1,6 @@
 export const COPY = {
   hero: {
-    eyebrow: "ZK COMPLIANCE · STELLAR STABLECOINS",
+    eyebrow: "ZK COMPLIANCE FOR STELLAR STABLECOINS",
     headlineLead: "Prove every transfer.",
     headlineAccent: "Expose nothing.",
     sub: "ZK compliance rails for cross-border stablecoin payments, with a portable issuer SDK.",
