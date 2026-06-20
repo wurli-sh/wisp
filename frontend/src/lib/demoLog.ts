@@ -124,7 +124,7 @@ const CONTRACT_HINTS: [RegExp, string][] = [
 const ISSUER_HINTS: [RegExp, string][] = [
   [
     /On-chain issuer\/corridor roots not found/i,
-    "Chain event scan missed issuer roots — restart ./scripts/dev/bru.sh (writes frontend/.env.local with VITE_VALIDATE_START_LEDGER) or set COMPLIANCE_DEPLOY_LEDGER in .env.",
+    "Chain event scan missed issuer roots — restart ./scripts/dev/bru.sh (writes frontend/.env.local with VITE_VALIDATE_START_LEDGER) or set VITE_VALIDATE_START_LEDGER in frontend/.env.",
   ],
   [
     /Issuer .+ is not registered on-chain/i,

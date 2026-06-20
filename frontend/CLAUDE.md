@@ -48,6 +48,13 @@ Wisp demo UI (`@wisp_/web`) — Vite 6 + React 19 + Tailwind 4.
 
 ## Env
 
-See `frontend/.env.example`. Issuer proxied at `/issuer` → `localhost:3000`.
+See `frontend/.env.example` (local) and `.wisp/production.env` (Vercel `VITE_*` block).
+
+| Context | `VITE_ISSUER_URL` |
+|---------|-------------------|
+| Local dev | `/issuer` (Vite proxy → `localhost:3000`) |
+| Vercel (`wisp-zk`) | `https://wisp-issuer.onrender.com` |
+
+All config keys use `VITE_WISP_*` (legacy `VITE_AMOEBA_*` still read in `config/env.ts`).
 
 Circuit WASM/zkey served from `public/circuits/` (copied by `demo-phase4.sh`).

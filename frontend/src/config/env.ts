@@ -13,13 +13,39 @@ export interface FrontendEnv {
   demoFixtureUrl: string;
 }
 
+/** Legacy VITE_AMOEBA_* → VITE_WISP_* for one-release cutover. */
+const ENV_LEGACY: Record<string, string> = {
+  VITE_AMOEBA_FIXTURE_PROFILE: "VITE_WISP_FIXTURE_PROFILE",
+  VITE_AMOEBA_WASM_URL: "VITE_WISP_WASM_URL",
+  VITE_AMOEBA_ZKEY_URL: "VITE_WISP_ZKEY_URL",
+  VITE_AMOEBA_DEMO_FIXTURE_URL: "VITE_WISP_DEMO_FIXTURE_URL",
+};
+
 function read(key: string): string | undefined {
   const value = import.meta.env[key];
   return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
+function readWithLegacy(key: string): string | undefined {
+  const direct = read(key);
+  if (direct) return direct;
+  const legacyKey = Object.entries(ENV_LEGACY).find(([, modern]) => modern === key)?.[0];
+  return legacyKey ? read(legacyKey) : undefined;
+}
+
+function readNumber(...keys: string[]): number | undefined {
+  for (const key of keys) {
+    const raw = readWithLegacy(key);
+    if (raw) {
+      const n = Number(raw);
+      if (!Number.isNaN(n)) return n;
+    }
+  }
+  return undefined;
+}
+
 export const env: FrontendEnv = {
-  profile: read("VITE_WISP_FIXTURE_PROFILE") ?? "testnet",
+  profile: readWithLegacy("VITE_WISP_FIXTURE_PROFILE") ?? "testnet",
   rpcUrl: read("VITE_STELLAR_RPC_URL") ?? "https://soroban-testnet.stellar.org",
   networkPassphrase:
     read("VITE_NETWORK_PASSPHRASE") ?? "Test SDF Network ; September 2015",
@@ -28,16 +54,18 @@ export const env: FrontendEnv = {
   assetId: read("VITE_SAC_CONTRACT_ID"),
   issuerPublicKey: read("VITE_ISSUER_PUBLIC_KEY"),
   issuerUrl: read("VITE_ISSUER_URL") ?? "/issuer",
-  validateStartLedger: read("VITE_VALIDATE_START_LEDGER")
-    ? Number(read("VITE_VALIDATE_START_LEDGER"))
-    : read("VITE_COMPLIANCE_DEPLOY_LEDGER")
-      ? Number(read("VITE_COMPLIANCE_DEPLOY_LEDGER"))
-      : undefined,
-  wasmUrl: read("VITE_WISP_WASM_URL") ?? "/circuits/compliance_corridor.wasm",
+  validateStartLedger: readNumber(
+    "VITE_VALIDATE_START_LEDGER",
+    "VITE_COMPLIANCE_DEPLOY_LEDGER",
+  ),
+  wasmUrl:
+    readWithLegacy("VITE_WISP_WASM_URL") ?? "/circuits/compliance_corridor.wasm",
   zkeyUrl:
-    read("VITE_WISP_ZKEY_URL") ?? "/circuits/compliance_corridor_final.zkey",
+    readWithLegacy("VITE_WISP_ZKEY_URL") ??
+    "/circuits/compliance_corridor_final.zkey",
   demoFixtureUrl:
-    read("VITE_WISP_DEMO_FIXTURE_URL") ?? "/fixtures/demo-transfer-testnet.json",
+    readWithLegacy("VITE_WISP_DEMO_FIXTURE_URL") ??
+    "/fixtures/demo-transfer-testnet.json",
 };
 
 export function getWispConfigOverrides(): Record<string, string | undefined> {
