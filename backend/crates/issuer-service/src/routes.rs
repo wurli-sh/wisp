@@ -9,7 +9,7 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use tower_http::cors::{Any, CorsLayer};
 
-use amoeba_types::{DemoTransferRequest, ProofPackage};
+use wisp_types::{DemoTransferRequest, ProofPackage};
 
 use crate::auth::require_token;
 use crate::config::Config;
@@ -26,7 +26,7 @@ pub fn router(cfg: Config, state: AppState) -> Router {
 
     let public = Router::new()
         .route("/health", get(health))
-        .route("/.well-known/amoeba-issuer.json", get(well_known_issuer))
+        .route("/.well-known/wisp-issuer.json", get(well_known_issuer))
         .route("/v1/credential/{wallet}", get(get_credential))
         .route("/v1/merkle-path/{wallet}", get(merkle_path))
         .route("/v1/jurisdiction-path/{jurisdiction}", get(jurisdiction_path))
@@ -198,7 +198,7 @@ fn mock_kyc_error_status(err: &str, fallback: StatusCode) -> (StatusCode, String
 async fn get_credential(
     State(state): State<AppState>,
     Path(wallet): Path<String>,
-) -> Result<Json<amoeba_types::Credential>, StatusCode> {
+) -> Result<Json<wisp_types::Credential>, StatusCode> {
     state
         .wallet_credential(&wallet)
         .await
@@ -276,7 +276,7 @@ async fn get_corridor(
     })))
 }
 
-async fn list_corridors(State(state): State<AppState>) -> Json<Vec<amoeba_types::CorridorOption>> {
+async fn list_corridors(State(state): State<AppState>) -> Json<Vec<wisp_types::CorridorOption>> {
     Json(state.available_corridors().await)
 }
 
@@ -579,7 +579,7 @@ mod tests {
         let app = router(cfg.clone(), state);
         let res = app
             .oneshot(
-                Request::get("/.well-known/amoeba-issuer.json")
+                Request::get("/.well-known/wisp-issuer.json")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -595,7 +595,7 @@ mod tests {
         assert_eq!(json["issuer_stellar_address"], "GISSUER");
         assert_eq!(
             json["metadata_uri"],
-            "http://127.0.0.1:3000/.well-known/amoeba-issuer.json"
+            "http://127.0.0.1:3000/.well-known/wisp-issuer.json"
         );
         assert_eq!(json["service_url"], "http://127.0.0.1:3000");
         assert_eq!(json["compliance_contract_id"], "CCOMPLIANCE");

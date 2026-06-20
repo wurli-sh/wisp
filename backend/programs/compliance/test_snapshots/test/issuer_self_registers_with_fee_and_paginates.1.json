@@ -58,7 +58,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "string": "https://a.example/.well-known/amoeba-issuer.json"
+                  "string": "https://a.example/.well-known/wisp-issuer.json"
                 }
               ]
             }
@@ -101,7 +101,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
                 },
                 {
-                  "string": "https://b.example/.well-known/amoeba-issuer.json"
+                  "string": "https://b.example/.well-known/wisp-issuer.json"
                 }
               ]
             }
@@ -230,7 +230,7 @@
                       "symbol": "metadata_uri"
                     },
                     "val": {
-                      "string": "https://a.example/.well-known/amoeba-issuer.json"
+                      "string": "https://a.example/.well-known/wisp-issuer.json"
                     }
                   },
                   {
@@ -306,7 +306,7 @@
                       "symbol": "metadata_uri"
                     },
                     "val": {
-                      "string": "https://b.example/.well-known/amoeba-issuer.json"
+                      "string": "https://b.example/.well-known/wisp-issuer.json"
                     }
                   },
                   {

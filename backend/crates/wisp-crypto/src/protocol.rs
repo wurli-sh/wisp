@@ -3,8 +3,8 @@ use ark_bn254::Fr;
 use crate::field::{bytes16_to_fr, mod_fr, mod_u128};
 use crate::poseidon2::{poseidon2_hash1, poseidon2_hash10, poseidon2_hash12};
 
-pub const NULLIFIER_DOMAIN_TAG: u128 = 1_204_609_112_206_068_373_041;
-pub const CORRIDOR_DOMAIN_TAG: u128 = 0x414d4f4542415f5631;
+pub const NULLIFIER_DOMAIN_TAG: u128 = 24_568_945_153_365_553;
+pub const CORRIDOR_DOMAIN_TAG: u128 = 0x574953505f5631;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AddressLimbs {

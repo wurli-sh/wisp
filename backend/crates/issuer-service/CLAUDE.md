@@ -24,9 +24,9 @@ Off-chain issuer backend service — manages identity trees, generates Merkle pr
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ISSUER_LISTEN_ADDR` | `127.0.0.1:3000` | HTTP listen address |
-| `ISSUER_REQUIRE_DB` | — | When `1` (or `AMOEBA_ENV=production`), fail startup if Postgres is unset or unreachable |
-| `AMOEBA_ENV` | — | Set to `production` on Render/deployed hosts |
-| `ISSUER_STATE_PATH` | `.amoeba/issuer-state.json` | JSON snapshot for memory store (users, KYC, roots) |
+| `ISSUER_REQUIRE_DB` | — | When `1` (or `WISP_ENV=production`), fail startup if Postgres is unset or unreachable |
+| `WISP_ENV` | — | Set to `production` on Render/deployed hosts |
+| `ISSUER_STATE_PATH` | `.wisp/issuer-state.json` | JSON snapshot for memory store (users, KYC, roots) |
 | `SUPABASE_DB_URL` | — | Postgres persistence (preferred over file snapshot) |
 | `DATABASE_URL` | — | Alias for `SUPABASE_DB_URL` |
 | `ISSUER_API_TOKEN` | — | Bearer token for root publishing |
@@ -38,8 +38,8 @@ Off-chain issuer backend service — manages identity trees, generates Merkle pr
 | `STELLAR_RPC_URL` | `https://soroban-testnet.stellar.org` | Soroban RPC endpoint |
 | `NETWORK_PASSPHRASE` | `Test SDF Network ; September 2015` | Network passphrase |
 | `COMPLIANCE_CONTRACT_ID` | — | Deployed compliance contract ID |
-| `AMOEBA_FIXTURES_DIR` | `../../../bindings/fixtures` (relative to crate) | Fixture directory path |
-| `AMOEBA_FIXTURE_PROFILE` | `local` | Fixture profile (`local` / `testnet`) |
+| `WISP_FIXTURES_DIR` | `../../../bindings/fixtures` (relative to crate) | Fixture directory path |
+| `WISP_FIXTURE_PROFILE` | `local` | Fixture profile (`local` / `testnet`) |
 
 ## Modules
 

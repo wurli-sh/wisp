@@ -2,13 +2,13 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryFrom;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use amoeba_crypto::{
+use wisp_crypto::{
     address_to_limbs, compute_corridor_config_hash, compute_nullifier, compute_zero_hashes,
     fr_to_canonical_decimal, hash2, mod_u128, mod_u64, poseidon2_hash1, poseidon2_hash2,
     sparse_sanctions_path, MERKLE_DEPTH,
 };
-use amoeba_types::public_inputs_from_roots;
-use amoeba_types::{
+use wisp_types::public_inputs_from_roots;
+use wisp_types::{
     CorridorOption, Credential, DemoPackageMetadata, DemoTransferFixture, DemoTransferRequest,
     DemoUsersFixture, MerklePaths, ProofPackage, Roots, TransferParams, WitnessPrivate,
     EPOCH_LEN_SECS,
@@ -384,7 +384,7 @@ pub fn build_canonical_proof_package(
         source_tree.root,
         destination_tree.root,
     );
-    let public_inputs = amoeba_types::PUBLIC_INPUT_FIELDS
+    let public_inputs = wisp_types::PUBLIC_INPUT_FIELDS
         .iter()
         .zip(public_input_values.iter())
         .map(|(name, value)| (name.to_string(), value.clone()))

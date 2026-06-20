@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use amoeba_crypto::fr_to_canonical_decimal;
 use ark_bn254::Fr;
+use wisp_crypto::fr_to_canonical_decimal;
 
 /// Normalize a decimal field string to canonical positive mod-BN254 representation.
 pub fn normalize_field(decimal: &str) -> String {
-    fr_to_canonical_decimal(amoeba_crypto::fr_from_decimal(decimal))
+    fr_to_canonical_decimal(wisp_crypto::fr_from_decimal(decimal))
 }
 
 pub type PublicInputsMap = HashMap<&'static str, String>;

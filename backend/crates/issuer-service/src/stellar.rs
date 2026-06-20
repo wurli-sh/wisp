@@ -2,8 +2,8 @@ use std::process::Command;
 
 use ark_ff::{BigInteger, PrimeField};
 
-use amoeba_crypto::{fr_from_decimal, fr_to_canonical_decimal};
-use amoeba_types::Roots;
+use wisp_crypto::{fr_from_decimal, fr_to_canonical_decimal};
+use wisp_types::Roots;
 
 use crate::config::Config;
 use crate::log_util::{short_key, short_root};

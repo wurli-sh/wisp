@@ -239,7 +239,7 @@ fn setup_compliance_fixture(fund_sender: bool) -> (Env, Address, ComplianceFixtu
     let issuer = Address::generate(&env);
     let fee = TestSacClient::new(&env, &initialized.fee_token);
     fee.mint(&issuer, &REGISTRATION_FEE);
-    compliance.register_issuer(&issuer, &metadata_uri(&env, "https://issuer.example/.well-known/amoeba-issuer.json"));
+    compliance.register_issuer(&issuer, &metadata_uri(&env, "https://issuer.example/.well-known/wisp-issuer.json"));
     compliance.update_issuer_root(
         &issuer,
         &field_decimal_to_bytes32(&env, &public[0]),
@@ -385,8 +385,8 @@ fn issuer_self_registers_with_fee_and_paginates() {
     fee.mint(&issuer_a, &REGISTRATION_FEE);
     fee.mint(&issuer_b, &REGISTRATION_FEE);
 
-    compliance.register_issuer(&issuer_a, &metadata_uri(&env, "https://a.example/.well-known/amoeba-issuer.json"));
-    compliance.register_issuer(&issuer_b, &metadata_uri(&env, "https://b.example/.well-known/amoeba-issuer.json"));
+    compliance.register_issuer(&issuer_a, &metadata_uri(&env, "https://a.example/.well-known/wisp-issuer.json"));
+    compliance.register_issuer(&issuer_b, &metadata_uri(&env, "https://b.example/.well-known/wisp-issuer.json"));
 
     assert_eq!(TokenClient::new(&env, &initialized.fee_token).balance(&initialized.treasury), 200);
     let issuer = compliance.get_issuer(&issuer_a).unwrap();
@@ -412,7 +412,7 @@ fn registration_without_fee_fails() {
     let compliance = ComplianceClient::new(&env, &initialized.compliance_id);
     let issuer = Address::generate(&env);
     assert!(compliance
-        .try_register_issuer(&issuer, &metadata_uri(&env, "https://issuer.example/.well-known/amoeba-issuer.json"))
+        .try_register_issuer(&issuer, &metadata_uri(&env, "https://issuer.example/.well-known/wisp-issuer.json"))
         .is_err());
 }
 

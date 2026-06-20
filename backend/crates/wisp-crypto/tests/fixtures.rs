@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use serde::Deserialize;
 
-use amoeba_crypto::{
+use wisp_crypto::{
     address_to_limbs, assert_fr_eq, compute_corridor_config_hash, compute_nullifier,
     fr_from_decimal, merkle_root_for_leaf_at_index, mod_u128, poseidon2_hash1, poseidon2_hash2,
     sparse_sanctions_path, NULLIFIER_DOMAIN_TAG,
@@ -157,22 +157,22 @@ fn crypto_fixtures_match_js() {
     let dest_leaf = poseidon2_hash2(recipient_limbs.lo, recipient_limbs.hi);
     assert_fr_eq(dest_leaf, &crypto.poseidon2.dest_leaf);
 
-    let merkle_root = merkle_root_for_leaf_at_index(sender_leaf, 0, amoeba_crypto::MERKLE_DEPTH);
+    let merkle_root = merkle_root_for_leaf_at_index(sender_leaf, 0, wisp_crypto::MERKLE_DEPTH);
     assert_fr_eq(merkle_root, &crypto.merkle.merkle_root);
 
     let jurisdiction_root =
-        merkle_root_for_leaf_at_index(jurisdiction_leaf, 0, amoeba_crypto::MERKLE_DEPTH);
+        merkle_root_for_leaf_at_index(jurisdiction_leaf, 0, wisp_crypto::MERKLE_DEPTH);
     assert_fr_eq(jurisdiction_root, &crypto.merkle.jurisdiction_root);
     assert_fr_eq(jurisdiction_root, &crypto.merkle.source_jurisdiction_root);
 
     let dest_address_root =
-        merkle_root_for_leaf_at_index(dest_leaf, 0, amoeba_crypto::MERKLE_DEPTH);
+        merkle_root_for_leaf_at_index(dest_leaf, 0, wisp_crypto::MERKLE_DEPTH);
     assert_fr_eq(dest_address_root, &crypto.merkle.dest_address_root);
 
     let sanctions = sparse_sanctions_path(
         sender_limbs.lo,
         sender_limbs.hi,
-        amoeba_crypto::MERKLE_DEPTH,
+        wisp_crypto::MERKLE_DEPTH,
     );
     assert_fr_eq(sanctions.root, &crypto.merkle.sanctions_root);
 

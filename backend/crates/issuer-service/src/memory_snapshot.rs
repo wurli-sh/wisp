@@ -193,7 +193,7 @@ mod tests {
     #[test]
     fn snapshot_roundtrip_preserves_mock_kyc_user() {
         let dir = std::env::temp_dir().join(format!(
-            "amoeba-issuer-snapshot-{}",
+            "wisp-issuer-snapshot-{}",
             std::process::id()
         ));
         let _ = fs::create_dir_all(&dir);
@@ -227,7 +227,7 @@ mod tests {
         use crate::state::AppState;
 
         let dir = std::env::temp_dir().join(format!(
-            "amoeba-issuer-kyc-status-{}",
+            "wisp-issuer-kyc-status-{}",
             std::process::id()
         ));
         let _ = fs::create_dir_all(&dir);
@@ -284,7 +284,7 @@ mod tests {
     #[test]
     fn write_guard_persist_does_not_deadlock() {
         let dir = std::env::temp_dir().join(format!(
-            "amoeba-issuer-deadlock-{}",
+            "wisp-issuer-deadlock-{}",
             std::process::id()
         ));
         let _ = fs::create_dir_all(&dir);
@@ -317,7 +317,7 @@ mod tests {
     #[test]
     fn corrupt_snapshot_returns_empty_store() {
         let dir = std::env::temp_dir().join(format!(
-            "amoeba-issuer-corrupt-{}",
+            "wisp-issuer-corrupt-{}",
             std::process::id()
         ));
         let _ = fs::create_dir_all(&dir);

@@ -9,8 +9,8 @@ name = "issuer-service"
 path = "src/main.rs"
 
 [dependencies]
-amoeba-crypto = { path = "../amoeba-crypto" }
-amoeba-types = { path = "../amoeba-types" }
+wisp-crypto = { path = "../wisp-crypto" }
+wisp-types = { path = "../wisp-types" }
 ark-bn254 = "0.6"
 ark-ff = "0.6"
 axum = "0.8"

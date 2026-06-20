@@ -1,11 +1,11 @@
 [package]
-name = "amoeba-types"
+name = "wisp-types"
 version = "0.1.0"
 edition = "2021"
 publish = false
 
 [dependencies]
-amoeba-crypto = { path = "../amoeba-crypto" }
+wisp-crypto = { path = "../wisp-crypto" }
 ark-bn254 = "0.6"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

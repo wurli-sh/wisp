@@ -71,10 +71,10 @@ impl Config {
                 .ok()
                 .filter(|s| !s.is_empty())
                 .or_else(|| env::var("SOURCE").ok().filter(|s| !s.is_empty())),
-            fixtures_dir: env::var("AMOEBA_FIXTURES_DIR").unwrap_or_else(|_| {
+            fixtures_dir: env::var("WISP_FIXTURES_DIR").unwrap_or_else(|_| {
                 concat!(env!("CARGO_MANIFEST_DIR"), "/../../../bindings/fixtures").into()
             }),
-            fixture_profile: env::var("AMOEBA_FIXTURE_PROFILE").unwrap_or_else(|_| "local".into()),
+            fixture_profile: env::var("WISP_FIXTURE_PROFILE").unwrap_or_else(|_| "local".into()),
             web_auth_domain: env::var("WEB_AUTH_DOMAIN").unwrap_or_else(|_| "localhost".into()),
             horizon_url: env::var("HORIZON_URL")
                 .unwrap_or_else(|_| "https://horizon-testnet.stellar.org".into()),
@@ -85,7 +85,7 @@ impl Config {
                 .or_else(|| env::var("VERIFIER_ID").ok().filter(|s| !s.is_empty())),
             expected_vk_hash: env::var("EXPECTED_VK_HASH").ok().filter(|s| !s.is_empty()),
             require_db: env_truthy("ISSUER_REQUIRE_DB")
-                || env::var("AMOEBA_ENV")
+                || env::var("WISP_ENV")
                     .map(|value| value.eq_ignore_ascii_case("production"))
                     .unwrap_or(false),
         }
@@ -101,7 +101,7 @@ impl Config {
     }
 
     pub fn metadata_uri(&self) -> String {
-        format!("{}/.well-known/amoeba-issuer.json", self.public_base_url)
+        format!("{}/.well-known/wisp-issuer.json", self.public_base_url)
     }
 
     pub fn demo_transfer_filename(&self) -> &'static str {
@@ -185,7 +185,7 @@ mod tests {
         let cfg = test_cfg();
         assert_eq!(
             cfg.metadata_uri(),
-            "http://127.0.0.1:3000/.well-known/amoeba-issuer.json"
+            "http://127.0.0.1:3000/.well-known/wisp-issuer.json"
         );
     }
 

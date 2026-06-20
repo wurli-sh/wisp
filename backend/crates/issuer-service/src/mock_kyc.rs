@@ -432,7 +432,7 @@ mod tests {
 
     #[test]
     fn auth_data_name_uses_domain() {
-        assert_eq!(auth_data_name("demo.amoeba.dev"), "demo.amoeba.dev auth");
+        assert_eq!(auth_data_name("demo.wisp.dev"), "demo.wisp.dev auth");
     }
 
     #[test]

@@ -25,9 +25,9 @@ COPY backend/crates/issuer-service/docker-entrypoint.sh /app/docker-entrypoint.s
 
 RUN chmod +x /app/docker-entrypoint.sh /app/scripts/deploy/migrate-issuer-db.sh
 
-ENV AMOEBA_FIXTURES_DIR=/app/bindings/fixtures \
-    AMOEBA_FIXTURE_PROFILE=testnet \
-    AMOEBA_ENV=production \
+ENV WISP_FIXTURES_DIR=/app/bindings/fixtures \
+    WISP_FIXTURE_PROFILE=testnet \
+    WISP_ENV=production \
     ISSUER_REQUIRE_DB=1 \
     KYC_MODE=sep10 \
     MIGRATIONS_DIR=/app/migrations \

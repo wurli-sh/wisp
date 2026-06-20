@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::{Arc, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use amoeba_types::{
+use wisp_types::{
     CorridorOption, Credential, DemoTransferFixture, DemoTransferRequest, DemoUsersFixture,
     ProofPackage, Roots,
 };
@@ -1178,6 +1178,33 @@ impl Repository {
                         });
                     }
                 }
+                let credential_secret = transfer
+                    .map(|item| item.credential_secret.clone())
+                    .unwrap_or_else(|| MOCK_CREDENTIAL_SECRET.into());
+                for user in &users_fixture.users {
+                    store.next_user_id += 1;
+                    let user_id = store.next_user_id;
+                    store.users.push(IssuerUser {
+                        id: user_id,
+                        wallet: user.wallet_hex.clone(),
+                        jurisdiction: user.jurisdiction.clone(),
+                        jurisdiction_code: user.jurisdiction_code,
+                        credential_expiry: user.credential_expiry,
+                        sanctions_clear: user.sanctions_clear,
+                        enabled: true,
+                        provider: Some("fixture".into()),
+                        provider_ref: Some("demo".into()),
+                        metadata: json!({ "corridor_eligibility": user.corridor_eligibility }),
+                    });
+                    store.next_credential_id += 1;
+                    let credential_id = store.next_credential_id;
+                    store.credentials.push(IssuerCredentialRecord {
+                        id: credential_id,
+                        user_id,
+                        credential_secret: credential_secret.clone(),
+                        enabled: true,
+                    });
+                }
             }
             Self::Postgres(store) => {
                 let _ = store.seed_demo_data(users_fixture, transfer).await;
@@ -1691,7 +1718,7 @@ impl Repository {
             demo_only: false,
             users: users
                 .into_iter()
-                .map(|user| amoeba_types::DemoUser {
+                .map(|user| wisp_types::DemoUser {
                     wallet_hex: user.wallet,
                     jurisdiction: user.jurisdiction,
                     jurisdiction_code: user.jurisdiction_code,
@@ -1702,7 +1729,7 @@ impl Repository {
                 .collect(),
             corridors: corridors
                 .into_iter()
-                .map(|corridor| amoeba_types::DemoCorridor {
+                .map(|corridor| wisp_types::DemoCorridor {
                     id: corridor.id,
                     name: corridor.name,
                     enabled: corridor.enabled,
@@ -2788,7 +2815,7 @@ fn parse_snapshot_row(row: Row) -> RootSnapshotRecord {
 }
 
 fn patch_proof_demo_strkeys(proof: &mut ProofPackage, fixture: &DemoTransferFixture) {
-    use amoeba_types::DemoPackageMetadata;
+    use wisp_types::DemoPackageMetadata;
     let demo = proof.demo.get_or_insert_with(|| DemoPackageMetadata {
         sender_strkey: None,
         recipient_strkey: None,

@@ -57,7 +57,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAK3IM"
                 },
                 {
-                  "string": "https://issuer.example/.well-known/amoeba-issuer.json"
+                  "string": "https://issuer.example/.well-known/wisp-issuer.json"
                 }
               ]
             }
@@ -531,7 +531,7 @@
                       "symbol": "metadata_uri"
                     },
                     "val": {
-                      "string": "https://issuer.example/.well-known/amoeba-issuer.json"
+                      "string": "https://issuer.example/.well-known/wisp-issuer.json"
                     }
                   },
                   {

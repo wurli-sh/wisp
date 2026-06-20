@@ -1,5 +1,5 @@
 [package]
-name = "amoeba-crypto"
+name = "wisp-crypto"
 version = "0.1.0"
 edition = "2021"
 publish = false

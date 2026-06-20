@@ -9,8 +9,8 @@ Single Rust workspace root for Soroban programs and off-chain crates.
 | `programs/verifier` | On-chain Groth16 BN254 verifier |
 | `programs/compliance` | Compliant transfer orchestration |
 | `programs/mock-sac` | Mock Stellar Asset Contract for tests |
-| `crates/amoeba-crypto` | Off-chain Poseidon2, Merkle, nullifier (Rust) |
-| `crates/amoeba-types` | Shared types + generated public inputs |
+| `crates/wisp-crypto` | Off-chain Poseidon2, Merkle, nullifier (Rust) |
+| `crates/wisp-types` | Shared types + generated public inputs |
 | `crates/issuer-service` | Axum issuer HTTP service |
 
 Workspace members are listed in root [`Cargo.toml`](../Cargo.toml).

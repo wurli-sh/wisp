@@ -1,6 +1,6 @@
-# backend/crates/amoeba-types
+# backend/crates/wisp-types
 
-Shared type definitions shared across the Amoeba Rust ecosystem.
+Shared type definitions shared across the Wisp Rust ecosystem.
 
 ## Types
 
