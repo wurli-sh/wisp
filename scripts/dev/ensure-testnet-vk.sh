@@ -8,6 +8,21 @@ SOURCE="${SOURCE:-amoeba-admin}"
 NETWORK_PASSPHRASE="${NETWORK_PASSPHRASE:-Test SDF Network ; September 2015}"
 export STELLAR_NETWORK_PASSPHRASE="${STELLAR_NETWORK_PASSPHRASE:-$NETWORK_PASSPHRASE}"
 DEPLOY_DIR="${ROOT}/.wisp"
+ZKEY="${ROOT}/circuits/circom/artifacts/compliance_corridor_final.zkey"
+VK_JSON="${ROOT}/circuits/circom/artifacts/verification_key.json"
+
+if [[ ! -f "${ZKEY}" ]]; then
+  echo "ERROR: missing proving key: ${ZKEY}" >&2
+  exit 1
+fi
+
+TMP_VK="$(mktemp "${TMPDIR:-/tmp}/wisp-vk-from-zkey.XXXXXX.json")"
+trap 'rm -f "${TMP_VK}"' EXIT
+pnpm exec snarkjs zkey export verificationkey "${ZKEY}" "${TMP_VK}" >/dev/null
+if [[ ! -f "${VK_JSON}" ]] || ! cmp -s "${TMP_VK}" "${VK_JSON}"; then
+  echo "VK artifacts drift — regenerating verifier from active zkey"
+  "${ROOT}/circuits/circom/scripts/export-vk.sh"
+fi
 
 LOCAL_VK_HASH=$(python3 "${ROOT}/circuits/circom/scripts/compute-vk-hash.py" | tr -d '\n')
 
