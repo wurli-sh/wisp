@@ -123,6 +123,10 @@ const CONTRACT_HINTS: [RegExp, string][] = [
 
 const ISSUER_HINTS: [RegExp, string][] = [
   [
+    /Failed to fetch|fetch failed|network ?error|Load failed/i,
+    "Issuer temporarily unreachable — if you just restarted the backend, wait a few seconds and retry. In local dev, restart ./scripts/dev/bru.sh so Vite proxy and issuer env are in sync.",
+  ],
+  [
     /On-chain issuer\/corridor roots not found/i,
     "Chain event scan missed issuer roots — restart ./scripts/dev/bru.sh (writes frontend/.env.local with VITE_VALIDATE_START_LEDGER) or set VITE_VALIDATE_START_LEDGER in frontend/.env.",
   ],
