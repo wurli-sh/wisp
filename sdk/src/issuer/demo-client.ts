@@ -1,5 +1,5 @@
 import type { DemoTransferRequest, ProofPackage } from "@wisp_/js";
-import { HttpIssuerAdapter } from "./http-adapter.js";
+import { HttpIssuerAdapter, issuerFetch } from "./http-adapter.js";
 
 export interface MockKycChallengeResponse {
   challenge_id: string;
@@ -52,13 +52,13 @@ export interface MockKycStatusResponse {
 /** Reference-issuer demo client: mock KYC + fixture proof packages. */
 export class DemoIssuerClient extends HttpIssuerAdapter {
   async getDemoTransfer(): Promise<ProofPackage> {
-    const res = await fetch(`${this.baseURL}/v1/fixtures/demo-transfer`);
+    const res = await issuerFetch(`${this.baseURL}/v1/fixtures/demo-transfer`);
     if (!res.ok) throw new Error(`issuer demo-transfer: HTTP ${res.status}`);
     return res.json() as Promise<ProofPackage>;
   }
 
   async createDemoTransfer(input: DemoTransferRequest): Promise<ProofPackage> {
-    const res = await fetch(`${this.baseURL}/v1/fixtures/demo-transfer`, {
+    const res = await issuerFetch(`${this.baseURL}/v1/fixtures/demo-transfer`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
@@ -73,7 +73,7 @@ export class DemoIssuerClient extends HttpIssuerAdapter {
   }
 
   async requestMockKycChallenge(wallet: string): Promise<MockKycChallengeResponse> {
-    const res = await fetch(`${this.baseURL}/v1/mock-kyc/challenge`, {
+    const res = await issuerFetch(`${this.baseURL}/v1/mock-kyc/challenge`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ wallet }),
@@ -86,11 +86,15 @@ export class DemoIssuerClient extends HttpIssuerAdapter {
   }
 
   async submitMockKyc(input: MockKycSubmitRequest): Promise<MockKycSubmitResponse> {
-    const res = await fetch(`${this.baseURL}/v1/mock-kyc/submit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });
+    const res = await issuerFetch(
+      `${this.baseURL}/v1/mock-kyc/submit`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      },
+      { retries: 0 },
+    );
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`issuer mock-kyc submit: HTTP ${res.status} ${text}`);
@@ -110,7 +114,7 @@ export class DemoIssuerClient extends HttpIssuerAdapter {
       params.set("recipient", opts.recipient);
     }
     const query = params.toString();
-    const res = await fetch(
+    const res = await issuerFetch(
       `${this.baseURL}/v1/mock-kyc/status/${encodeURIComponent(wallet)}${query ? `?${query}` : ""}`,
     );
     if (!res.ok) {
