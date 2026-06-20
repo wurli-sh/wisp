@@ -29,7 +29,9 @@ COPY backend/crates/issuer-service/migrations /app/migrations
 COPY scripts/deploy/migrate-issuer-db.sh /app/scripts/deploy/migrate-issuer-db.sh
 COPY backend/crates/issuer-service/docker-entrypoint.sh /app/docker-entrypoint.sh
 
-RUN chmod +x /app/docker-entrypoint.sh /app/scripts/deploy/migrate-issuer-db.sh
+RUN chmod +x /app/docker-entrypoint.sh /app/scripts/deploy/migrate-issuer-db.sh \
+  && ln -sf /usr/local/bin/stellar /usr/bin/stellar \
+  && stellar --version
 
 ENV WISP_FIXTURES_DIR=/app/bindings/fixtures \
     WISP_FIXTURE_PROFILE=testnet \

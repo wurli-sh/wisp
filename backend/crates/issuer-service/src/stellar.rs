@@ -17,7 +17,14 @@ fn network_alias(cfg: &Config) -> &'static str {
 }
 
 fn stellar_command(cfg: &Config) -> Command {
-    let mut cmd = Command::new("stellar");
+    let bin = std::env::var("STELLAR_BIN").unwrap_or_else(|_| {
+        if std::path::Path::new("/usr/local/bin/stellar").is_file() {
+            "/usr/local/bin/stellar".into()
+        } else {
+            "stellar".into()
+        }
+    });
+    let mut cmd = Command::new(bin);
     cmd.env("STELLAR_NETWORK_PASSPHRASE", &cfg.network_passphrase)
         .env("STELLAR_RPC_URL", &cfg.rpc_url);
     cmd
@@ -250,7 +257,12 @@ mod tests {
 
 #[allow(dead_code)]
 pub fn stellar_available() -> bool {
-    Command::new("stellar")
+    Command::new(
+        std::env::var("STELLAR_BIN")
+            .ok()
+            .filter(|value| !value.is_empty())
+            .unwrap_or_else(|| "stellar".into()),
+    )
         .arg("--version")
         .output()
         .map(|o| o.status.success())
