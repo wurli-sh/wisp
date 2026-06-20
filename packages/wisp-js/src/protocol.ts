@@ -7,8 +7,8 @@ import {
   poseidon2Hash12,
 } from "./poseidon2.js";
 
-export const NULLIFIER_DOMAIN_TAG = 1204609112206068373041n;
-export const CORRIDOR_DOMAIN_TAG = 0x414d4f4542415f5631n;
+export const NULLIFIER_DOMAIN_TAG = 24568945153365553n;
+export const CORRIDOR_DOMAIN_TAG = 0x574953505f5631n;
 
 export function addressToLimbs(bytes32: Buffer): { lo: FieldElement; hi: FieldElement } {
   const hi = BigInt("0x" + bytes32.subarray(0, 16).toString("hex"));

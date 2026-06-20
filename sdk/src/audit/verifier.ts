@@ -1,7 +1,7 @@
-import { Client } from "@amoeba_/verifier";
-import type { AmoebaConfig } from "../config.js";
+import { Client } from "@wisp_/verifier";
+import type { WispConfig } from "../config.js";
 
-export async function getVerifierVkHash(cfg: AmoebaConfig): Promise<string> {
+export async function getVerifierVkHash(cfg: WispConfig): Promise<string> {
   if (!cfg.verifierId) {
     throw new Error("VERIFIER_CONTRACT_ID required for vk_hash check");
   }

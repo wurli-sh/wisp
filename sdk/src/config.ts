@@ -1,6 +1,6 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadAmoebaEnv } from "./env.js";
+import { loadWispEnv } from "./env.js";
 
 function defaultRepoRoot(): string {
   // sdk/src or sdk/dist → repo root (one level up from package root).
@@ -8,10 +8,10 @@ function defaultRepoRoot(): string {
   return path.resolve(moduleDir, "../..");
 }
 
-/** Repo root for artifact/env paths; override with AMOEBA_REPO_ROOT. */
-export const REPO_ROOT = process.env.AMOEBA_REPO_ROOT ?? defaultRepoRoot();
+/** Repo root for artifact/env paths; override with WISP_REPO_ROOT. */
+export const REPO_ROOT = process.env.WISP_REPO_ROOT ?? defaultRepoRoot();
 
-export interface AmoebaConfig {
+export interface WispConfig {
   profile: string;
   rpcUrl: string;
   networkPassphrase: string;
@@ -41,9 +41,9 @@ export interface DemoStrkeys {
   recipient_strkey?: string;
 }
 
-export function loadConfig(overrides: Record<string, string | undefined> = {}): AmoebaConfig {
-  const env = { ...loadAmoebaEnv(REPO_ROOT), ...process.env, ...overrides };
-  const profile = env.AMOEBA_FIXTURE_PROFILE ?? "local";
+export function loadConfig(overrides: Record<string, string | undefined> = {}): WispConfig {
+  const env = { ...loadWispEnv(REPO_ROOT), ...process.env, ...overrides };
+  const profile = env.WISP_FIXTURE_PROFILE ?? "local";
 
   return {
     profile,
@@ -55,25 +55,25 @@ export function loadConfig(overrides: Record<string, string | undefined> = {}): 
     assetId: env.SAC_CONTRACT_ID ?? env.ASSET_ID,
     issuerPublicKey: env.ISSUER_PUBLIC_KEY,
     issuerUrl: env.ISSUER_URL ?? "http://127.0.0.1:3000",
-    artifactDir: env.AMOEBA_ARTIFACT_DIR ?? path.join(REPO_ROOT, "circuits/circom/artifacts"),
+    artifactDir: env.WISP_ARTIFACT_DIR ?? path.join(REPO_ROOT, "circuits/circom/artifacts"),
     zkeyPath:
-      env.AMOEBA_ZKEY_PATH ??
+      env.WISP_ZKEY_PATH ??
       path.join(REPO_ROOT, "circuits/circom/artifacts/compliance_corridor_final.zkey"),
     wasmPath:
-      env.AMOEBA_WASM_PATH ??
+      env.WISP_WASM_PATH ??
       path.join(
         REPO_ROOT,
         "circuits/circom/artifacts/compliance_corridor_js/compliance_corridor.wasm",
       ),
     witnessGen:
-      env.AMOEBA_WITNESS_GEN ??
+      env.WISP_WITNESS_GEN ??
       path.join(
         REPO_ROOT,
         "circuits/circom/artifacts/compliance_corridor_js/generate_witness.js",
       ),
-    wasmUrl: env.AMOEBA_WASM_URL ?? env.VITE_AMOEBA_WASM_URL,
-    zkeyUrl: env.AMOEBA_ZKEY_URL ?? env.VITE_AMOEBA_ZKEY_URL,
-    demoFixtureUrl: env.AMOEBA_DEMO_FIXTURE_URL ?? env.VITE_AMOEBA_DEMO_FIXTURE_URL,
+    wasmUrl: env.WISP_WASM_URL ?? env.VITE_WISP_WASM_URL,
+    zkeyUrl: env.WISP_ZKEY_URL ?? env.VITE_WISP_ZKEY_URL,
+    demoFixtureUrl: env.WISP_DEMO_FIXTURE_URL ?? env.VITE_WISP_DEMO_FIXTURE_URL,
     validateStartLedger: env.VALIDATE_START_LEDGER
       ? Number(env.VALIDATE_START_LEDGER)
       : env.COMPLIANCE_DEPLOY_LEDGER

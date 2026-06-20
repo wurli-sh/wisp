@@ -1,6 +1,6 @@
 import { rpc, scValToNative, xdr } from "@stellar/stellar-sdk";
-import type { ProofSettledData } from "@amoeba_/compliance";
-import type { AmoebaConfig } from "../config.js";
+import type { ProofSettledData } from "@wisp_/compliance";
+import type { WispConfig } from "../config.js";
 import { resolveEventStartLedger } from "./ledger-window.js";
 
 export interface ProofSettledEvent {
@@ -50,7 +50,7 @@ function parseTxContractEvent(
 }
 
 async function pagedProofSettledEvents(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   opts: { limit?: number; startLedger?: number; endLedger?: number; maxPages?: number } = {},
 ): Promise<ProofSettledEvent[]> {
   if (!cfg.complianceId) throw new Error("COMPLIANCE_CONTRACT_ID not set");
@@ -108,7 +108,7 @@ async function pagedProofSettledEvents(
 }
 
 export async function listProofSettledEvents(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   opts: { limit?: number; startLedger?: number; endLedger?: number } = {},
 ): Promise<ProofSettledEvent[]> {
   return pagedProofSettledEvents(cfg, {
@@ -120,7 +120,7 @@ export async function listProofSettledEvents(
 }
 
 export async function getProofSettledByTxHash(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   txHash: string,
 ): Promise<ProofSettledEvent | null> {
   const server = new rpc.Server(cfg.rpcUrl);
@@ -148,7 +148,7 @@ export async function getProofSettledByTxHash(
 }
 
 export async function getProofSettledByNullifier(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   nullifierHex: string,
 ): Promise<ProofSettledEvent | null> {
   const needle = nullifierHex.replace(/^0x/i, "").toLowerCase();

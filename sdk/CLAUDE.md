@@ -1,6 +1,6 @@
 # sdk/
 
-TypeScript SDK (`@amoeba_/sdk`) — prove, settle, audit compliant transfers on Stellar.
+TypeScript SDK (`@wisp_/sdk`) — prove, settle, audit compliant transfers on Stellar.
 
 ## Layout
 
@@ -13,15 +13,15 @@ TypeScript SDK (`@amoeba_/sdk`) — prove, settle, audit compliant transfers on 
 | `src/demo/` | Demo-specific flows and helpers |
 | `src/validate/` | Input validation for transfer parameters |
 | `src/config.ts` | Env-backed config (`loadConfig`) |
-| `src/env.ts` | `.env` / `.amoeba/*.env` loader (`loadAmoebaEnv`) |
+| `src/env.ts` | `.env` / `.wisp/*.env` loader (`loadWispEnv`) |
 | `src/debug.ts` | Debug/diagnostic helpers |
 | `src/errors.ts` | Typed error classes |
-| `src/index.ts` | `AmoebaClient` facade |
+| `src/index.ts` | `WispClient` facade |
 
-Build: `pnpm --filter @amoeba_/sdk run build` (requires compliance client + `@amoeba_/js` built first).
+Build: `pnpm --filter @wisp_/sdk run build` (requires compliance client + `@wisp_/js` built first).
 
-`REPO_ROOT` resolves from package location (not cwd), so tests work via `pnpm --filter @amoeba_/sdk`.
+`REPO_ROOT` resolves from package location (not cwd), so tests work via `pnpm --filter @wisp_/sdk`.
 
 Tests: `pnpm test:sdk` — integration test skips if issuer-service is not on `:3000`; `./scripts/dev/demo-phase3.sh` starts issuer and runs the full prove path.
 
-npm: published as `@amoeba_/sdk` — see [scripts/publish/CLAUDE.md](../scripts/publish/CLAUDE.md).
+npm: published as `@wisp_/sdk` — see [scripts/publish/CLAUDE.md](../scripts/publish/CLAUDE.md).

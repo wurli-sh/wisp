@@ -5,9 +5,9 @@ import {
   publicSignalsMatch,
   rebuildExpectedPublicInputsFromRoots,
   type ProofPackage,
-} from "@amoeba_/js";
+} from "@wisp_/js";
 import { rpc } from "@stellar/stellar-sdk";
-import type { AmoebaConfig } from "../config.js";
+import type { WispConfig } from "../config.js";
 import {
   getLatestChainRoots,
   getLatestCorridorRoots,
@@ -50,13 +50,13 @@ export interface ValidatePackageResult {
   chainRoots?: ChainRootsBundle;
 }
 
-function resolveStartLedger(cfg: AmoebaConfig, opts: ValidatePackageOptions): number | undefined {
+function resolveStartLedger(cfg: WispConfig, opts: ValidatePackageOptions): number | undefined {
   return opts.startLedger ?? cfg.validateStartLedger;
 }
 
 async function assertRootAge(
   chain: ChainRootsBundle,
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
 ): Promise<void> {
   const server = new rpc.Server(cfg.rpcUrl);
   const latest = await server.getLatestLedger();
@@ -76,7 +76,7 @@ async function assertRootAge(
 
 export async function validatePackage(
   pkg: ProofPackage,
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   opts: ValidatePackageOptions,
 ): Promise<ValidatePackageResult> {
   const issuerPublicKey = opts.resolvedIssuer?.issuerPublicKey ?? opts.issuerPublicKey;

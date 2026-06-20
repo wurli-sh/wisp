@@ -1,12 +1,12 @@
 {
-  "name": "@amoeba_/issuer-sdk",
-  "version": "0.1.0",
-  "description": "TypeScript SDK for operating an Amoeba issuer service and publishing roots",
+  "name": "@wisp_/issuer-sdk",
+  "version": "0.2.0",
+  "description": "TypeScript SDK for operating an Wisp issuer service and publishing roots",
   "license": "MIT",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wurli-sh/amoeba.git",
+    "url": "git+https://github.com/wurli-sh/wisp.git",
     "directory": "issuer-sdk"
   },
   "publishConfig": {
@@ -28,9 +28,9 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@amoeba_/compliance": "workspace:*",
-    "@amoeba_/js": "workspace:*",
-    "@amoeba_/sdk": "workspace:*",
+    "@wisp_/compliance": "workspace:*",
+    "@wisp_/js": "workspace:*",
+    "@wisp_/sdk": "workspace:*",
     "@stellar/stellar-sdk": "^14.5.0"
   },
   "devDependencies": {

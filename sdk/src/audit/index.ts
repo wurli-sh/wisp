@@ -1,9 +1,9 @@
-import { Client } from "@amoeba_/compliance";
-import type { AmoebaConfig } from "../config.js";
+import { Client } from "@wisp_/compliance";
+import type { WispConfig } from "../config.js";
 
 export async function auditNullifier(
   nullifierBytes: Buffer,
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   publicKey: string,
 ): Promise<boolean> {
   if (!cfg.complianceId) throw new Error("COMPLIANCE_CONTRACT_ID not set");

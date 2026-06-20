@@ -1,6 +1,6 @@
 import type { AssembledTransaction, Result } from "@stellar/stellar-sdk/contract";
 
-export interface AmoebaIssuerConfig {
+export interface WispIssuerConfig {
   rpcUrl: string;
   networkPassphrase: string;
   complianceId: string;

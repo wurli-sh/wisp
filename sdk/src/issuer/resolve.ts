@@ -1,4 +1,4 @@
-import type { AmoebaConfig } from "../config.js";
+import type { WispConfig } from "../config.js";
 import { IssuerMetadataMismatchError, IssuerNotRegisteredError } from "../errors.js";
 import { listIssuerRegistryEntries, getLatestIssuerRecord } from "../audit/roots.js";
 import type { ChainIssuerPage, ChainIssuerRecord } from "../audit/roots.js";
@@ -32,7 +32,7 @@ function protocolVersionOf(metadata: IssuerWellKnown): string {
 }
 
 function assertMetadataMatchesChain(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   record: ChainIssuerRecord,
   metadata: IssuerWellKnown,
   requestedUrl?: string,
@@ -47,7 +47,7 @@ function assertMetadataMatchesChain(
     throw new IssuerMetadataMismatchError("Issuer well-known verifier contract does not match configured verifier contract");
   }
   if (protocolVersionOf(metadata) !== "2") {
-    throw new IssuerMetadataMismatchError("Issuer well-known protocol version is not Amoeba v2");
+    throw new IssuerMetadataMismatchError("Issuer well-known protocol version is not Wisp v2");
   }
   const canonicalMetadataUri = normalizeUrl(record.metadata_uri);
   const declaredMetadataUri = normalizeUrl(metadata.metadata_uri ?? canonicalMetadataUri);
@@ -73,7 +73,7 @@ function assertMetadataMatchesChain(
 }
 
 export async function resolveIssuer(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   issuerPublicKey: string,
   opts: ResolveIssuerOptions = {},
 ): Promise<ResolvedIssuer> {
@@ -93,7 +93,7 @@ export async function resolveIssuer(
 }
 
 export async function resolveIssuerFromUrl(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   url: string,
   opts: ResolveIssuerOptions = {},
 ): Promise<ResolvedIssuer> {
@@ -117,7 +117,7 @@ export async function resolveIssuerFromUrl(
 }
 
 export async function listIssuers(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   opts: { cursor?: number; limit?: number; startLedger?: number } = {},
 ): Promise<ChainIssuerPage> {
   return listIssuerRegistryEntries(cfg, opts);

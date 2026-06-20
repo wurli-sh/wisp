@@ -1,5 +1,5 @@
 import { rpc } from "@stellar/stellar-sdk";
-import type { AmoebaConfig } from "../config.js";
+import type { WispConfig } from "../config.js";
 
 /**
  * Soroban RPC returns zero contract events when startLedger predates the
@@ -9,7 +9,7 @@ export const DEFAULT_EVENT_SCAN_LEDGERS = 10_000;
 
 export async function resolveEventStartLedger(
   server: rpc.Server,
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   explicit?: number,
 ): Promise<number> {
   if (explicit != null) return explicit;

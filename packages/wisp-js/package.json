@@ -1,13 +1,13 @@
 {
-  "name": "@amoeba_/js",
-  "version": "0.1.0",
-  "description": "Amoeba cryptographic primitives — Poseidon2, Merkle trees, nullifiers, witness builder",
+  "name": "@wisp_/js",
+  "version": "0.2.0",
+  "description": "Wisp cryptographic primitives — Poseidon2, Merkle trees, nullifiers, witness builder",
   "license": "MIT",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wurli-sh/amoeba.git",
-    "directory": "packages/amoeba-js"
+    "url": "git+https://github.com/wurli-sh/wisp.git",
+    "directory": "packages/wisp-js"
   },
   "publishConfig": {
     "access": "public"

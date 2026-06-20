@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Keypair, TransactionBuilder } from "@stellar/stellar-sdk";
-import { Client } from "@amoeba_/compliance";
-import type { ProofPackage } from "@amoeba_/js";
-import type { AmoebaConfig } from "../config.js";
+import { Client } from "@wisp_/compliance";
+import type { ProofPackage } from "@wisp_/js";
+import type { WispConfig } from "../config.js";
 import { REPO_ROOT } from "../config.js";
 import type { ProvenTransfer } from "../prove/prover.js";
 import { sdkCheckpoint } from "../debug.js";
@@ -28,7 +28,7 @@ function packageStrkeys(pkg: ProofPackage): DemoFixture {
 
 let cachedRemoteFixture: DemoFixture | null = null;
 
-async function loadDemoFixture(cfg: AmoebaConfig): Promise<DemoFixture> {
+async function loadDemoFixture(cfg: WispConfig): Promise<DemoFixture> {
   if (cfg.demoStrkeys) return cfg.demoStrkeys;
   if (cfg.demoFixtureUrl) {
     if (!cachedRemoteFixture) {
@@ -49,7 +49,7 @@ async function loadDemoFixture(cfg: AmoebaConfig): Promise<DemoFixture> {
   return JSON.parse(raw) as DemoFixture;
 }
 
-async function resolveSettleParties(proven: ProvenTransfer | null, pkg: ProofPackage, cfg: AmoebaConfig) {
+async function resolveSettleParties(proven: ProvenTransfer | null, pkg: ProofPackage, cfg: WispConfig) {
   const fixture = await loadDemoFixture(cfg);
   const pkgFixture = packageStrkeys(pkg);
   const issuer = cfg.issuerPublicKey ?? pkgFixture.issuer_strkey ?? fixture.issuer_strkey;
@@ -78,7 +78,7 @@ async function resolveSettleParties(proven: ProvenTransfer | null, pkg: ProofPac
   };
 }
 
-async function transferArgs(proven: ProvenTransfer, pkg: ProofPackage, cfg: AmoebaConfig) {
+async function transferArgs(proven: ProvenTransfer, pkg: ProofPackage, cfg: WispConfig) {
   const parties = await resolveSettleParties(proven, pkg, cfg);
   return {
     ...parties,
@@ -87,7 +87,7 @@ async function transferArgs(proven: ProvenTransfer, pkg: ProofPackage, cfg: Amoe
 }
 
 function logSettleCheckpoint(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   proven: ProvenTransfer,
   pkg: ProofPackage,
   args: Awaited<ReturnType<typeof transferArgs>>,
@@ -117,7 +117,7 @@ export interface WalletSigner {
 
 export async function approveSacForCompliance(
   pkg: ProofPackage,
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   wallet: WalletSigner,
 ) {
   const parties = await resolveSettleParties(null, pkg, cfg);
@@ -126,7 +126,7 @@ export async function approveSacForCompliance(
 
 export async function approveSacForComplianceWithKeypair(
   pkg: ProofPackage,
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   secret: string,
 ) {
   const parties = await resolveSettleParties(null, pkg, cfg);
@@ -136,7 +136,7 @@ export async function approveSacForComplianceWithKeypair(
 export async function settleWithKeypair(
   proven: ProvenTransfer,
   pkg: ProofPackage,
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   secret: string,
 ) {
   if (!cfg.complianceId) throw new Error("COMPLIANCE_CONTRACT_ID not set");
@@ -169,7 +169,7 @@ export async function settleWithKeypair(
 export async function settleWithWallet(
   proven: ProvenTransfer,
   pkg: ProofPackage,
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   wallet: WalletSigner,
 ) {
   if (!cfg.complianceId) throw new Error("COMPLIANCE_CONTRACT_ID not set");
@@ -197,7 +197,7 @@ export async function settleWithWallet(
 export async function simulateSettle(
   proven: ProvenTransfer,
   pkg: ProofPackage,
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   publicKey: string,
 ) {
   if (!cfg.complianceId) throw new Error("COMPLIANCE_CONTRACT_ID not set");

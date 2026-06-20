@@ -1,6 +1,6 @@
-# packages/amoeba-js
+# packages/wisp-js
 
-TypeScript implementation of Amoeba cryptographic primitives (`@amoeba_/js`). Compiled to `dist/` via `tsc`.
+TypeScript implementation of Wisp cryptographic primitives (`@wisp_/js`). Compiled to `dist/` via `tsc`.
 
 ## Modules
 

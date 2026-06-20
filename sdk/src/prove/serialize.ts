@@ -1,4 +1,4 @@
-import { normalizeField } from "@amoeba_/js";
+import { normalizeField } from "@wisp_/js";
 
 function decimalToBeHex(decimal: string): string {
   const n = normalizeField(decimal);

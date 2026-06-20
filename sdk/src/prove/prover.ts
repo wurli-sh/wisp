@@ -2,9 +2,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
-import { proofPackageToWitnessInput } from "@amoeba_/js/witness";
-import type { ProofPackage } from "@amoeba_/js";
-import type { AmoebaConfig } from "../config.js";
+import { proofPackageToWitnessInput } from "@wisp_/js/witness";
+import type { ProofPackage } from "@wisp_/js";
+import type { WispConfig } from "../config.js";
 import { REPO_ROOT } from "../config.js";
 import { type SerializedProof, type SnarkjsProof } from "./serialize.js";
 import { buildProvenTransfer } from "./build.js";
@@ -19,10 +19,10 @@ export interface ProvenTransfer {
 
 export async function proveFromPackage(
   pkg: ProofPackage,
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
 ): Promise<ProvenTransfer> {
   const witnessInput = proofPackageToWitnessInput(pkg);
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "amoeba-prove-"));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wisp-prove-"));
   const inputPath = path.join(tmpDir, "input.json");
   const witnessPath = path.join(tmpDir, "witness.wtns");
   const proofPath = path.join(tmpDir, "proof.json");

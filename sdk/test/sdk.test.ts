@@ -3,9 +3,9 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { proofPackageToWitnessInput } from "@amoeba_/js/witness";
+import { proofPackageToWitnessInput } from "@wisp_/js/witness";
 import {
-  AmoebaClient,
+  WispClient,
   CorridorDisabledForIssuerError,
   DemoIssuerClient,
   issuerRootsMatch,
@@ -16,7 +16,7 @@ import {
   validatePackage,
   validatePackageStructure,
 } from "../src/index.js";
-import type { ProofPackage } from "@amoeba_/js";
+import type { ProofPackage } from "@wisp_/js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "../..");
@@ -167,7 +167,7 @@ test("validatePackageStructure accepts fixture-shaped package", () => {
 });
 
 test("validatePackage rebuilds public_inputs from roots (skipChain)", async () => {
-  const client = AmoebaClient.fromEnv();
+  const client = WispClient.fromEnv();
   const pkg = loadFixturePackage();
   const result = await client.validatePackage(pkg, {
     issuerPublicKey: client.cfg.issuerPublicKey ?? "GTEST",
@@ -178,7 +178,7 @@ test("validatePackage rebuilds public_inputs from roots (skipChain)", async () =
 });
 
 test("validatePackage rejects mismatched public_inputs (skipChain)", async () => {
-  const client = AmoebaClient.fromEnv();
+  const client = WispClient.fromEnv();
   const pkg = loadFixturePackage();
   pkg.public_inputs = { ...pkg.public_inputs!, merkle_root: "999" };
   await assert.rejects(
@@ -224,7 +224,7 @@ test("issuerRootsMatch normalizes equivalent field decimals", () => {
 });
 
 test("validatePackage matches injected chain roots", async () => {
-  const client = AmoebaClient.fromEnv();
+  const client = WispClient.fromEnv();
   const pkg = loadFixturePackage();
   const roots = pkg.roots!;
   const result = await client.validatePackage(pkg, {
@@ -257,7 +257,7 @@ test("validatePackage matches injected chain roots", async () => {
 });
 
 test("validatePackage rejects disabled corridor from injected chain roots", async () => {
-  const client = AmoebaClient.fromEnv();
+  const client = WispClient.fromEnv();
   const pkg = loadFixturePackage();
   const roots = pkg.roots!;
   await assert.rejects(
@@ -293,14 +293,14 @@ test("validatePackage rejects disabled corridor from injected chain roots", asyn
 });
 
 test("resolveIssuer validates metadata against on-chain registry entry", async () => {
-  const client = AmoebaClient.fromEnv({
+  const client = WispClient.fromEnv({
     COMPLIANCE_CONTRACT_ID: "CCOMPLIANCE",
     VERIFIER_CONTRACT_ID: "CVERIFIER",
   });
   const resolved = await resolveIssuer(client.cfg, "GTEST", {
     registryEntry: {
       issuer: "GTEST",
-      metadata_uri: "https://issuer.example/.well-known/amoeba-issuer.json",
+      metadata_uri: "https://issuer.example/.well-known/wisp-issuer.json",
       enabled: true,
       registered_at_ledger: 10,
       updated_at_ledger: 11,
@@ -314,7 +314,7 @@ test("resolveIssuer validates metadata against on-chain registry entry", async (
         api_version: "2",
         protocol_version: "2",
         issuer_stellar_address: "GTEST",
-        metadata_uri: "https://issuer.example/.well-known/amoeba-issuer.json",
+        metadata_uri: "https://issuer.example/.well-known/wisp-issuer.json",
         service_url: "https://issuer.example",
         compliance_contract_id: "CCOMPLIANCE",
         verifier_contract_id: "CVERIFIER",
@@ -329,13 +329,13 @@ test("resolveIssuer validates metadata against on-chain registry entry", async (
 });
 
 test("resolveIssuerFromUrl rejects non-canonical metadata URL", async () => {
-  const client = AmoebaClient.fromEnv();
+  const client = WispClient.fromEnv();
   await assert.rejects(
     () =>
-      resolveIssuerFromUrl(client.cfg, "https://spoof.example/.well-known/amoeba-issuer.json", {
+      resolveIssuerFromUrl(client.cfg, "https://spoof.example/.well-known/wisp-issuer.json", {
         registryEntry: {
           issuer: "GTEST",
-          metadata_uri: "https://issuer.example/.well-known/amoeba-issuer.json",
+          metadata_uri: "https://issuer.example/.well-known/wisp-issuer.json",
           enabled: true,
           registered_at_ledger: 10,
           updated_at_ledger: 11,
@@ -349,7 +349,7 @@ test("resolveIssuerFromUrl rejects non-canonical metadata URL", async () => {
             api_version: "2",
             protocol_version: "2",
             issuer_stellar_address: "GTEST",
-            metadata_uri: "https://issuer.example/.well-known/amoeba-issuer.json",
+            metadata_uri: "https://issuer.example/.well-known/wisp-issuer.json",
             service_url: "https://issuer.example",
             proof_package_schema: 1,
           }),
@@ -358,12 +358,12 @@ test("resolveIssuerFromUrl rejects non-canonical metadata URL", async () => {
   );
 });
 
-test("AmoebaClient prove from issuer package", { timeout: 120_000 }, async (t) => {
+test("WispClient prove from issuer package", { timeout: 120_000 }, async (t) => {
   if (!(await issuerAvailable())) {
     t.skip("issuer-service not running on :3000");
   }
 
-  const client = AmoebaClient.fromEnv();
+  const client = WispClient.fromEnv();
   const demoIssuer = new DemoIssuerClient(client.cfg.issuerUrl);
   const pkg = await demoIssuer.getDemoTransfer();
   const issuerPk = client.cfg.issuerPublicKey;

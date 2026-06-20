@@ -1,10 +1,10 @@
-import { loadAmoebaEnv } from "@amoeba_/sdk";
-import type { AmoebaIssuerConfig } from "./types.js";
+import { loadWispEnv } from "@wisp_/sdk";
+import type { WispIssuerConfig } from "./types.js";
 
 export function loadIssuerConfig(
   overrides: Record<string, string | undefined> = {},
-): AmoebaIssuerConfig {
-  const env = { ...loadAmoebaEnv(), ...process.env, ...overrides };
+): WispIssuerConfig {
+  const env = { ...loadWispEnv(), ...process.env, ...overrides };
   const complianceId = env.COMPLIANCE_CONTRACT_ID ?? env.COMPLIANCE_ID;
   const operatorPublicKey = env.OPERATOR_PUBLIC_KEY ?? env.ISSUER_PUBLIC_KEY;
 

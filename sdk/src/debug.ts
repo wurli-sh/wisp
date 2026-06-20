@@ -1,8 +1,8 @@
 export function sdkCheckpoint(label: string, data: Record<string, unknown>): void {
-  const g = globalThis as { __AMOEBA_DEBUG__?: boolean };
+  const g = globalThis as { __WISP_DEBUG__?: boolean };
   const enabled =
-    g.__AMOEBA_DEBUG__ === true ||
-    (typeof process !== "undefined" && process.env?.AMOEBA_DEBUG === "1");
+    g.__WISP_DEBUG__ === true ||
+    (typeof process !== "undefined" && process.env?.WISP_DEBUG === "1");
   if (!enabled) return;
-  console.info("[amoeba:sdk]", label, data);
+  console.info("[wisp:sdk]", label, data);
 }

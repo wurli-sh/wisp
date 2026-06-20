@@ -1,4 +1,4 @@
-import type { CorridorOption, ProofPackage, ProofPackageRequest } from "@amoeba_/js";
+import type { CorridorOption, ProofPackage, ProofPackageRequest } from "@wisp_/js";
 import type { CorridorDetail, IssuerAdapter, IssuerWellKnown } from "./adapter.js";
 
 export class HttpIssuerAdapter implements IssuerAdapter {
@@ -38,7 +38,7 @@ export class HttpIssuerAdapter implements IssuerAdapter {
   }
 
   async getWellKnown(): Promise<IssuerWellKnown> {
-    const res = await fetch(`${this.baseUrl}/.well-known/amoeba-issuer.json`);
+    const res = await fetch(`${this.baseUrl}/.well-known/wisp-issuer.json`);
     if (!res.ok) throw new Error(`issuer well-known: HTTP ${res.status}`);
     return res.json() as Promise<IssuerWellKnown>;
   }

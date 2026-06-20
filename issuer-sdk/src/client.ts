@@ -1,7 +1,7 @@
-import { Client as ComplianceClient, ComplianceError } from "@amoeba_/compliance";
+import { Client as ComplianceClient, ComplianceError } from "@wisp_/compliance";
 import type { ClientOptions as ContractClientOptions } from "@stellar/stellar-sdk/contract";
 import type {
-  AmoebaIssuerConfig,
+  WispIssuerConfig,
   IssuerMutationTransaction,
   IssuerTransactionSigner,
   PublishIssuerRootsInput,
@@ -49,7 +49,7 @@ interface ComplianceClientLike {
   }): Promise<IssuerMutationTransaction>;
 }
 
-export interface AmoebaIssuerClientOptions {
+export interface WispIssuerClientOptions {
   contractFactory?: (options: ContractClientOptions) => ComplianceClientLike;
 }
 
@@ -104,11 +104,11 @@ async function signAndSend(
   return sent;
 }
 
-export class AmoebaIssuerClient {
-  readonly cfg: AmoebaIssuerConfig;
+export class WispIssuerClient {
+  readonly cfg: WispIssuerConfig;
   private readonly contractFactory: (options: ContractClientOptions) => ComplianceClientLike;
 
-  constructor(cfg: AmoebaIssuerConfig, options: AmoebaIssuerClientOptions = {}) {
+  constructor(cfg: WispIssuerConfig, options: WispIssuerClientOptions = {}) {
     this.cfg = cfg;
     this.contractFactory =
       options.contractFactory ??

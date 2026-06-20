@@ -1,7 +1,7 @@
-import { normalizeField } from "@amoeba_/js";
+import { normalizeField } from "@wisp_/js";
 import { rpc, scValToNative, xdr } from "@stellar/stellar-sdk";
-import type { AmoebaConfig } from "../config.js";
-import { resolveEventStartLedger } from "./ledger-window.js";
+import type { WispConfig } from "../config.js";
+import { DEFAULT_EVENT_SCAN_LEDGERS, resolveEventStartLedger } from "./ledger-window.js";
 
 export interface ChainIssuerRecord {
   issuer: string;
@@ -105,14 +105,19 @@ interface IssuerEnabledPatch {
 }
 
 async function pageContractEvents(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   topicFilter: string[],
   opts: { startLedger?: number; maxPages?: number } = {},
 ): Promise<ParsedChainEvent[]> {
   if (!cfg.complianceId) throw new Error("COMPLIANCE_CONTRACT_ID not set");
 
   const server = new rpc.Server(cfg.rpcUrl);
-  const startLedger = await resolveEventStartLedger(server, cfg, opts.startLedger);
+  const explicitStart = await resolveEventStartLedger(server, cfg, opts.startLedger);
+  const latest = await server.getLatestLedger();
+  const startLedger = Math.max(
+    explicitStart,
+    latest.sequence - DEFAULT_EVENT_SCAN_LEDGERS,
+  );
   const maxPages = opts.maxPages ?? 40;
   const pageSize = 200;
 
@@ -252,7 +257,7 @@ function parseCorridorRootsEvent(
 }
 
 async function pageIssuerEvents(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   opts: { startLedger?: number; maxPages?: number } = {},
 ): Promise<ParsedChainEvent[]> {
   const batches = await Promise.all(
@@ -262,7 +267,7 @@ async function pageIssuerEvents(
 }
 
 async function pageCorridorEvents(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   opts: { startLedger?: number; maxPages?: number } = {},
 ): Promise<ParsedChainEvent[]> {
   const batches = await Promise.all(
@@ -272,7 +277,7 @@ async function pageCorridorEvents(
 }
 
 export async function getLatestIssuerRecord(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   issuerStrkey: string,
   opts: { startLedger?: number; maxPages?: number } = {},
 ): Promise<ChainIssuerRecord | null> {
@@ -309,7 +314,7 @@ export async function getLatestIssuerRecord(
 }
 
 export async function listIssuerRegistryEntries(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   opts: { cursor?: number; limit?: number; startLedger?: number; maxPages?: number } = {},
 ): Promise<ChainIssuerPage> {
   const events = await pageIssuerEvents(cfg, opts);
@@ -360,7 +365,7 @@ export async function listIssuerRegistryEntries(
 }
 
 export async function getLatestIssuerEnabled(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   issuerStrkey: string,
   opts: { startLedger?: number; maxPages?: number } = {},
 ): Promise<boolean | null> {
@@ -369,7 +374,7 @@ export async function getLatestIssuerEnabled(
 }
 
 export async function getLatestIssuerRoots(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   issuerStrkey: string,
   opts: { startLedger?: number; maxPages?: number } = {},
 ): Promise<ChainIssuerRoots | null> {
@@ -378,15 +383,18 @@ export async function getLatestIssuerRoots(
   let enabled: boolean | null = null;
 
   for (const event of events) {
-    if (enabled == null) {
-      const patch = parseIssuerEnabledEvent(event);
-      if (patch?.issuer === issuerStrkey) enabled = patch.enabled;
+    const parsed = parseIssuerRootsEvent(event, issuerStrkey);
+    if (parsed && (!roots || parsed.ledger > roots.ledger)) {
+      roots = parsed;
     }
-    if (!roots) {
-      const parsed = parseIssuerRootsEvent(event, issuerStrkey);
-      if (parsed) roots = parsed;
+  }
+
+  for (const event of events) {
+    const patch = parseIssuerEnabledEvent(event);
+    if (patch?.issuer === issuerStrkey) {
+      enabled = patch.enabled;
+      break;
     }
-    if (roots && enabled != null) break;
   }
 
   if (!roots) return null;
@@ -395,21 +403,24 @@ export async function getLatestIssuerRoots(
 }
 
 export async function getLatestCorridorRoots(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   issuerStrkey: string,
   corridorId: number,
   opts: { startLedger?: number; maxPages?: number } = {},
 ): Promise<ChainCorridorRoots | null> {
   const events = await pageCorridorEvents(cfg, opts);
+  let corridor: ChainCorridorRoots | null = null;
   for (const event of events) {
     const parsed = parseCorridorRootsEvent(event, issuerStrkey, corridorId);
-    if (parsed) return parsed;
+    if (parsed && (!corridor || parsed.ledger > corridor.ledger)) {
+      corridor = parsed;
+    }
   }
-  return null;
+  return corridor;
 }
 
 export async function getLatestChainRoots(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   issuerStrkey: string,
   corridorId: number,
   opts: { startLedger?: number; maxPages?: number } = {},

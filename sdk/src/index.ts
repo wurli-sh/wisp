@@ -1,4 +1,4 @@
-import { loadConfig, type AmoebaConfig } from "./config.js";
+import { loadConfig, type WispConfig } from "./config.js";
 import type { IssuerAdapter } from "./issuer/adapter.js";
 import { HttpIssuerAdapter } from "./issuer/http-adapter.js";
 import { proveFromPackageBrowser } from "./prove/browser.js";
@@ -38,7 +38,7 @@ import {
   type ResolvedIssuer,
 } from "./issuer/resolve.js";
 import { fieldDecimalToBytes32, normalizeField } from "./settle/encoding.js";
-import type { ProofPackage } from "@amoeba_/js";
+import type { ProofPackage } from "@wisp_/js";
 import {
   validatePackage,
   type ValidatePackageOptions,
@@ -46,17 +46,17 @@ import {
   MAX_ROOT_AGE_LEDGERS,
 } from "./validate/package.js";
 
-export class AmoebaClient {
-  readonly cfg: AmoebaConfig;
+export class WispClient {
+  readonly cfg: WispConfig;
   readonly issuer: IssuerAdapter;
 
-  constructor(cfg: AmoebaConfig, issuer?: IssuerAdapter) {
+  constructor(cfg: WispConfig, issuer?: IssuerAdapter) {
     this.cfg = cfg;
     this.issuer = issuer ?? new HttpIssuerAdapter(cfg.issuerUrl);
   }
 
-  static fromEnv(overrides: Record<string, string | undefined> = {}): AmoebaClient {
-    return new AmoebaClient(loadConfig(overrides));
+  static fromEnv(overrides: Record<string, string | undefined> = {}): WispClient {
+    return new WispClient(loadConfig(overrides));
   }
 
   async prove(input: {
@@ -71,7 +71,7 @@ export class AmoebaClient {
       throw new Error("prove requires an explicit ProofPackage (fetch via IssuerAdapter first)");
     }
     const pkg = input.package;
-    const cfg: AmoebaConfig = {
+    const cfg: WispConfig = {
       ...this.cfg,
       ...(input.artifactDir ? { artifactDir: input.artifactDir } : {}),
       ...(input.zkeyPath ? { zkeyPath: input.zkeyPath } : {}),
@@ -155,7 +155,7 @@ export class AmoebaClient {
 }
 
 export { loadConfig } from "./config.js";
-export { loadAmoebaEnv } from "./env.js";
+export { loadWispEnv, loadAmoebaEnv } from "./env.js";
 export { serializeSnarkjsProof } from "./prove/serialize.js";
 export { fieldDecimalToBytes32, normalizeField } from "./settle/encoding.js";
 export type { ProofSettledEvent };

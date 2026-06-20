@@ -1,4 +1,4 @@
-import { normalizeField } from "@amoeba_/js";
+import { normalizeField } from "@wisp_/js";
 import type { RootHashInput } from "./types.js";
 
 function bytesToCanonicalHex(bytes: Uint8Array): string {

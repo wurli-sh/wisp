@@ -1,9 +1,9 @@
-export { AmoebaIssuerClient } from "./client.js";
+export { WispIssuerClient } from "./client.js";
 export { loadIssuerConfig } from "./config.js";
 export { normalizeRootHashToBytes, normalizeRootHashToHex } from "./encoding.js";
 export { runIssuerConformance } from "./conformance.js";
 export type {
-  AmoebaIssuerConfig,
+  WispIssuerConfig,
   CorridorRootsInput,
   IssuerRootsInput,
   IssuerTransactionSigner,

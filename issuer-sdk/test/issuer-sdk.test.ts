@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { AmoebaIssuerClient, loadIssuerConfig, normalizeRootHashToBytes, runIssuerConformance } from "../src/index.js";
+import { WispIssuerClient, loadIssuerConfig, normalizeRootHashToBytes, runIssuerConformance } from "../src/index.js";
 
 function fakeTx(label: string, onSend?: () => unknown): {
   label: string;
@@ -26,7 +26,7 @@ function makeClient(log: Array<{ method: string; args: unknown }>, state?: {
   corridorExists?: boolean;
   registerCorridorSendFails?: boolean;
 }) {
-  return new AmoebaIssuerClient(
+  return new WispIssuerClient(
     {
       rpcUrl: "https://rpc.test",
       networkPassphrase: "Test SDF Network ; September 2015",
@@ -260,7 +260,7 @@ test("publishRoots send path assembles sequentially after issuer registration", 
 
 test("registerIssuerAndSend surfaces send failures from sent.result", async () => {
   const log: Array<{ method: string; args: unknown }> = [];
-  const client = new AmoebaIssuerClient(
+  const client = new WispIssuerClient(
     {
       rpcUrl: "https://rpc.test",
       networkPassphrase: "Test SDF Network ; September 2015",

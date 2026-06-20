@@ -1,12 +1,12 @@
-import type { ProofPackage } from "@amoeba_/js";
+import type { ProofPackage } from "@wisp_/js";
 import {
-  AmoebaClient,
+  WispClient,
   HttpIssuerAdapter,
   type IssuerAdapter,
   type IssuerWellKnown,
   type ProvenTransfer,
   type ValidatePackageResult,
-} from "@amoeba_/sdk";
+} from "@wisp_/sdk";
 
 interface ConformanceClientLike {
   issuer: IssuerAdapter;
@@ -58,9 +58,9 @@ export async function runIssuerConformance(
 ): Promise<IssuerConformanceResult> {
   const client =
     deps.client ??
-    new AmoebaClient(
+    new WispClient(
       {
-        ...AmoebaClient.fromEnv({ ISSUER_URL: options.issuerUrl }).cfg,
+        ...WispClient.fromEnv({ ISSUER_URL: options.issuerUrl }).cfg,
         issuerUrl: options.issuerUrl,
       },
       new HttpIssuerAdapter(options.issuerUrl),

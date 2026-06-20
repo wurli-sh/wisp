@@ -6,7 +6,7 @@ import {
   TransactionBuilder,
   nativeToScVal,
 } from "@stellar/stellar-sdk";
-import type { AmoebaConfig } from "../config.js";
+import type { WispConfig } from "../config.js";
 import type { WalletSigner } from "./compliant-transfer.js";
 
 export interface SacApproveResult {
@@ -40,7 +40,7 @@ async function waitForSentTransaction(
 }
 
 export async function approveSacAllowance(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   wallet: WalletSigner,
   assetContractId: string,
   amount: bigint,
@@ -92,7 +92,7 @@ export async function approveSacAllowance(
 }
 
 export async function approveSacAllowanceWithKeypair(
-  cfg: AmoebaConfig,
+  cfg: WispConfig,
   secret: string,
   assetContractId: string,
   amount: bigint,

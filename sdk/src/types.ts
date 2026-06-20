@@ -6,9 +6,9 @@ export type {
   Roots,
   TransferParams,
   WitnessPrivate,
-} from "@amoeba_/bindings/proofPackage";
-export type { ProofPackage } from "@amoeba_/js";
-export type { AmoebaConfig } from "./config.js";
+} from "@wisp_/bindings/proofPackage";
+export type { ProofPackage } from "@wisp_/js";
+export type { WispConfig } from "./config.js";
 export type { ProvenTransfer } from "./prove/prover.js";
 export type { WalletSigner } from "./settle/compliant-transfer.js";
 export type { SettleResult } from "./settle/compliant-transfer.js";
