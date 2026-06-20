@@ -2,7 +2,7 @@ import { cn } from "@/lib/cn";
 import { CARD_BODY_H, CARD_FOOTER_H, CARD_H, CENTER_CARD_W, SIDE_CARD_W } from "./constants";
 
 type PipelineCardShellProps = {
-  variant?: "side" | "center";
+  variant?: "side" | "center" | "center-dark";
   active?: boolean;
   cardRef?: React.RefObject<HTMLDivElement | null>;
   className?: string;
@@ -18,7 +18,8 @@ export function PipelineCardShell({
   style,
   children,
 }: PipelineCardShellProps) {
-  const isCenter = variant === "center";
+  const isCenter = variant === "center" || variant === "center-dark";
+  const isCenterDark = variant === "center-dark";
 
   return (
     <div
@@ -29,9 +30,11 @@ export function PipelineCardShell({
         ...style,
       }}
       className={cn(
-        "flex shrink-0 flex-col border-2 bg-background p-4 shadow-soft",
-        isCenter ? "border-primary/40 bg-card shadow-card" : "border-border",
-        active && isCenter && "border-primary-dark shadow-blue-pill",
+        "flex shrink-0 flex-col border-2 p-4",
+        isCenterDark && "border-primary-dark bg-primary-dark",
+        variant === "center" && "border-primary/40 bg-card shadow-card",
+        variant === "side" && "border-border bg-background shadow-soft",
+        active && variant === "center" && "border-primary-dark shadow-blue-pill",
         className,
       )}
     >

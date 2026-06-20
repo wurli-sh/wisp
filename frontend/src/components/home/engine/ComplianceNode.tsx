@@ -20,13 +20,10 @@ export function ComplianceNode({ phase, cardRef, hideCaption }: ComplianceNodePr
   return (
     <div className="flex flex-col items-center" style={{ width: 260 }}>
       <PipelineCardShell
-        variant="center"
+        variant="center-dark"
         active={false}
         cardRef={cardRef}
-        className={cn(
-          "border-primary-dark bg-primary-dark shadow-none",
-          isProving && "border-brand ring-2 ring-brand/35",
-        )}
+        className={cn(isProving && "border-brand ring-2 ring-brand/35")}
       >
         <div className="flex items-center justify-between" style={{ height: 40 }}>
           <div className="flex items-center gap-2">
