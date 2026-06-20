@@ -568,6 +568,18 @@ impl AppState {
 
         let users = self.repo.list_active_users().await;
         let destinations = self.repo.list_enabled_destinations(req.corridor_id).await;
+        let demo_overrides = load_demo_transfer(cfg)
+            .filter(|fixture| {
+                fixture.sender_hex == sender_wallet
+                    && fixture.recipient_hex == recipient_wallet
+                    && fixture.amount == req.amount
+                    && fixture.corridor_id == req.corridor_id
+            })
+            .and_then(|fixture| {
+                let transfer_nonce = fixture.transfer_nonce.parse::<u128>().ok()?;
+                let epoch = fixture.epoch.parse::<u64>().ok()?;
+                Some((transfer_nonce, epoch))
+            });
         let proof = build_canonical_proof_package(
             &sender,
             &credential,
@@ -576,6 +588,7 @@ impl AppState {
             &users,
             &destinations,
             req.amount.clone(),
+            demo_overrides,
         )?;
         tracing::info!(
             corridor_id = req.corridor_id,
@@ -1091,6 +1104,7 @@ impl AppState {
             &users,
             &destinations,
             "1".into(),
+            None,
         )?;
         Ok(pkg.roots)
     }

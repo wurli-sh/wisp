@@ -2,6 +2,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::convert::TryFrom;
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use ark_bn254::Fr;
+use rand::random;
+use serde_json::{json, Value};
 use wisp_crypto::{
     address_to_limbs, compute_corridor_config_hash, compute_nullifier, compute_zero_hashes,
     fr_to_canonical_decimal, hash2, mod_u128, mod_u64, poseidon2_hash1, poseidon2_hash2,
@@ -13,9 +16,6 @@ use wisp_types::{
     DemoUsersFixture, MerklePaths, ProofPackage, Roots, TransferParams, WitnessPrivate,
     EPOCH_LEN_SECS,
 };
-use ark_bn254::Fr;
-use rand::random;
-use serde_json::{json, Value};
 
 use crate::mock_kyc::normalize_wallet_hex;
 use crate::state::{CorridorDestinationRecord, CorridorRecord, IssuerCredentialRecord, IssuerUser};
@@ -152,13 +152,16 @@ pub fn build_dynamic_demo_fixture(
         return Err("amount must be greater than zero".into());
     }
 
-    let epoch = current_epoch();
+    let epoch = template
+        .epoch
+        .parse::<u64>()
+        .unwrap_or_else(|_| current_epoch());
     let jurisdiction_code = country_code(users, &req.source_country)?;
 
     Ok(DemoTransferFixture {
         demo_only: true,
         credential_secret: template.credential_secret.clone(),
-        transfer_nonce: random::<u128>().to_string(),
+        transfer_nonce: template.transfer_nonce.clone(),
         corridor_id: req.corridor_id,
         sender_hex: payload_to_hex(&sender),
         recipient_hex: payload_to_hex(&recipient),
@@ -183,10 +186,10 @@ pub fn normalize_provider_payload(
 ) -> Result<NormalizedProviderEvent, String> {
     let wallet = normalize_wallet_hex(
         payload
-        .get("wallet")
-        .or_else(|| payload.get("wallet_hex"))
-        .and_then(Value::as_str)
-        .ok_or_else(|| "provider payload missing wallet".to_string())?,
+            .get("wallet")
+            .or_else(|| payload.get("wallet_hex"))
+            .and_then(Value::as_str)
+            .ok_or_else(|| "provider payload missing wallet".to_string())?,
     )?;
     let jurisdiction = payload
         .get("jurisdiction")
@@ -253,6 +256,7 @@ pub fn build_canonical_proof_package(
     users: &[IssuerUser],
     destinations: &[CorridorDestinationRecord],
     amount: String,
+    demo_overrides: Option<(u128, u64)>,
 ) -> Result<ProofPackage, String> {
     let sender_bytes = hex_to_bytes(&sender.wallet);
     let recipient_bytes = hex_to_bytes(&destination.address);
@@ -326,7 +330,9 @@ pub fn build_canonical_proof_package(
     let destination_tree = build_merkle_tree(&destination_leaves, destination_index);
 
     let sanctions = sparse_sanctions_path(sender_limbs.lo, sender_limbs.hi, MERKLE_DEPTH);
-    let epoch = current_epoch();
+    let epoch = demo_overrides
+        .map(|(_, epoch)| epoch)
+        .unwrap_or_else(current_epoch);
     let parsed_amount: i128 = amount
         .parse()
         .map_err(|_| format!("invalid amount: {amount}"))?;
@@ -337,7 +343,9 @@ pub fn build_canonical_proof_package(
         .credential_secret
         .parse()
         .map_err(|_| "invalid credential secret".to_string())?;
-    let transfer_nonce = random::<u128>();
+    let transfer_nonce = demo_overrides
+        .map(|(nonce, _)| nonce)
+        .unwrap_or_else(|| random::<u128>());
     let nullifier = compute_nullifier(
         mod_u128(credential_secret),
         sender_limbs.lo,
