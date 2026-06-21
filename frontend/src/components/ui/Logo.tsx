@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { LOGO_SRC } from "@/config/brand";
 import { cn } from "@/lib/cn";
 
@@ -16,14 +17,32 @@ type LogoProps = {
   tone?: LogoTone;
   className?: string;
   alt?: string;
+  onLoad?: React.ReactEventHandler<HTMLImageElement>;
 };
 
-export function Logo({ size = "md", tone = "dark", className, alt = "Wisp" }: LogoProps) {
+export function Logo({
+  size = "md",
+  tone = "dark",
+  className,
+  alt = "Wisp",
+  onLoad,
+}: LogoProps) {
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    const img = imgRef.current;
+    if (img?.complete && onLoad) {
+      onLoad({ currentTarget: img } as React.SyntheticEvent<HTMLImageElement>);
+    }
+  }, [onLoad]);
+
   return (
     <img
+      ref={imgRef}
       src={LOGO_SRC}
       alt={alt}
       draggable={false}
+      onLoad={onLoad}
       className={cn(sizes[size], tone === "dark" && "brightness-0", className)}
     />
   );

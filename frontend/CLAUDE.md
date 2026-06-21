@@ -2,7 +2,9 @@
 
 Wisp demo UI (`@wisp_/web`) — Vite 6 + React 19 + Tailwind 4.
 
-**Routes:** `/` landing · `/wisp-pay` Wisp Pay Links (Create · Pay · Receipt) · `/demo` prove/settle/kyc console
+**Routes:** `/` landing · `/wisp-pay` Wisp Pay (Create · Pay · Receipt) · `/demo` prove/settle/kyc console · `/invoice` → `/wisp-pay` (legacy)
+
+**Wisp Pay nuances:** payment links fix **payee + amount + corridor**; **payer is open** (any SEP-10–verified wallet). Portable `?d=` links work without localStorage. Create tab stores pending invoices locally; removing one does not revoke shared links. Receipt tab loads on-chain `ProofSettled` by tx hash.
 
 ## Commands
 

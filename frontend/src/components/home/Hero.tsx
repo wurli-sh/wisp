@@ -19,15 +19,15 @@ const DITHER_PROPS = {
   colorFront: "#0C100B",
   shape: "simplex" as const,
   type: "4x4" as const,
-  scale: 0.42,
-  speed: 0.018,
+  scale: 0.4,
+  speed: 0.04,
 };
 
 function HeroDitherSide({ side }: { side: "left" | "right" }) {
   const isLeft = side === "left";
   const maskImage = isLeft
-    ? "linear-gradient(to right, black 10%, rgba(0,0,0,0.78) 20%, transparent 100%)"
-    : "linear-gradient(to left, black 10%, rgba(0,0,0,0.78) 20%, transparent 100%)";
+    ? "linear-gradient(to right, black 0%, rgba(0,0,0,0.85) 40%, transparent 100%)"
+    : "linear-gradient(to left, black 0%, rgba(0,0,0,0.85) 40%, transparent 100%)";
 
   return (
     <motion.div
@@ -35,7 +35,7 @@ function HeroDitherSide({ side }: { side: "left" | "right" }) {
         isLeft ? "left-0" : "right-0"
       }`}
       initial={{ opacity: 0 }}
-      animate={{ opacity: 0.8 }}
+      animate={{ opacity: 0.7 }}
       transition={{ duration: 2, delay: 0.1 }}
     >
       <div
@@ -63,7 +63,7 @@ export function Hero() {
   const { hero } = COPY;
 
   return (
-    <section className="relative flex min-h-[calc(100dvh-5.5rem)] items-center justify-center overflow-hidden bg-background py-28 md:py-32">
+    <section className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-background pt-18 pb-16 md:pb-20">
       <HeroDitherSide side="left" />
       <HeroDitherSide side="right" />
 

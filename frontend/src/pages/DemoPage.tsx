@@ -3,9 +3,11 @@ import { toast } from "sonner";
 import type { CorridorOption, DemoTransferRequest, ProofPackage } from "@wisp_/js";
 import type { MockKycStatusResponse, ProvenTransfer } from "@wisp_/sdk";
 import { COPY } from "@/content/copy";
+import { PAGE_PT } from "@/config/layout";
 import { useWispClient } from "@/hooks/useWispClient";
 import { useDemoIssuerClient } from "@/hooks/useDemoIssuerClient";
 import { useWallet } from "@/hooks/useWallet";
+import { cn } from "@/lib/cn";
 import { DemoKycPanel } from "@/components/demo/DemoKycPanel";
 import { CircleUsdcTrustlineBanner } from "@/components/demo/CircleUsdcTrustlineBanner";
 import { ApproveRecipientBanner } from "@/components/demo/ApproveRecipientBanner";
@@ -570,7 +572,7 @@ export function DemoPage() {
   const corridorId = selectedCorridor?.id.toString() ?? "";
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 py-8 lg:gap-8 lg:py-12">
+    <div className={cn("mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-8 sm:px-6 lg:gap-8 lg:pb-12", PAGE_PT)}>
       <DemoKycPanel
         status={kycStatus}
         skipped={kycSkipped && !kycApproved}

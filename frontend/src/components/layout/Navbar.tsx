@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { LayoutGroup, motion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, ClipboardCopy, ExternalLink, LogOut } from "lucide-react";
-import { PAGE_MAX } from "@/config/layout";
+import { NAV_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
 import { stellarExplorerAccount } from "@/config/env";
 import { useWallet } from "@/hooks/useWallet";
@@ -10,11 +10,14 @@ import { DropdownPanel } from "@/components/ui/DropdownPanel";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/cn";
 
+const indicatorSpring = { type: "spring" as const, stiffness: 420, damping: 32 };
+
 export function Navbar() {
   const { pathname } = useLocation();
   const { address, isConnected, isConnecting, connect, disconnect } = useWallet();
   const [walletMenuOpen, setWalletMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [logoLoaded, setLogoLoaded] = useState(false);
   const connectTriggerRef = useRef<HTMLButtonElement>(null);
   const connectedTriggerRef = useRef<HTMLButtonElement>(null);
 
@@ -22,45 +25,78 @@ export function Navbar() {
 
   useEffect(() => {
     setWalletMenuOpen(false);
-  }, [isConnected, pathname]);
+  }, [pathname]);
 
   return (
-    <header className="sticky top-0 z-40 flex w-full justify-center px-4">
-      <div className={cn("mt-4 grid h-14 w-full grid-cols-[1fr_auto_1fr] items-center border-2 border-border bg-brand-soft/60 px-4 shadow-soft backdrop-blur-md sm:px-6", PAGE_MAX)}>
-        <Link to="/" className="group flex select-none items-center gap-2.5">
-          <Logo size="sm" tone="dark" className="transition-opacity group-hover:opacity-80" />
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-front flex w-full justify-center px-4 pt-4 sm:px-6">
+      <div
+        className={cn(
+          "pointer-events-auto flex h-14 w-full items-center justify-between gap-3 border-2 border-border bg-brand-soft/60 px-4 shadow-soft backdrop-blur-md sm:gap-4 sm:px-6",
+          NAV_MAX,
+        )}
+      >
+        <Link to="/" className="group flex shrink-0 select-none items-center gap-2.5">
+          <div className="relative h-6 w-6 shrink-0">
+            {!logoLoaded && (
+              <div className="absolute inset-0 bg-charcoal/50 animate-pulse" aria-hidden />
+            )}
+            <Logo
+              size="md"
+              tone="dark"
+              onLoad={() => setLogoLoaded(true)}
+              className={cn(
+                "transition-opacity group-hover:opacity-80",
+                !logoLoaded && "opacity-0",
+              )}
+            />
+          </div>
           <span className="text-base font-bold tracking-tight text-primary transition-colors group-hover:text-charcoal">
             Wisp
           </span>
         </Link>
 
-        <nav className="hidden items-center justify-center gap-0.5 sm:flex sm:gap-1">
-          {COPY.nav.links.map(({ href, label }) => {
-            const isActive =
-              pathname === href || (href !== "/" && pathname.startsWith(href));
-            return (
-              <Link
-                key={href}
-                to={href}
-                className={cn(
-                  "relative px-3 py-1.5 text-xs font-medium transition-colors duration-200 sm:px-4 sm:text-sm",
-                  isActive ? "text-brand-foreground" : "text-muted-foreground hover:text-primary",
-                )}
-              >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeNav"
-                    className="absolute inset-0 bg-charcoal-soft/90"
-                    transition={{ type: "spring", stiffness: 350, damping: 30 }}
-                  />
-                )}
-                <span className="relative z-10">{label}</span>
-              </Link>
-            );
-          })}
+        <nav className="hidden min-w-0 items-center justify-center sm:flex sm:flex-1">
+          <LayoutGroup id="navIndicator">
+            <div className="flex items-center justify-center gap-0.5 whitespace-nowrap sm:gap-1">
+              {COPY.nav.links.map(({ href, label }) => {
+                const isActive =
+                  pathname === href || (href !== "/" && pathname.startsWith(href));
+                return (
+                  <Link
+                    key={href}
+                    to={href}
+                    className={cn(
+                      "relative shrink-0 px-3 py-1.5 text-xs font-medium outline-none transition-colors duration-200 focus-visible:shadow-glow sm:px-4 sm:text-sm",
+                      isActive
+                        ? "text-inverse-foreground"
+                        : "text-muted-foreground hover:text-primary",
+                    )}
+                  >
+                    {isActive && (
+                      <>
+                        <motion.div
+                          layoutId="nav-panel"
+                          initial={false}
+                          className="absolute inset-0 bg-charcoal-soft/90 shadow-soft/20"
+                          transition={indicatorSpring}
+                        />
+                        <motion.div
+                          layoutId="nav-bar"
+                          initial={false}
+                          className="absolute inset-x-2 bottom-0 h-0.5 bg-inverse-foreground/80"
+                          transition={indicatorSpring}
+                        />
+                      </>
+                    )}
+                    <span className="relative z-10">{label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </LayoutGroup>
         </nav>
 
-        <div className="flex justify-end">
+        <div className="flex shrink-0 justify-end">
           {isConnecting ? (
             <div className="flex items-center gap-2 border-2 border-border bg-card px-5 py-2">
               <div className="h-4 w-20 animate-pulse bg-muted" />
@@ -120,7 +156,7 @@ export function Navbar() {
                 <ChevronDown
                   size={12}
                   className={cn(
-                    "text-muted-foreground transition-transform duration-200",
+                    "text-muted-foreground transition-transform duration-300",
                     walletMenuOpen && "rotate-180",
                   )}
                 />

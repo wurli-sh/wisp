@@ -3,29 +3,29 @@ export const COPY = {
     eyebrow: "ZK COMPLIANCE FOR STELLAR STABLECOINS",
     headlineLead: "Stealth rails for",
     headlineAccent: "stablecoin compliance.",
-    sub: "ZK compliance for cross-border Stellar stablecoins, with a portable SDK for any issuer.",
+    sub: "ZK compliance for cross-border Stellar stablecoins — shareable Wisp Pay links for merchants, plus a portable SDK for any issuer.",
     ctas: {
-      primary: { label: "Live demo →", href: "/demo" },
-      secondary: { label: "How it works", href: "#how-it-works" },
+      primary: { label: "Try Wisp Pay →", href: "/wisp-pay" },
+      secondary: { label: "Technical demo", href: "/demo" },
     },
     showcase: [
       {
-        eyebrow: "STEALTH LAYER",
-        title: "ZK compliance for cross-border Stellar stablecoins.",
-        body: "Corridor rules, sanctions checks, and settlement in one rail.",
-        points: ["Cross-border corridors", "ZK-backed compliance", "Stellar settlement"],
+        eyebrow: "WISP PAY",
+        title: "Compliant payment links for merchants.",
+        body: "Create an invoice, share a portable link, and let any KYC-approved wallet pay with one proof — recipient fixed, payer open.",
+        points: ["Create · Pay · Receipt", "Portable ?d= links", "On-chain receipt audit"],
       },
       {
         eyebrow: "PORTABLE SDK",
         title: "Portable issuer SDK for any anchor.",
         body: "Integrate credentials, roots, and transfers without issuer lock-in.",
-        points: ["Any issuer", "Portable integration", "Browser prove + wallet settle"],
+        points: ["Any issuer", "Browser prove + wallet settle", "Switch issuers without rewrites"],
       },
     ],
   },
 
   paradoxAct: {
-    eyebrow: "PRIVACY MOAT",
+    eyebrow: "PROOF, NOT FILES",
     headline: "Keep the proof.",
     headlineAccent: "Drop the data.",
     withoutZk: {
@@ -54,7 +54,7 @@ export const COPY = {
   },
 
   engine: {
-    eyebrow: "WORKFLOW MOAT",
+    eyebrow: "END-TO-END FLOW",
     headlineLead: "From issuer root",
     headlineAccent: "to compliant settlement.",
     pipeline: {
@@ -71,7 +71,7 @@ export const COPY = {
       compliance: {
         title: "Wisp",
         kicker: "compliance layer",
-        caption: "Wisp packages corridor rules into one browser proof.",
+        caption: "Wisp packages corridor rules into one browser proof — or one Wisp Pay checkout click.",
         steps: [
           { label: "Awaiting credential", detail: "Idle" },
           { label: "Generating proof…", detail: "Groth16 · BN254" },
@@ -106,11 +106,11 @@ export const COPY = {
   },
 
   builders: {
-    eyebrow: "CORRIDOR MOAT",
+    eyebrow: "CROSS-BORDER",
     headlineRest: "Built for",
     headlineAccent: "cross-border stablecoin flows.",
-    sub: "Wisp targets regulated corridors where issuers need compliant Stellar settlement.",
-    featuredNote: "US→MX live on testnet",
+    sub: "Wisp targets regulated corridors where issuers need compliant Stellar settlement — merchants can share Wisp Pay links without rebuilding policy.",
+    featuredNote: "US→MX live on testnet · Wisp Pay on /wisp-pay",
     benefits: [
       {
         name: "Remittance corridors",
@@ -130,7 +130,7 @@ export const COPY = {
         name: "Treasury payouts",
         stat: "B2B",
         statLabel: "Settlement",
-        body: "Run compliant supplier and treasury transfers without attaching customer files to payments.",
+        body: "Share a Wisp Pay link: fixed payee and amount, any verified sender pays with one proof, receipt auditable on-chain.",
         tags: ["Treasury", "Payouts"],
       },
       {
@@ -151,7 +151,7 @@ export const COPY = {
   },
 
   sdk: {
-    eyebrow: "PORTABILITY MOAT",
+    eyebrow: "PORTABLE SDK",
     headlineLead: "Portable issuer SDK.",
     headlineAccent: "Plug into any issuer.",
     sub: "Integrate once, prove in the browser, and switch issuers without rewriting the stack.",
@@ -175,10 +175,10 @@ await client.settleWithWallet(proven, pkg, wallet);`,
   },
 
   complianceCard: {
-    eyebrow: "TRANSFER MOAT",
+    eyebrow: "VERIFY ONCE",
     headlineAccent: "Verify once.",
     headlineRest: "Prove every transfer.",
-    sub: "One issuer credential. A fresh proof for every transfer.",
+    sub: "One issuer credential. A fresh proof per payment — Wisp Pay links encode payee and corridor; the payer connects their own wallet.",
     card: {
       brand: "Wisp",
       network: "Stellar",
@@ -194,23 +194,23 @@ await client.settleWithWallet(proven, pkg, wallet);`,
       },
       {
         label: "Prove anywhere",
-        detail: "Generate a fresh Groth16 proof for each compliant transfer.",
+        detail: "Generate a fresh Groth16 proof per transfer — from Wisp Pay or the full demo console.",
       },
       {
         label: "Audit forever",
-        detail: "Nullifiers and ProofSettled events — replayable from any tx hash.",
+        detail: "Nullifiers and ProofSettled events — replayable from any tx hash in the Receipt tab.",
       },
     ],
   },
 
   move: {
     closer: {
-      eyebrow: "DEPLOYMENT MOAT",
+      eyebrow: "LIVE ON TESTNET",
       headline: "Ready for live issuer rails.",
-      sub: "Portable zk compliance infrastructure for cross-border Stellar stablecoins.",
+      sub: "Try Wisp Pay for merchant checkout links, or open the technical demo for the full prove → settle pipeline.",
       ctas: {
-        primary: { label: "Open demo →", href: "/demo" },
-        secondary: { label: "View on GitHub", href: "https://github.com/amoeba-zk/amoeba" },
+        primary: { label: "Try Wisp Pay →", href: "/wisp-pay" },
+        secondary: { label: "View on GitHub", href: "https://github.com/wurli-sh/wisp" },
       },
     },
   },

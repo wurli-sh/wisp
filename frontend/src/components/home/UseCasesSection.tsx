@@ -103,7 +103,7 @@ export function UseCasesSection() {
                 )}
               >
                 <div
-                  className="absolute inset-0 translate-y-full bg-primary transition-transform duration-500 ease-out group-hover:translate-y-0"
+                  className="absolute inset-0 translate-y-full bg-primary opacity-0 transition-[transform,opacity] duration-500 ease-out group-hover:translate-y-0 group-hover:opacity-100"
                   aria-hidden
                 />
                 <div

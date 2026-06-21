@@ -29,7 +29,9 @@ IDs are written to `.wisp/*.env` after deploy. Redeploy: [`scripts/deploy/`](scr
 | **Live** | [wisp-zk.vercel.app](https://wisp-zk.vercel.app/) |
 | Local | `pnpm dev:frontend` → `:5173` |
 
-Routes: `/` landing · `/demo` prove/settle console · `/compliance` proofs/audit/corridors. Config: [`frontend/.env.example`](frontend/.env.example).
+Routes: `/` landing · `/wisp-pay` Wisp Pay (Create · Pay · Receipt) · `/demo` prove/settle console · `/invoice` redirects to `/wisp-pay`. Config: [`frontend/.env.example`](frontend/.env.example).
+
+**Wisp Pay** — merchants create compliant USDC payment links (amount, corridor, payee). Links are portable (`?d=` payload survives without local storage). Any KYC-approved wallet can pay; the payee is fixed in the link. Receipt tab audits `ProofSettled` on-chain.
 
 ### Backend (issuer-service)
 
@@ -77,7 +79,7 @@ Soroban compliance contract
 ```
 
 ```
-frontend/          React demo UI
+frontend/          React demo UI (landing, Wisp Pay, technical demo)
   ↓
 @wisp_/sdk       issuer client · prove · settle · audit
   ↓

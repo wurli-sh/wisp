@@ -29,7 +29,7 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 - **sdk/** — TypeScript SDK (`@wisp_/sdk`) for proving, settling, and auditing compliant transfers
 - **issuer-sdk/** — Issuer-side TypeScript SDK (`@wisp_/issuer-sdk`) for integration
 - **scripts/** — deploy, dev, fixture, and ceremony tooling
-- **frontend/** — Vite demo UI (`@wisp_/web`: landing, `/demo`, `/compliance`)
+- **frontend/** — Vite demo UI (`@wisp_/web`: landing, `/wisp-pay`, `/demo`; legacy `/invoice` → `/wisp-pay`)
 - **docs/** — Design notes, gap analyses, and planning documents
 
 ## Key Commands
@@ -65,7 +65,7 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 | `./scripts/dev/verify-testnet.sh` | Phase 0 gate check |
 | `./scripts/dev/verify-compliance-testnet.sh` | Phase 1 testnet gate |
 | `./scripts/dev/verify-phase3-testnet.sh` | Full Phase 3 testnet gate check |
-| `pnpm dev:frontend` | Wisp demo UI dev server |
+| `pnpm dev:frontend` | Wisp demo UI dev server (`/` · `/wisp-pay` · `/demo`) |
 | `pnpm ceremony:init` | Initialize multi-party ceremony |
 | `pnpm ceremony:verify` | Verify ceremony transcript |
 | `pnpm ceremony:sync` | Sync verifier from ceremony final zkey |

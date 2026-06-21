@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { useMemo } from "react";
 import { COPY } from "@/content/copy";
+import { PAGE_PT } from "@/config/layout";
+import { cn } from "@/lib/cn";
 import { WispPayCreatePanel } from "@/components/wisp-pay/WispPayCreatePanel";
 import { WispPayPanel } from "@/components/wisp-pay/WispPayPanel";
 import { WispPayReceiptPanel } from "@/components/wisp-pay/WispPayReceiptPanel";
@@ -81,7 +83,7 @@ export function WispPayPage() {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 py-8 lg:gap-8 lg:py-12">
+    <div className={cn("mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-8 sm:px-6 lg:gap-8 lg:pb-12", PAGE_PT)}>
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-brand">
           {COPY.wispPay.eyebrow}
