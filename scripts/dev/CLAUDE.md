@@ -9,6 +9,7 @@ Development and testnet verification scripts.
 | `demo-e2e.sh` | Full local E2E: fixtures -> compile -> setup -> prove -> verify -> export -> test -> build |
 | `demo-phase2.sh` | Full Phase 2 pipeline: gen bindings -> gen fixtures -> crate tests -> binding tests -> issuer service |
 | `demo-phase3.sh` | Full Phase 3 local demo (blocker gate + SDK prove + settle + audit) |
+| `demo-phase4.sh` | Phase 4 frontend gate: circuit artifacts → build → Playwright e2e (Pay Links + demo) |
 | `bootstrap-testnet-demo.sh` | Generate testnet fixture + deploy contracts + bootstrap issuer |
 | `verify-testnet.sh` | Phase 0 gate: minimal Groth16 proof on testnet |
 | `verify-compliance-testnet.sh` | Phase 1 gate: compliance proof on testnet + tampered rejection |

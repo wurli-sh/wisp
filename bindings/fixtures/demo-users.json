@@ -16,7 +16,9 @@
       "name": "US-MX",
       "enabled": true,
       "allowed_destinations_hex": [
-        "102132435465768798a9babbdcedfe0f0f1e2d3c4b5a69788796a5b4c3d2e1f0"
+        "102132435465768798a9babbdcedfe0f0f1e2d3c4b5a69788796a5b4c3d2e1f0",
+        "1bb92559f99a7ae045bff1bbcc687e536f3cec8d17fa0c143b21f2a28f1a8250",
+        "2b141b2f39585c3437c9042ca30776816d08e27501452c79669ea56a4862dee0"
       ]
     }
   ]

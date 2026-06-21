@@ -28,32 +28,43 @@ has_circle_trustline() {
 }
 
 ensure_trustline() {
-  local identity="$1"
-  if ! stellar keys public-key "${identity}" >/dev/null 2>&1; then
-    echo "ERROR: identity '${identity}' not found" >&2
-    exit 1
+  local identity_or_address="$1"
+  local addr source_account
+  if [[ "${identity_or_address}" == G* ]]; then
+    addr="${identity_or_address}"
+    if [[ -n "${STELLAR_SOURCE_SECRET:-}" ]]; then
+      source_account="${STELLAR_SOURCE_SECRET}"
+    else
+      echo "ERROR: G-address '${addr}' requires STELLAR_SOURCE_SECRET (Freighter secret) or a stellar CLI identity name" >&2
+      exit 1
+    fi
+  else
+    if ! stellar keys public-key "${identity_or_address}" >/dev/null 2>&1; then
+      echo "ERROR: identity '${identity_or_address}' not found" >&2
+      exit 1
+    fi
+    source_account="${identity_or_address}"
+    addr="$(stellar keys public-key "${identity_or_address}")"
   fi
-  local addr
-  addr="$(stellar keys public-key "${identity}")"
   if has_circle_trustline "${addr}"; then
-    echo "  ${identity}: Circle USDC trustline OK (${addr})"
+    echo "  ${identity_or_address}: Circle USDC trustline OK (${addr})"
     return 0
   fi
-  echo "  ${identity}: creating Circle USDC trustline (${addr})..."
+  echo "  ${identity_or_address}: creating Circle USDC trustline (${addr})..."
   local err
   if err="$(stellar tx new change-trust \
-    --source-account "${identity}" \
+    --source-account "${source_account}" \
     --network "${NETWORK}" \
     --line "USDC:${USDC_ISSUER}" \
     --send=yes 2>&1)"; then
-    echo "  ${identity}: trustline created"
+    echo "  ${identity_or_address}: trustline created"
     return 0
   fi
   if has_circle_trustline "${addr}"; then
-    echo "  ${identity}: trustline OK (already present)"
+    echo "  ${identity_or_address}: trustline OK (already present)"
     return 0
   fi
-  echo "ERROR: ${identity} trustline failed: ${err}" >&2
+  echo "ERROR: ${identity_or_address} trustline failed: ${err}" >&2
   exit 1
 }
 

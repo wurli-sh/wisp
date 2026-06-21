@@ -66,6 +66,7 @@ VITE_COMPLIANCE_CONTRACT_ID=${COMPLIANCE_CONTRACT_ID}
 VITE_SAC_CONTRACT_ID=${SAC_CONTRACT_ID:-${ASSET_ID:-}}
 VITE_ISSUER_PUBLIC_KEY=${ISSUER_PUBLIC_KEY}
 VITE_ISSUER_URL=/issuer
+VITE_ISSUER_ADMIN_TOKEN=${ISSUER_API_TOKEN:-demo-token}
 VITE_WISP_FIXTURE_PROFILE=${WISP_FIXTURE_PROFILE}
 VITE_VALIDATE_START_LEDGER=${VALIDATE_START_LEDGER:-}
 VITE_WISP_WASM_URL=/circuits/compliance_corridor.wasm
@@ -168,6 +169,12 @@ done
 if ! curl -sf "http://${ISSUER_LISTEN_ADDR}/health" >/dev/null 2>&1; then
   echo "[bru] issuer failed — see ${LOGFILE}" >&2
   exit 1
+fi
+
+if "${ROOT}/scripts/dev/seed-testnet-issuer.sh"; then
+  log_bru "issuer seed ok"
+else
+  echo "[bru] issuer seed skipped or failed — see ${LOGFILE}" >&2
 fi
 
 if [[ "${REPUBLISH_ROOTS}" == "1" ]]; then

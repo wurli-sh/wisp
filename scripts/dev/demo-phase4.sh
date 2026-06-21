@@ -84,6 +84,11 @@ echo "4. Frontend typecheck + build"
 pnpm build:frontend
 
 echo ""
+echo "5. Frontend e2e (Pay Links + demo smoke)"
+pnpm --filter @wisp_/web exec playwright install chromium
+pnpm test:e2e:frontend
+
+echo ""
 echo "=== Phase 4 frontend gate: PASSED ==="
 echo ""
 echo "Dev server:"
