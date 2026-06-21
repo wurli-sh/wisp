@@ -1,7 +1,13 @@
 import { normalizeField } from "@wisp_/js";
 import { rpc, scValToNative, xdr } from "@stellar/stellar-sdk";
 import type { WispConfig } from "../config.js";
-import { DEFAULT_EVENT_SCAN_LEDGERS, resolveEventStartLedger } from "./ledger-window.js";
+import {
+  clampStartLedger,
+  DEFAULT_EVENT_SCAN_LEDGERS,
+  isLedgerRangeError,
+  parseOldestLedgerFromError,
+  resolveEventStartLedger,
+} from "./ledger-window.js";
 
 export interface ChainIssuerRecord {
   issuer: string;
@@ -115,27 +121,44 @@ async function pageContractEvents(
   const explicitStart = await resolveEventStartLedger(server, cfg, opts.startLedger);
   const latest = await server.getLatestLedger();
   const hasDeployLedger = opts.startLedger != null || cfg.validateStartLedger != null;
-  const startLedger = hasDeployLedger
+  let startLedger = hasDeployLedger
     ? explicitStart
     : Math.max(explicitStart, latest.sequence - DEFAULT_EVENT_SCAN_LEDGERS);
+  startLedger = clampStartLedger(startLedger, latest.sequence);
   const maxPages = opts.maxPages ?? 40;
   const pageSize = 200;
 
   let cursor: string | null = null;
   const events: ParsedChainEvent[] = [];
 
+  const fetchPage = async (start: number, pageCursor: string | null) => {
+    if (pageCursor) {
+      return server.getEvents({
+        cursor: pageCursor,
+        filters: [{ type: "contract", contractIds: [cfg.complianceId!], topics: [topicFilter] }],
+        limit: pageSize,
+      });
+    }
+    return server.getEvents({
+      startLedger: start,
+      filters: [{ type: "contract", contractIds: [cfg.complianceId!], topics: [topicFilter] }],
+      limit: pageSize,
+    });
+  };
+
   for (let page = 0; page < maxPages; page += 1) {
-    const resp: rpc.Api.GetEventsResponse = cursor
-      ? await server.getEvents({
-          cursor,
-          filters: [{ type: "contract", contractIds: [cfg.complianceId], topics: [topicFilter] }],
-          limit: pageSize,
-        })
-      : await server.getEvents({
-          startLedger,
-          filters: [{ type: "contract", contractIds: [cfg.complianceId], topics: [topicFilter] }],
-          limit: pageSize,
-        });
+    let resp: rpc.Api.GetEventsResponse;
+    try {
+      resp = await fetchPage(startLedger, cursor);
+    } catch (err) {
+      if (page !== 0 || cursor != null || !isLedgerRangeError(err)) throw err;
+      const parsed = parseOldestLedgerFromError(err);
+      startLedger = clampStartLedger(
+        parsed ?? Math.max(1, latest.sequence - DEFAULT_EVENT_SCAN_LEDGERS),
+        latest.sequence,
+      );
+      resp = await fetchPage(startLedger, null);
+    }
 
     for (const event of resp.events) {
       if (!event.inSuccessfulContractCall) continue;
