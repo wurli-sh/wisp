@@ -1,32 +1,16 @@
 import { motion } from "framer-motion";
-import {
-  Fingerprint,
-  Globe2,
-  Landmark,
-  Scale,
-  TrendingUp,
-  type LucideIcon,
-} from "lucide-react";
+import { Globe2, Scale, type LucideIcon } from "lucide-react";
+import { BRAND_IMAGES } from "@/config/brand";
 import { PAGE_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
 import { cn } from "@/lib/cn";
 import { HighlightedText } from "@/components/spell/highlighted-text";
+import { ImageWithSkeleton } from "@/components/ui/ImageWithSkeleton";
 import { fadeInUp, scrollViewport, staggerContainer } from "@/lib/animations";
 
-const dotGrid = {
-  backgroundImage: "radial-gradient(circle, color-mix(in srgb, var(--color-brand-sky) 70%, transparent) 1px, transparent 1px)",
-  backgroundSize: "16px 16px",
-};
-
-const BENTO: ReadonlyArray<{
-  icon: LucideIcon;
-  className: string;
-}> = [
-  { icon: Globe2, className: "md:col-span-3" },
-  { icon: Scale, className: "md:col-span-3" },
-  { icon: TrendingUp, className: "md:col-span-2" },
-  { icon: Fingerprint, className: "md:col-span-2" },
-  { icon: Landmark, className: "md:col-span-2" },
+const BENTO: ReadonlyArray<{ icon: LucideIcon }> = [
+  { icon: Globe2 },
+  { icon: Scale },
 ];
 
 function MarketTags({ tags }: { tags: readonly string[] }) {
@@ -35,7 +19,7 @@ function MarketTags({ tags }: { tags: readonly string[] }) {
       {tags.map((tag) => (
         <li
           key={tag}
-          className="border-2 border-border bg-muted/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground transition-colors duration-300 group-hover:border-brand-sky/30 group-hover:bg-primary-dark group-hover:text-brand-sky"
+          className="border-2 border-border bg-muted/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground transition-colors duration-300 group-hover:border-brand-sky/50 group-hover:bg-primary group-hover:text-brand-sky"
         >
           {tag}
         </li>
@@ -55,7 +39,7 @@ export function UseCasesSection() {
           whileInView="visible"
           viewport={scrollViewport}
           variants={staggerContainer}
-          className="mb-10 text-center"
+          className="text-center"
         >
           <motion.p
             variants={fadeInUp}
@@ -65,7 +49,7 @@ export function UseCasesSection() {
           </motion.p>
           <motion.h2
             variants={fadeInUp}
-            className="mt-3 text-3xl font-bold text-foreground sm:text-4xl"
+            className="mt-4 text-3xl font-bold text-foreground sm:text-4xl"
           >
             {builders.headlineRest}{" "}
             <HighlightedText variant="sky" from="bottom" inView delay={0.08}>
@@ -74,10 +58,24 @@ export function UseCasesSection() {
           </motion.h2>
           <motion.p
             variants={fadeInUp}
-            className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-muted-foreground"
+            className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base"
           >
             {builders.sub}
           </motion.p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={scrollViewport}
+          className="mx-auto mt-12 max-w-2xl overflow-hidden border-2 border-border shadow-card"
+        >
+          <ImageWithSkeleton
+            src={BRAND_IMAGES.stableCoins.src}
+            alt={BRAND_IMAGES.stableCoins.alt}
+            width={BRAND_IMAGES.stableCoins.width}
+            height={BRAND_IMAGES.stableCoins.height}
+          />
         </motion.div>
 
         <motion.div
@@ -85,11 +83,10 @@ export function UseCasesSection() {
           whileInView="visible"
           viewport={scrollViewport}
           variants={staggerContainer}
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-6"
+          className="mx-auto mt-10 grid max-w-4xl grid-cols-1 gap-4 md:grid-cols-2"
         >
           {builders.benefits.map((market, index) => {
-            const layout = BENTO[index];
-            const Icon = layout.icon;
+            const { icon: Icon } = BENTO[index];
             const isFeatured = index === 0;
 
             return (
@@ -97,21 +94,8 @@ export function UseCasesSection() {
                 key={market.name}
                 variants={fadeInUp}
                 transition={{ delay: index * 0.05 }}
-                className={cn(
-                  "group relative flex min-h-[168px] flex-col overflow-hidden border-2 border-border bg-card p-5 shadow-soft transition-shadow duration-300 hover:shadow-card",
-                  layout.className,
-                )}
+                className="group relative flex min-h-[168px] flex-col overflow-hidden border-2 border-border bg-card p-5 shadow-soft transition-[background-color,border-color,box-shadow] duration-300 hover:border-primary-dark hover:bg-primary-dark hover:shadow-card"
               >
-                <div
-                  className="absolute inset-0 translate-y-full bg-primary opacity-0 transition-[transform,opacity] duration-500 ease-out group-hover:translate-y-0 group-hover:opacity-100"
-                  aria-hidden
-                />
-                <div
-                  className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-25"
-                  style={dotGrid}
-                  aria-hidden
-                />
-
                 <div className="relative z-10 flex flex-1 flex-col">
                   <div className="flex items-start justify-between gap-2">
                     <Icon
@@ -133,7 +117,7 @@ export function UseCasesSection() {
                     {market.name}
                   </h3>
 
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground transition-colors duration-300 group-hover:text-brand-sky">
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground transition-colors duration-300 group-hover:text-white/75">
                     {market.body}
                   </p>
 

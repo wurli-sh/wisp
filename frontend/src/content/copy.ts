@@ -126,27 +126,6 @@ export const COPY = {
         body: "Jurisdiction, sanctions, source, destination, asset, and amount are enforced in one proof.",
         tags: ["Travel rule", "Policy"],
       },
-      {
-        name: "Treasury payouts",
-        stat: "B2B",
-        statLabel: "Settlement",
-        body: "Share a Wisp Pay link: fixed payee and amount, any verified sender pays with one proof, receipt auditable on-chain.",
-        tags: ["Treasury", "Payouts"],
-      },
-      {
-        name: "Issuer-ready corridors",
-        stat: "1",
-        statLabel: "Shared rail",
-        body: "Multiple issuers can plug into the same corridor compliance model instead of rebuilding policy stacks.",
-        tags: ["Anchors", "SDK"],
-      },
-      {
-        name: "Regulated stablecoin movement",
-        stat: "∞",
-        statLabel: "Expansion paths",
-        body: "Open new corridors without changing the proof model or exposing more data.",
-        tags: ["Expansion", "Soroban"],
-      },
     ],
   },
 
