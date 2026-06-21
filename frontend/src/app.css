@@ -27,6 +27,10 @@
   --color-border-strong: #A7AE98;
   --color-muted: #ECEFE3;
   --color-muted-foreground: #5A6251;
+  --color-skeleton: #E4E4E0;
+  --color-skeleton-shine: #F0F0EE;
+  --color-skeleton-dark: #2C2C2A;
+  --color-skeleton-dark-shine: #3A3A38;
   --color-destructive: #C63B33;
   --color-destructive-foreground: #ffffff;
   --color-success: #0F8A6A;
@@ -142,6 +146,45 @@ pre {
   color: var(--color-inverse-foreground);
   padding: 1rem;
   overflow-x: auto;
+}
+
+@keyframes image-skeleton-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.image-skeleton-shimmer,
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-skeleton-shine) 80%, transparent) 45%,
+    color-mix(in srgb, var(--color-skeleton-shine) 95%, white) 55%,
+    transparent 100%
+  );
+  animation: image-skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image-skeleton-shimmer,
+  .skeleton-shimmer {
+    animation: none;
+    opacity: 0.35;
+  }
+}
+
+.bg-skeleton-dark > .skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-skeleton-dark-shine) 70%, transparent) 45%,
+    color-mix(in srgb, var(--color-skeleton-dark-shine) 90%, white 8%) 55%,
+    transparent 100%
+  );
 }
 
 @keyframes text-shimmer-sweep {

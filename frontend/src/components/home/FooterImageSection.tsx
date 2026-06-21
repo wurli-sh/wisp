@@ -1,7 +1,9 @@
 import { motion } from "framer-motion";
+import { BRAND_IMAGES } from "@/config/brand";
 import { PAGE_MAX } from "@/config/layout";
 import { cn } from "@/lib/cn";
 import { fadeInUp, scrollViewport } from "@/lib/animations";
+import { ImageWithSkeleton } from "@/components/ui/ImageWithSkeleton";
 
 export function FooterImageSection() {
   return (
@@ -16,11 +18,11 @@ export function FooterImageSection() {
         variants={fadeInUp}
         className={cn("w-full overflow-hidden", PAGE_MAX)}
       >
-        <img
-          src="/footer.png"
-          alt=""
-          className="block h-auto w-full"
-          loading="lazy"
+        <ImageWithSkeleton
+          src={BRAND_IMAGES.footer.src}
+          alt={BRAND_IMAGES.footer.alt}
+          width={BRAND_IMAGES.footer.width}
+          height={BRAND_IMAGES.footer.height}
         />
       </motion.div>
     </section>

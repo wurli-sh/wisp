@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, Copy } from "lucide-react";
-import { PORTABLE_SDK_SRC } from "@/config/brand";
+import { BRAND_IMAGES } from "@/config/brand";
 import { PAGE_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
 import { InstallCommand, TypeScriptSnippet } from "@/components/spell/code-highlight";
 import { HighlightedText } from "@/components/spell/highlighted-text";
+import { ImageWithSkeleton } from "@/components/ui/ImageWithSkeleton";
 import { cn } from "@/lib/cn";
 import { fadeInUp, scrollViewport, staggerContainer } from "@/lib/animations";
 
@@ -62,13 +63,13 @@ export function SdkSection() {
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={scrollViewport}
-          className="mx-auto mt-12 max-w-4xl overflow-hidden border-2 border-border shadow-card"
+          className="mx-auto mt-12 max-w-2xl overflow-hidden border-2 border-border shadow-card"
         >
-          <img
-            src={PORTABLE_SDK_SRC}
-            alt="Wisp works alongside your issuer."
-            className="block h-auto w-full"
-            loading="lazy"
+          <ImageWithSkeleton
+            src={BRAND_IMAGES.portableSdk.src}
+            alt={BRAND_IMAGES.portableSdk.alt}
+            width={BRAND_IMAGES.portableSdk.width}
+            height={BRAND_IMAGES.portableSdk.height}
           />
         </motion.div>
 
