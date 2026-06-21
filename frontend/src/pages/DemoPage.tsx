@@ -11,8 +11,6 @@ import { DemoKycPanel } from "@/components/demo/DemoKycPanel";
 import { KycOnboardingModal } from "@/components/demo/KycOnboardingModal";
 import { DemoTransferPanel } from "@/components/demo/DemoTransferPanel";
 import { DemoProgressSidebar } from "@/components/demo/DemoProgressSidebar";
-import { Badge } from "@/components/ui/Badge";
-import { Logo } from "@/components/ui/Logo";
 import {
   checkWalletSender,
   configCheckpoint,
@@ -45,12 +43,10 @@ function tamperProof(proven: ProvenTransfer): ProvenTransfer {
   };
 }
 
-function extractTxHash(result: Awaited<ReturnType<WispClient["settleWithWallet"]>>): string {
-  return (
-    result.getTransactionResponse?.txHash ??
-    result.sendTransactionResponse?.hash ??
-    ""
-  );
+function extractTxHash(
+  result: Awaited<ReturnType<WispClient["settleWithWallet"]>>,
+): string {
+  return result.getTransactionResponse?.txHash ?? result.sendTransactionResponse?.hash ?? "";
 }
 
 function parseUsdcAmount(input: string): string | null {
@@ -194,7 +190,7 @@ export function DemoPage() {
       Boolean(txHash),
       Boolean(auditLedger),
     ],
-    [address, amountInput, approvedSac, auditLedger, isConnected, kycApproved, pkg, proven, recipientInput, selectedCorridor, simulated, txHash],
+    [amountInput, approvedSac, auditLedger, isConnected, kycApproved, pkg, proven, recipientInput, selectedCorridor, simulated, txHash],
   );
 
   const activeStep = stepIndex(stepsDone);
@@ -550,11 +546,7 @@ export function DemoPage() {
         await client.simulateSettle(toSettle, activePkg, walletSigner.publicKey);
         demoLog("settle.simulate.ok");
         setSimulated(true);
-        const result = await client.settleWithWallet(
-          toSettle,
-          activePkg,
-          walletSigner,
-        );
+        const result = await client.settleWithWallet(toSettle, activePkg, walletSigner);
         const hash = extractTxHash(result);
         if (!hash) throw new Error("Transaction submitted but hash missing");
         demoLog("settle.ok", { tx_hash: hash, nullifier: toSettle.nullifier });
@@ -576,7 +568,17 @@ export function DemoPage() {
         setBusy(null);
       }
     },
-    [approvedSac, buildRequest, client, demoIssuer, pkg, prepareFreshTransfer, proven, walletSigner, address],
+    [
+      address,
+      approvedSac,
+      buildRequest,
+      client,
+      demoIssuer,
+      pkg,
+      prepareFreshTransfer,
+      proven,
+      walletSigner,
+    ],
   );
 
   const viewAudit = useCallback(async () => {
@@ -639,19 +641,6 @@ export function DemoPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6 py-8 lg:gap-8 lg:py-12">
-      <header className="flex flex-col items-center gap-3 border-2 border-border bg-brand-soft/80 px-5 py-5 text-center shadow-none sm:items-start sm:px-6 sm:text-left">
-        <div className="flex w-full flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Logo size="md" tone="dark" className="self-center sm:self-start" />
-          <Badge variant={isConnected ? "brand" : "warning"} className="self-center sm:self-start">
-            {isConnected ? "Wallet connected" : "Wallet disconnected"}
-          </Badge>
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-primary sm:text-3xl">{COPY.demo.title}</h1>
-          <p className="mt-2 text-sm text-muted-foreground">{COPY.demo.honesty}</p>
-        </div>
-      </header>
-
       <DemoKycPanel
         status={kycStatus}
         skipped={kycSkipped && !kycApproved}

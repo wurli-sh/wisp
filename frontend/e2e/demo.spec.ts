@@ -17,7 +17,7 @@ test.describe("Wisp demo UI", () => {
     await page.goto("/");
     await page.getByRole("link", { name: "Demo", exact: true }).click();
     await expect(page).toHaveURL(/\/demo$/);
-    await expect(page.getByText("Generate a compliant transfer")).toBeVisible();
+    await expect(page.getByText("Transfer", { exact: true })).toBeVisible();
   });
 
   test("demo page shows stepper and action buttons", async ({ page }) => {
@@ -31,6 +31,6 @@ test.describe("Wisp demo UI", () => {
   test("legacy compliance route redirects to demo", async ({ page }) => {
     await page.goto("/compliance?tab=corridors");
     await expect(page).toHaveURL(/\/demo$/);
-    await expect(page.getByText("Generate a compliant transfer")).toBeVisible();
+    await expect(page.getByText("Transfer", { exact: true })).toBeVisible();
   });
 });

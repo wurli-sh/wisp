@@ -1,7 +1,6 @@
 import { ShieldCheck } from "lucide-react";
 import type { MockKycStatusResponse } from "@wisp_/sdk";
 import { COPY } from "@/content/copy";
-import { useWallet } from "@/hooks/useWallet";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
@@ -14,13 +13,9 @@ interface DemoKycPanelProps {
 }
 
 export function DemoKycPanel({ status, skipped, onReopen }: DemoKycPanelProps) {
-  const { address } = useWallet();
-
   const approved = status?.kyc_status === "approved";
   const revoked = status?.kyc_status === "revoked";
   const rejected = status?.kyc_status === "rejected";
-
-  if (!address) return null;
 
   const hint = revoked
     ? COPY.demo.kyc.revokedHint
