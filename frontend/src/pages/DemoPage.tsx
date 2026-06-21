@@ -15,6 +15,10 @@ import { KycOnboardingModal } from "@/components/demo/KycOnboardingModal";
 import { DemoTransferPanel } from "@/components/demo/DemoTransferPanel";
 import { DemoProgressSidebar } from "@/components/demo/DemoProgressSidebar";
 import {
+  DemoProgressSkeleton,
+  DemoTransferPanelSkeleton,
+} from "@/components/skeletons/DemoSkeletons";
+import {
   checkWalletSender,
   configCheckpoint,
   demoLog,
@@ -61,6 +65,7 @@ export function DemoPage() {
   const { isConnected, isConnecting, connect, walletSigner, address } = useWallet();
 
   const [corridors, setCorridors] = useState<CorridorOption[]>([]);
+  const [corridorsLoading, setCorridorsLoading] = useState(true);
   const [sourceCountry, setSourceCountry] = useState("");
   const [destCountry, setDestCountry] = useState("");
   const [recipientInput, setRecipientInput] = useState("");
@@ -156,6 +161,7 @@ export function DemoPage() {
   }, []);
 
   useEffect(() => {
+    setCorridorsLoading(true);
     void demoIssuer
       .listCorridors()
       .then((next) => {
@@ -169,6 +175,9 @@ export function DemoPage() {
         const msg = formatDemoError(e);
         demoLog("corridors.fail", { error: msg });
         setError(msg);
+      })
+      .finally(() => {
+        setCorridorsLoading(false);
       });
   }, [demoIssuer]);
 
@@ -602,7 +611,11 @@ export function DemoPage() {
       )}
 
       <div className="border-2 border-border bg-background px-4 py-4 shadow-soft sm:px-5">
-        <DemoProgressSidebar activeStep={activeStep} />
+        {corridorsLoading ? (
+          <DemoProgressSkeleton />
+        ) : (
+          <DemoProgressSidebar activeStep={activeStep} />
+        )}
       </div>
 
       <KycOnboardingModal
@@ -623,70 +636,74 @@ export function DemoPage() {
         onActivating={() => setKycActivating(true)}
       />
 
-      <DemoTransferPanel
-        isConnected={isConnected}
-        isConnecting={isConnecting}
-        amount={amountInput}
-        recipient={recipientInput}
-        sourceCountry={sourceCountry}
-        destCountry={destCountry}
-        corridorId={corridorId}
-        corridors={corridors}
-        nullifier={nullifier}
-        txHash={txHash}
-        hasPackage={Boolean(pkg)}
-        hasProof={Boolean(proven)}
-        auditLedger={auditLedger}
-        busy={busy}
-        validationError={validationError}
-        onAmountChange={(value) => {
-          setAmountInput(value);
-          resetDerivedState();
-        }}
-        onRecipientChange={(value) => {
-          setRecipientInput(value);
-          resetDerivedState();
-        }}
-        onSourceCountryChange={(value) => {
-          setSourceCountry(value);
-          resetDerivedState();
-        }}
-        onDestCountryChange={(value) => {
-          setDestCountry(value);
-          resetDerivedState();
-        }}
-        onSwapCountries={() => {
-          if (!sourceCountry || !destCountry || sourceCountry === destCountry) return;
-          const hasReverse = corridors.some(
-            (corridor) =>
-              corridor.enabled &&
-              corridor.source_country === destCountry &&
-              corridor.dest_country === sourceCountry,
-          );
-          if (hasReverse) {
-            setSourceCountry(destCountry);
-            setDestCountry(sourceCountry);
-          } else {
-            const next = reconcileCorridorSelection(corridors, destCountry, sourceCountry);
-            setSourceCountry(next.sourceCountry);
-            setDestCountry(next.destCountry);
-          }
-          resetDerivedState();
-        }}
-        onConnect={() => void connect()}
-        onFetchPackage={() => void fetchPackage()}
-        walletVerified={kycApproved}
-        proofReady={proofReady}
-        kycBlockReason={kycBlockReason}
-        onGenerateProof={() => void generateProof()}
-        onApproveSac={() => void approveSac()}
-        sacApproved={approvedSac}
-        onSubmit={() => void submitTransfer()}
-        onViewAudit={() => void viewAudit()}
-        onTryInvalid={() => void tryInvalid()}
-        onTryReplay={() => void tryReplay()}
-        canReplay={Boolean(lastProven)}
-      />
+      {corridorsLoading ? (
+        <DemoTransferPanelSkeleton />
+      ) : (
+        <DemoTransferPanel
+          isConnected={isConnected}
+          isConnecting={isConnecting}
+          amount={amountInput}
+          recipient={recipientInput}
+          sourceCountry={sourceCountry}
+          destCountry={destCountry}
+          corridorId={corridorId}
+          corridors={corridors}
+          nullifier={nullifier}
+          txHash={txHash}
+          hasPackage={Boolean(pkg)}
+          hasProof={Boolean(proven)}
+          auditLedger={auditLedger}
+          busy={busy}
+          validationError={validationError}
+          onAmountChange={(value) => {
+            setAmountInput(value);
+            resetDerivedState();
+          }}
+          onRecipientChange={(value) => {
+            setRecipientInput(value);
+            resetDerivedState();
+          }}
+          onSourceCountryChange={(value) => {
+            setSourceCountry(value);
+            resetDerivedState();
+          }}
+          onDestCountryChange={(value) => {
+            setDestCountry(value);
+            resetDerivedState();
+          }}
+          onSwapCountries={() => {
+            if (!sourceCountry || !destCountry || sourceCountry === destCountry) return;
+            const hasReverse = corridors.some(
+              (corridor) =>
+                corridor.enabled &&
+                corridor.source_country === destCountry &&
+                corridor.dest_country === sourceCountry,
+            );
+            if (hasReverse) {
+              setSourceCountry(destCountry);
+              setDestCountry(sourceCountry);
+            } else {
+              const next = reconcileCorridorSelection(corridors, destCountry, sourceCountry);
+              setSourceCountry(next.sourceCountry);
+              setDestCountry(next.destCountry);
+            }
+            resetDerivedState();
+          }}
+          onConnect={() => void connect()}
+          onFetchPackage={() => void fetchPackage()}
+          walletVerified={kycApproved}
+          proofReady={proofReady}
+          kycBlockReason={kycBlockReason}
+          onGenerateProof={() => void generateProof()}
+          onApproveSac={() => void approveSac()}
+          sacApproved={approvedSac}
+          onSubmit={() => void submitTransfer()}
+          onViewAudit={() => void viewAudit()}
+          onTryInvalid={() => void tryInvalid()}
+          onTryReplay={() => void tryReplay()}
+          canReplay={Boolean(lastProven)}
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Check, ExternalLink, Loader2 } from "lucide-react";
+import { Check, ExternalLink } from "lucide-react";
+import { WispPayReceiptSkeleton } from "@/components/skeletons/WispPaySkeletons";
 import { COPY } from "@/content/copy";
 import { stellarExplorerTx } from "@/config/env";
 import { WispPayLookupField } from "@/components/wisp-pay/WispPayLookupField";
@@ -170,23 +171,7 @@ export function WispPayReceiptPanel({
   }
 
   if (audit.loading) {
-    return (
-      <div className="flex flex-col gap-6">
-        {invoice ? (
-          <ReceiptSummaryCard invoice={invoice}>
-            <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
-              <Loader2 size={16} className="animate-spin text-brand" />
-              {receipt.loadingTitle}
-            </div>
-          </ReceiptSummaryCard>
-        ) : (
-          <div className="flex items-center justify-center gap-2 border-2 border-border bg-brand-soft/40 px-6 py-12 text-sm text-muted-foreground">
-            <Loader2 size={16} className="animate-spin text-brand" />
-            {receipt.loadingTitle}
-          </div>
-        )}
-      </div>
-    );
+    return <WispPayReceiptSkeleton withSummary={Boolean(invoice)} />;
   }
 
   if (audit.notFound) {

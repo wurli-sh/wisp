@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { WispPayFormSkeleton } from "@/components/skeletons/WispPaySkeletons";
 import { motion } from "framer-motion";
 import { ArrowLeftRight, Check, ClipboardCopy, Link2 } from "lucide-react";
 import { toast } from "sonner";
@@ -44,6 +45,7 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
   const { create, demoTransfer } = COPY.wispPay;
 
   const [corridors, setCorridors] = useState<CorridorOption[]>([]);
+  const [corridorsLoading, setCorridorsLoading] = useState(true);
   const [sourceCountry, setSourceCountry] = useState("");
   const [destCountry, setDestCountry] = useState("");
   const [recipient, setRecipient] = useState(DEFAULT_CREATE_RECIPIENT);
@@ -71,6 +73,7 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
   }, []);
 
   useEffect(() => {
+    setCorridorsLoading(true);
     void demoIssuer
       .listCorridors()
       .then((next) => {
@@ -81,6 +84,9 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
       })
       .catch((error) => {
         toast.error(error instanceof Error ? error.message : "Failed to load corridors");
+      })
+      .finally(() => {
+        setCorridorsLoading(false);
       });
   }, [demoIssuer]);
 
@@ -193,6 +199,10 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
 
   const fieldClass =
     "min-h-12 border-2 border-border bg-background px-4 text-sm font-medium text-primary outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-brand focus-visible:ring-2 focus-visible:ring-brand/20";
+
+  if (corridorsLoading) {
+    return <WispPayFormSkeleton />;
+  }
 
   return (
     <div className="flex flex-col gap-8">
