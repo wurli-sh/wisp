@@ -262,7 +262,7 @@ await client.settleWithWallet(proven, pkg, wallet);`,
       statusPending: "Pending",
       statusPaid: "Paid",
       errors: {
-        amount: "Enter a valid USDC amount with up to 6 decimals.",
+        amount: "Enter a valid USDC amount with up to 7 decimals.",
         corridor: "Select an available corridor.",
         recipient: "Enter a recipient Stellar address.",
       },

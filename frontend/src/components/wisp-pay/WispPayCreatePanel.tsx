@@ -72,7 +72,7 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
   const [sourceCountry, setSourceCountry] = useState("");
   const [destCountry, setDestCountry] = useState("");
   const [recipient, setRecipient] = useState(DEFAULT_CREATE_RECIPIENT);
-  const [amountInput, setAmountInput] = useState("25.00");
+  const [amountInput, setAmountInput] = useState("10.00");
   const [label, setLabel] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
   const [createdInvoice, setCreatedInvoice] = useState<Invoice | null>(null);

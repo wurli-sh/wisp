@@ -1,6 +1,9 @@
 import type { CorridorOption } from "@wisp_/js";
 import type { WispClient } from "@wisp_/sdk";
 
+const STELLAR_ASSET_DECIMALS = 7;
+const STELLAR_ASSET_SCALE = 10_000_000n;
+
 export function extractTxHash(
   result: Awaited<ReturnType<WispClient["settleWithWallet"]>>,
 ): string {
@@ -10,17 +13,20 @@ export function extractTxHash(
 export function parseUsdcAmount(input: string): string | null {
   const trimmed = input.trim();
   if (!trimmed) return null;
-  if (!/^\d+(\.\d{0,6})?$/.test(trimmed)) return null;
+  if (!/^\d+(\.\d{0,7})?$/.test(trimmed)) return null;
   const [whole, frac = ""] = trimmed.split(".");
-  const normalized = `${whole}${frac.padEnd(6, "0")}`.replace(/^0+(?=\d)/, "");
+  const normalized = `${whole}${frac.padEnd(STELLAR_ASSET_DECIMALS, "0")}`.replace(
+    /^0+(?=\d)/,
+    "",
+  );
   return normalized.length > 0 ? normalized : "0";
 }
 
 export function formatUsdcDisplay(micro: string): string {
   const value = BigInt(micro);
-  const whole = value / 1_000_000n;
-  const frac = value % 1_000_000n;
-  const fracStr = frac.toString().padStart(6, "0").replace(/0+$/, "");
+  const whole = value / STELLAR_ASSET_SCALE;
+  const frac = value % STELLAR_ASSET_SCALE;
+  const fracStr = frac.toString().padStart(STELLAR_ASSET_DECIMALS, "0").replace(/0+$/, "");
   return fracStr.length > 0 ? `${whole}.${fracStr}` : whole.toString();
 }
 

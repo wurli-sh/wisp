@@ -341,7 +341,7 @@ export function DemoPage() {
     }
     const amount = parseUsdcAmount(amountInput);
     if (!amount || amount === "0") {
-      setValidationError("Enter a valid USDC amount with up to 6 decimals.");
+      setValidationError("Enter a valid USDC amount with up to 7 decimals.");
       return null;
     }
     setValidationError(null);
