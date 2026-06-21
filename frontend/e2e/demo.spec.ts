@@ -9,8 +9,8 @@ test.describe("Wisp demo UI", () => {
 
   test("landing page shows how it works", async ({ page }) => {
     await page.goto("/#how-it-works");
-    await expect(page.getByRole("heading", { name: /Verify once\. Prove anywhere\./i })).toBeVisible();
-    await expect(page.getByText("Trusted Issuer")).toBeVisible();
+    await expect(page.getByRole("heading", { name: /From issuer root/i })).toBeVisible();
+    await expect(page.getByText("Trusted Issuer").first()).toBeVisible();
   });
 
   test("nav routes to demo", async ({ page }) => {
