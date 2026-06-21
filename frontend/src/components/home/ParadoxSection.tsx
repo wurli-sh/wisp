@@ -57,7 +57,7 @@ function ComparisonRow({
 }
 
 const COMPARISON_LIST_CLASS =
-  "mt-6 overflow-hidden border-2 bg-background shadow-soft";
+  "mt-3 overflow-hidden border-2 bg-background shadow-soft";
 
 type ComparisonRowData = {
   readonly field: string;
@@ -102,7 +102,7 @@ function ComparisonCard({
       )}
     >
       <div className="flex flex-1 flex-col p-6 sm:p-4">
-        <div className="flex h-[5.5rem] items-start gap-3">
+        <div className="flex min-h-[4.25rem] items-start gap-3">
           <span
             className={cn(
               "inline-flex h-9 w-9 shrink-0 items-center justify-center border-2",
