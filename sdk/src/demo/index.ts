@@ -1,5 +1,6 @@
 export { DemoIssuerClient } from "../issuer/demo-client.js";
 export type {
+  CorridorDestinationRecord,
   MockKycChallengeResponse,
   MockKycLifecycleStatus,
   MockKycMissing,
@@ -8,5 +9,7 @@ export type {
   MockKycSubmitRequest,
   MockKycSubmitResponse,
   MockKycSubmitStatus,
+  PublishRootsResponse,
+  PublishRootsResult,
 } from "../issuer/demo-client.js";
 export { HttpIssuerAdapter } from "../issuer/http-adapter.js";

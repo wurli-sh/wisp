@@ -114,10 +114,10 @@ async function pageContractEvents(
   const server = new rpc.Server(cfg.rpcUrl);
   const explicitStart = await resolveEventStartLedger(server, cfg, opts.startLedger);
   const latest = await server.getLatestLedger();
-  const startLedger = Math.max(
-    explicitStart,
-    latest.sequence - DEFAULT_EVENT_SCAN_LEDGERS,
-  );
+  const hasDeployLedger = opts.startLedger != null || cfg.validateStartLedger != null;
+  const startLedger = hasDeployLedger
+    ? explicitStart
+    : Math.max(explicitStart, latest.sequence - DEFAULT_EVENT_SCAN_LEDGERS);
   const maxPages = opts.maxPages ?? 40;
   const pageSize = 200;
 
@@ -150,7 +150,7 @@ async function pageContractEvents(
       });
     }
 
-    if (resp.events.length < pageSize || !resp.cursor || resp.cursor === cursor) break;
+    if (!resp.cursor || resp.cursor === cursor) break;
     cursor = resp.cursor;
   }
 

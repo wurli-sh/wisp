@@ -202,3 +202,11 @@ export type {
   MockKycSubmitStatus,
 } from "./issuer/demo-client.js";
 export { DemoIssuerClient } from "./issuer/demo-client.js";
+export {
+  CIRCLE_TESTNET_USDC_CODE,
+  CIRCLE_TESTNET_USDC_ISSUER,
+  circleUsdcAsset,
+  establishCircleUsdcTrustline,
+  establishCircleUsdcTrustlineWithSecret,
+  hasCircleUsdcTrustline,
+} from "./wallet/circle-usdc-trustline.js";

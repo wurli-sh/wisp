@@ -49,6 +49,25 @@ export interface MockKycStatusResponse {
   publish_warning?: string;
 }
 
+export interface CorridorDestinationRecord {
+  id: number;
+  corridor_id: number;
+  address: string;
+  enabled: boolean;
+}
+
+export interface PublishRootsResult {
+  snapshot_id: number;
+  corridor_id: number;
+  status: string;
+  message?: string;
+}
+
+export interface PublishRootsResponse {
+  status: string;
+  results: PublishRootsResult[];
+}
+
 /** Reference-issuer demo client: mock KYC + fixture proof packages. */
 export class DemoIssuerClient extends HttpIssuerAdapter {
   async getDemoTransfer(): Promise<ProofPackage> {
@@ -100,6 +119,53 @@ export class DemoIssuerClient extends HttpIssuerAdapter {
       throw new Error(`issuer mock-kyc submit: HTTP ${res.status} ${text}`);
     }
     return res.json() as Promise<MockKycSubmitResponse>;
+  }
+
+  async addCorridorDestination(
+    corridorId: number,
+    address: string,
+    adminToken: string,
+  ): Promise<CorridorDestinationRecord> {
+    const res = await issuerFetch(
+      `${this.baseURL}/v1/admin/corridors/${corridorId}/destinations`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ address, enabled: true }),
+      },
+      { retries: 0 },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`issuer add destination: HTTP ${res.status}${text ? ` — ${text}` : ""}`);
+    }
+    return res.json() as Promise<CorridorDestinationRecord>;
+  }
+
+  async publishIssuerRoots(
+    adminToken: string,
+    corridorId?: number,
+  ): Promise<PublishRootsResponse> {
+    const res = await issuerFetch(
+      `${this.baseURL}/v1/admin/roots/publish`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify(corridorId != null ? { corridor_id: corridorId } : {}),
+      },
+      { retries: 0 },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`issuer publish roots: HTTP ${res.status}${text ? ` — ${text}` : ""}`);
+    }
+    return res.json() as Promise<PublishRootsResponse>;
   }
 
   async getMockKycStatus(
