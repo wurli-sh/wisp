@@ -65,6 +65,15 @@ jobs:
       - name: Frontend build (Vercel smoke)
         run: pnpm build:frontend
 
+      - name: Install Playwright (Chromium)
+        working-directory: frontend
+        run: pnpm exec playwright install chromium --with-deps
+
+      - name: Frontend e2e (Pay Links + demo)
+        env:
+          CI: true
+        run: pnpm test:e2e:frontend
+
       - name: SDK prove integration (issuer-service)
         run: |
           mkdir -p .wisp

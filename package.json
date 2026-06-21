@@ -19,6 +19,7 @@
     "demo:phase4": "./scripts/dev/demo-phase4.sh",
     "dev:frontend": "pnpm --filter @wisp_/web dev",
     "build:frontend": "pnpm --filter @wisp_/web build",
+    "test:e2e:frontend": "pnpm --filter @wisp_/web run test:e2e",
     "prove": "cd circuits/circom && ./scripts/prove.sh",
     "verify": "cd circuits/circom && ./scripts/verify-local.sh",
     "test:circuit": "node --import tsx --test circuits/circom/test/*.test.ts",

@@ -176,7 +176,9 @@ Canonical field order: [`bindings/public-inputs.json`](bindings/public-inputs.js
 | `pnpm build:js` | Build all publishable TypeScript packages |
 | `pnpm gen:bindings` | Regenerate ABI bindings |
 | `pnpm prove` / `pnpm verify` | Local prove + verify |
-| `pnpm dev:frontend` | Demo UI dev server |
+| `pnpm dev:frontend` | Demo UI dev server (`/` · `/wisp-pay` Pay Links · `/demo`) |
+| `pnpm test:e2e:frontend` | Playwright e2e (Pay Links + demo smoke) |
+| `pnpm demo:phase4` | Frontend gate: artifacts + build + e2e |
 | `pnpm test:js` | JS test suite |
 | `cargo test -p verifier -p compliance` | Contract tests |
 | `cargo run -p issuer-service` | Issuer API |

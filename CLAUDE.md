@@ -55,7 +55,7 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 | `pnpm test:ceremony` | Ceremony gate tests |
 | `pnpm verify:phase3-blockers` | Phase 3 pre-flight blocker checks |
 | `pnpm demo:phase3` | Phase 3 demo (blockers + SDK prove) |
-| `pnpm demo:phase4` | Phase 4 gate: circuit artifacts + frontend build |
+| `pnpm demo:phase4` | Phase 4 gate: circuit artifacts + frontend build + Pay Links e2e |
 | `./scripts/publish/publish-packages.sh --dry-run` | npm publish dry-run for all `@wisp_/*` packages |
 | `./scripts/publish/publish-packages.sh` | npm publish (see `scripts/publish/CLAUDE.md`) |
 | `cargo test -p verifier -p compliance` | Contract unit tests |

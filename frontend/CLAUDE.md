@@ -2,7 +2,7 @@
 
 Wisp demo UI (`@wisp_/web`) — Vite 6 + React 19 + Tailwind 4.
 
-**Routes:** `/` landing · `/demo` prove/settle/kyc console
+**Routes:** `/` landing · `/wisp-pay` Wisp Pay Links (Create · Pay · Receipt) · `/demo` prove/settle/kyc console
 
 ## Commands
 
@@ -10,14 +10,17 @@ Wisp demo UI (`@wisp_/web`) — Vite 6 + React 19 + Tailwind 4.
 |---------|-------------|
 | `pnpm dev:frontend` | Dev server on :5173 |
 | `pnpm build:frontend` | Production build |
-| `./scripts/dev/demo-phase4.sh` | Copy circuit artifacts + build gate |
+| `pnpm test:e2e:frontend` | Playwright e2e (Wisp Pay Links + demo smoke) |
+| `./scripts/dev/demo-phase4.sh` | Copy circuit artifacts + build + e2e gate |
 
 ## Component structure
 
 | Path | Purpose |
 |------|---------|
 | `pages/HomePage.tsx` | Landing page (8 sections) |
+| `pages/WispPayPage.tsx` | Wisp Pay Links — Create · Pay · Receipt (URL-driven) |
 | `pages/DemoPage.tsx` | 11-step prove → settle → audit console |
+| `components/wisp-pay/` | WispPayCreatePanel, WispPayPanel, WispPayReceiptPanel, WispPayLookupField |
 | `components/demo/DemoProgressSidebar.tsx` | Step progress indicator |
 | `components/demo/DemoTransferPanel.tsx` | Transfer form + results display |
 | `components/demo/DemoKycPanel.tsx` | KYC verification UI |
@@ -32,6 +35,13 @@ Wisp demo UI (`@wisp_/web`) — Vite 6 + React 19 + Tailwind 4.
 | `hooks/useWallet.ts` | Freighter wallet connection |
 | `lib/kyc.ts` | KYC flow state machine and types |
 | `lib/demoLog.ts` | Console-style step logging |
+| `lib/invoices.ts` | Invoice localStorage CRUD + `removeInvoice` (pending-only) |
+| `lib/invoiceCodec.ts` | Portable pay-link `d=` payload encode/decode |
+| `lib/transferUtils.ts` | Shared USDC/corridor helpers (demo + wisp-pay) |
+| `hooks/useWispPayUrlState.ts` | URL mode/id/tx/d query sync |
+| `hooks/useWispPay.ts` | Pay flow KYC + Prove & Pay |
+| `hooks/useCompliantTransfer.ts` | Shared prove → settle orchestration |
+| `hooks/useReceiptAudit.ts` | On-chain receipt lookup |
 | `lib/animations.ts` | GSAP / framer-motion animation helpers |
 | `lib/cn.ts` | Tailwind class merge utility |
 | `content/copy.ts` | All UI text content (single source of truth) |

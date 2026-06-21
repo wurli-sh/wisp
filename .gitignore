@@ -17,6 +17,7 @@ bindings/dist/
 issuer-sdk/dist/
 frontend/dist/
 frontend/test-results/
+frontend/playwright-report/
 bindings/generated/**/package-lock.json
 bindings/generated/**/dist/
 bindings/generated/publicInputs.mjs
