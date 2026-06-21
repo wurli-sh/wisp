@@ -3,8 +3,10 @@
 FROM rust:1-bookworm AS builder
 WORKDIR /app
 
+ARG STELLAR_CLI_VERSION=25.2.0
+
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends pkg-config libssl-dev libdbus-1-dev libudev-dev \
+  && apt-get install -y --no-install-recommends ca-certificates curl pkg-config libssl-dev libdbus-1-dev libudev-dev \
   && rm -rf /var/lib/apt/lists/*
 
 COPY Cargo.toml Cargo.lock ./
@@ -12,7 +14,15 @@ COPY backend ./backend
 COPY bindings/generated/public_inputs.rs ./bindings/generated/public_inputs.rs
 
 RUN cargo build --release -p issuer-service
-RUN cargo install --locked stellar-cli --version 25.2.0
+RUN set -eux; \
+  mkdir -p /tmp/stellar-cli; \
+  curl -fsSL "https://github.com/stellar/stellar-cli/releases/download/v${STELLAR_CLI_VERSION}/stellar-cli-${STELLAR_CLI_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
+    | tar -xz -C /tmp/stellar-cli; \
+  find /tmp/stellar-cli -type f -name stellar -exec cp {} /usr/local/cargo/bin/stellar \; -quit; \
+  chmod +x /usr/local/cargo/bin/stellar; \
+  test -x /usr/local/cargo/bin/stellar; \
+  stellar --version; \
+  rm -rf /tmp/stellar-cli
 
 FROM debian:bookworm-slim
 
