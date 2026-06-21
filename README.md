@@ -26,8 +26,6 @@ Contract IDs → `.wisp/*.env` · redeploy [`scripts/deploy/`](scripts/deploy/) 
 
 ## Published Packages
 
-<img src="docs/portable-sdk.png" width="100%" alt="Wisp works alongside your issuer." />
-
 Plug-and-play npm packages — install, configure env, run.
 
 | Package | Version | Purpose | README |
@@ -80,37 +78,7 @@ wisp/
 
 **Stack:** Groth16 · BN254 · Poseidon2 t=4 · 20-level Merkle/SMT · **17 public inputs**
 
-```
-circuits/circom/compliance_corridor.circom
-┌──────────────────────────────────────────────────────────────────────────┐
-│                           ComplianceCorridor()                           │
-│  PUBLIC (17)               │  PRIVATE                                    │
-│  roots · nullifier         │  credential_secret · transfer_nonce         │
-│  sender/recipient/asset    │  merkle paths + indices (×5 trees)          │
-│  amount · epoch · corridor │  jurisdiction · sanctions_leaf              │
-├──────────────────────────────────────────────────────────────────────────┤
-│  components/  poseidon2 · merkle · smt.circom                            │
-├──────────────────────────────────────────────────────────────────────────┤
-│ Merkle membership          │ Poseidon2(sender) → MerklePath → root       │
-│ Nullifier binding          │ Poseidon2Hash12(domain+transfer ctx)        │
-│ Sanctions exclusion        │ SparseMerkleExclusion(sender) → root        │
-│ Jurisdiction               │ Poseidon2(jurisdiction) → MerklePath        │
-│ Credential expiry          │ timestamp ≤ credential_expiry               │
-│ Corridor source            │ jurisdiction → source_jurisdiction_root     │
-│ Corridor destination       │ Poseidon2(recipient) → dest_address_root    │
-│ Corridor binding           │ corridor_config_hash ↔ on-chain corridor    │
-└──────────────────────────────────────────────────────────────────────────┘
-                                     │
-          proof package ───────────────────────┼─────── @wisp_/js buildWitnessInput
-                                     ▼
-               witness.json → compliance_corridor.wasm + zkey
-                                     │
-                                     ▼ snarkjs Groth16.prove (BN254)
-                     π_a, π_b, π_c  +  17 public signals
-                                     │
-                                     ▼ Soroban verifier.verify_proof()
-               compliance.compliant_transfer → nullifier → SAC settle
-```
+![ZK Implementation — ComplianceCorridor circuit, witness generation, and Soroban settlement](docs/zk-implementation.png)
 
 Canonical field order: [`bindings/public-inputs.json`](bindings/public-inputs.json) · [`bindings/README.md`](bindings/README.md)
 
@@ -203,6 +171,7 @@ export NETWORK=testnet SOURCE=amoeba-admin
 ---
 
 ## Issuer Setup
+<img src="docs/portable-sdk.png" width="100%" alt="Wisp works alongside your issuer." />
 
 **Run locally:**
 
