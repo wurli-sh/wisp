@@ -51,7 +51,7 @@ Soroban compliance contract
 ```
 
 ```
-frontend/          React demo UI (landing, Wisp Pay, technical demo)
+frontend/          React demo UI (landing, Wisp Pay, Walkthrough)
   ↓
 @wisp_/sdk       issuer client · prove · settle · audit
   ↓

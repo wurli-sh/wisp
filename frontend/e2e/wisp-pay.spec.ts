@@ -30,7 +30,7 @@ test.describe("Wisp Pay Links", () => {
   test("creates invoice and lists it locally", async ({ page }) => {
     await page.goto("/wisp-pay");
     await page.locator('input[inputmode="decimal"]').fill("25.00");
-    await page.getByPlaceholder("Vendor payout, Q2 retainer…").fill("Acme retainer");
+    await page.getByPlaceholder("World Cup Quarter final R2 ticket").fill("Acme retainer");
     await page.getByRole("button", { name: "Create pay link" }).click();
 
     await expect(page.getByRole("main").getByText("Invoice created")).toBeVisible();
@@ -188,9 +188,9 @@ test.describe("Wisp Pay Links", () => {
     await expect(page.getByText("Transaction not found")).toBeVisible();
   });
 
-  test("wisp-pay page links to technical demo", async ({ page }) => {
+  test("wisp-pay page links to Walkthrough", async ({ page }) => {
     await page.goto("/wisp-pay");
-    await expect(page.getByRole("link", { name: /Open technical demo/i })).toHaveAttribute(
+    await expect(page.getByRole("link", { name: /Walkthrough/i })).toHaveAttribute(
       "href",
       "/demo",
     );

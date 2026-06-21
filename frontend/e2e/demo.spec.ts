@@ -4,7 +4,7 @@ test.describe("Wisp demo UI", () => {
   test("landing page renders hero copy", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: /Prove every transfer/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Live demo →" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Walkthrough" }).first()).toBeVisible();
   });
 
   test("landing page shows how it works", async ({ page }) => {
