@@ -11,6 +11,7 @@ import { WispPayStat, truncate } from "@/components/wisp-pay/WispPayStat";
 import { CountryFlag } from "@/components/ui/CountryFlag";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { FreighterNotice } from "@/components/ui/FreighterNotice";
 import { useWispPay } from "@/hooks/useWispPay";
 import { getCountryDisplayName } from "@/lib/countryDisplay";
 import type { Invoice } from "@/lib/invoices";
@@ -64,48 +65,53 @@ export function WispPayPanel({
   }
 
   const canPay = flow.isConnected && flow.proofReady && !flow.busy;
+  const alreadyPaid = invoice.status === "paid" && Boolean(invoice.txHash);
 
   return (
     <div className="flex flex-col gap-6">
-      <DemoKycPanel
-        status={flow.kycStatus}
-        skipped={flow.kycSkipped && !flow.kycApproved}
-        onReopen={() => {
-          flow.setKycSkipped(false);
-          flow.setKycActivating(false);
-        }}
-      />
+      {!alreadyPaid && (
+        <>
+          <DemoKycPanel
+            status={flow.kycStatus}
+            skipped={flow.kycSkipped && !flow.kycApproved}
+            onReopen={() => {
+              flow.setKycSkipped(false);
+              flow.setKycActivating(false);
+            }}
+          />
 
-      {flow.isConnected && (
-        <CircleUsdcTrustlineBanner address={flow.address} walletSigner={flow.walletSigner} />
+          {flow.isConnected && (
+            <CircleUsdcTrustlineBanner address={flow.address} walletSigner={flow.walletSigner} />
+          )}
+
+          {flow.isConnected && (
+            <ApproveRecipientBanner
+              recipient={invoice.recipient}
+              corridorId={invoice.corridorId}
+              kycStatus={flow.kycStatus}
+              onApproved={flow.refreshKycStatus}
+            />
+          )}
+
+          <KycOnboardingModal
+            open={flow.showKycModal}
+            kycStatus={flow.kycStatus}
+            corridorId={invoice.corridorId}
+            recipient={invoice.recipient}
+            onStatusChange={flow.setKycStatus}
+            onComplete={() => {
+              flow.setKycSkipped(false);
+              flow.setKycActivating(false);
+              void flow.refreshKycStatus();
+            }}
+            onSkip={() => {
+              flow.setKycSkipped(true);
+              flow.setKycActivating(false);
+            }}
+            onActivating={() => flow.setKycActivating(true)}
+          />
+        </>
       )}
-
-      {flow.isConnected && (
-        <ApproveRecipientBanner
-          recipient={invoice.recipient}
-          corridorId={invoice.corridorId}
-          kycStatus={flow.kycStatus}
-          onApproved={flow.refreshKycStatus}
-        />
-      )}
-
-      <KycOnboardingModal
-        open={flow.showKycModal}
-        kycStatus={flow.kycStatus}
-        corridorId={invoice.corridorId}
-        recipient={invoice.recipient}
-        onStatusChange={flow.setKycStatus}
-        onComplete={() => {
-          flow.setKycSkipped(false);
-          flow.setKycActivating(false);
-          void flow.refreshKycStatus();
-        }}
-        onSkip={() => {
-          flow.setKycSkipped(true);
-          flow.setKycActivating(false);
-        }}
-        onActivating={() => flow.setKycActivating(true)}
-      />
 
       <div className="border-2 border-border bg-brand-soft/40">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-border bg-background px-6 py-5">
@@ -184,61 +190,110 @@ export function WispPayPanel({
       )}
 
       {flow.progressLabel && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 size={16} className="animate-spin text-brand" />
-          {flow.progressLabel}
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 size={16} className="animate-spin text-brand" />
+            {flow.progressLabel}
+          </div>
+          {flow.busy === "prove" && (
+            <p className="pl-6 text-xs text-muted-foreground">{pay.progressProveHint}</p>
+          )}
         </div>
       )}
 
-      {flow.kycBlockReason && flow.isConnected && !flow.proofReady && (
-        <p className="text-xs text-muted-foreground">{flow.kycBlockReason}</p>
+      {flow.kycStatusError && flow.isConnected && !alreadyPaid && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-destructive/30 bg-destructive/5 px-3 py-2">
+          <p className="min-w-0 flex-1 text-xs text-destructive">{pay.kycStatusError}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void flow.refreshKycStatus()}
+          >
+            {pay.kycStatusRetry}
+          </Button>
+        </div>
       )}
 
-      <div className="flex flex-wrap gap-3">
-        {!flow.isConnected ? (
-          <motion.div
-            className="inline-flex"
-            whileHover={flow.isConnecting ? undefined : buttonHover}
-            whileTap={flow.isConnecting ? undefined : buttonTap}
-          >
-            <Button
-              type="button"
-              size="lg"
-              disabled={flow.isConnecting}
-              onClick={() => void flow.connect()}
-              className="min-w-44 gap-2"
-            >
-              <Wallet size={16} />
-              {pay.connectWallet}
-            </Button>
-          </motion.div>
-        ) : (
-          <motion.div
-            className="inline-flex"
-            whileHover={!canPay ? undefined : buttonHover}
-            whileTap={!canPay ? undefined : buttonTap}
-          >
-            <Button
-              type="button"
-              size="lg"
-              disabled={!canPay}
-              onClick={() => {
-                void flow.proveAndPay().then((result) => {
-                  if (result) {
-                    onPaymentSuccess({
-                      ...result,
-                      invoiceId: invoice.id,
-                    });
-                  }
-                });
-              }}
-              className="min-w-44"
-            >
-              {flow.busy ? pay.proveAndPayBusy : pay.proveAndPay}
-            </Button>
-          </motion.div>
+      {flow.kycBlockReason &&
+        flow.isConnected &&
+        !flow.proofReady &&
+        !flow.kycStatusError &&
+        !alreadyPaid && (
+          <p className="text-xs text-muted-foreground">{flow.kycBlockReason}</p>
         )}
-      </div>
+
+      {alreadyPaid ? (
+        <div className="border-2 border-brand/25 bg-brand-soft/40 px-4 py-4">
+          <p className="text-sm font-bold text-primary">{pay.alreadyPaidTitle}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{pay.alreadyPaidBody}</p>
+          <div className="mt-4">
+            <Button
+              type="button"
+              size="lg"
+              className="min-w-44"
+              onClick={() =>
+                onPaymentSuccess({
+                  txHash: invoice.txHash!,
+                  nullifier: invoice.nullifier ?? "",
+                  invoiceId: invoice.id,
+                })
+              }
+            >
+              {pay.viewReceipt}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap gap-3">
+            {!flow.isConnected ? (
+              <motion.div
+                className="inline-flex"
+                whileHover={flow.isConnecting ? undefined : buttonHover}
+                whileTap={flow.isConnecting ? undefined : buttonTap}
+              >
+                <Button
+                  type="button"
+                  size="lg"
+                  disabled={flow.isConnecting}
+                  onClick={() => void flow.connect()}
+                  className="min-w-44 gap-2"
+                >
+                  <Wallet size={16} />
+                  {pay.connectWallet}
+                </Button>
+              </motion.div>
+            ) : (
+              <motion.div
+                className="inline-flex"
+                whileHover={!canPay ? undefined : buttonHover}
+                whileTap={!canPay ? undefined : buttonTap}
+              >
+                <Button
+                  type="button"
+                  size="lg"
+                  disabled={!canPay}
+                  onClick={() => {
+                    void flow.proveAndPay().then((result) => {
+                      if (result) {
+                        onPaymentSuccess({
+                          ...result,
+                          invoiceId: invoice.id,
+                        });
+                      }
+                    });
+                  }}
+                  className="min-w-44"
+                >
+                  {flow.busy ? pay.proveAndPayBusy : pay.proveAndPay}
+                </Button>
+              </motion.div>
+            )}
+          </div>
+          {!flow.isConnected && !flow.freighterAvailable && <FreighterNotice />}
+        </div>
+      )}
 
       <p className={cn("text-xs text-muted-foreground")}>
         {pay.demoHint}{" "}

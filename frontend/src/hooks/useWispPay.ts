@@ -25,10 +25,12 @@ export interface ProveAndPayResult {
 export function useWispPay(invoice: Invoice | null) {
   const client = useWispClient();
   const demoIssuer = useDemoIssuerClient();
-  const { isConnected, isConnecting, connect, walletSigner, address } = useWallet();
+  const { isConnected, isConnecting, connect, walletSigner, address, freighterAvailable } =
+    useWallet();
 
   const [kycStatus, setKycStatus] = useState<MockKycStatusResponse | null>(null);
   const [kycStatusLoading, setKycStatusLoading] = useState(false);
+  const [kycStatusError, setKycStatusError] = useState<string | null>(null);
   const [kycSkipped, setKycSkipped] = useState(false);
   const [kycActivating, setKycActivating] = useState(false);
   const [busy, setBusy] = useState<PayBusyStage>(null);
@@ -93,6 +95,7 @@ export function useWispPay(invoice: Invoice | null) {
       return;
     }
     setKycStatusLoading(true);
+    setKycStatusError(null);
     try {
       const next = await demoIssuer.getMockKycStatus(address, {
         corridor_id: invoice.corridorId,
@@ -103,7 +106,9 @@ export function useWispPay(invoice: Invoice | null) {
         toast.warning(next.publish_warning);
       }
     } catch (e) {
-      demoLog("wispPay.kyc.fail", { error: formatDemoError(e) });
+      const msg = formatDemoError(e);
+      demoLog("wispPay.kyc.fail", { error: msg });
+      setKycStatusError(msg);
     } finally {
       setKycStatusLoading(false);
     }
@@ -115,6 +120,7 @@ export function useWispPay(invoice: Invoice | null) {
 
   useEffect(() => {
     setKycStatus(null);
+    setKycStatusError(null);
     setKycStatusLoading(Boolean(address));
   }, [address]);
 
@@ -227,9 +233,11 @@ export function useWispPay(invoice: Invoice | null) {
     isConnected,
     isConnecting,
     connect,
+    freighterAvailable,
     address,
     walletSigner,
     kycStatus,
+    kycStatusError,
     kycSkipped,
     setKycSkipped,
     kycActivating,

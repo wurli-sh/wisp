@@ -75,6 +75,20 @@ export const env: FrontendEnv = {
     "/fixtures/demo-transfer-testnet.json",
 };
 
+/**
+ * Required env vars for the prove → settle pipeline. When any are missing the
+ * flow throws deep inside the fetch/settle stage; surfacing them early prevents
+ * a mid-demo failure.
+ */
+export function missingRequiredConfig(): string[] {
+  const required: [string, string | undefined][] = [
+    ["VITE_COMPLIANCE_CONTRACT_ID", env.complianceId],
+    ["VITE_ISSUER_PUBLIC_KEY", env.issuerPublicKey],
+    ["VITE_SAC_CONTRACT_ID", env.assetId],
+  ];
+  return required.filter(([, value]) => !value).map(([key]) => key);
+}
+
 export function getWispConfigOverrides(): Record<string, string | undefined> {
   return {
     WISP_FIXTURE_PROFILE: env.profile,

@@ -84,3 +84,28 @@ export function findCorridor(
     ) ?? null
   );
 }
+
+/**
+ * Reconcile corridor selection without reverting an intentional swap to an
+ * invalid (no enabled corridor) source/dest pair. Keeps the pair when the
+ * source has no enabled corridors; otherwise fixes dest only.
+ */
+export function relaxCorridorReconcile(
+  corridors: CorridorOption[],
+  source: string,
+  dest: string,
+): { sourceCountry: string; destCountry: string } | null {
+  if (!corridors.length || !source || !dest) return null;
+  if (findCorridor(corridors, source, dest)) return null;
+
+  const enabled = corridors.filter((corridor) => corridor.enabled);
+  const hasSource = enabled.some((corridor) => corridor.source_country === source);
+  if (!hasSource) return null;
+
+  const destsForSource = enabled
+    .filter((corridor) => corridor.source_country === source)
+    .map((corridor) => corridor.dest_country);
+  const nextDest = destsForSource.includes(dest) ? dest : destsForSource[0]!;
+  if (nextDest === dest) return null;
+  return { sourceCountry: source, destCountry: nextDest };
+}

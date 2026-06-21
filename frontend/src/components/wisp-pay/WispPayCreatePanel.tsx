@@ -22,14 +22,36 @@ import {
   findCorridor,
   formatUsdcDisplay,
   parseUsdcAmount,
-  reconcileCorridorSelection,
+  relaxCorridorReconcile,
 } from "@/lib/transferUtils";
+import { ExplodingInput } from "@/components/spell/exploding-input";
 import { buttonHover, buttonTap } from "@/lib/animations";
 import { cn } from "@/lib/cn";
 
-/** Default payee on Create — demo merchant wallet (testnet fixture sender). */
+const LABEL_PARTICLES = [
+  <span key="ball" className="text-2xl">
+    ⚽
+  </span>,
+  <span key="trophy" className="text-2xl">
+    🏆
+  </span>,
+  <span key="ticket" className="text-2xl">
+    🎫
+  </span>,
+  <span key="globe" className="text-2xl">
+    🌍
+  </span>,
+  <span key="star" className="text-2xl">
+    ⭐
+  </span>,
+  <span key="goal" className="text-2xl">
+    🥅
+  </span>,
+];
+
+/** Default payee on Create — demo merchant payout wallet (testnet fixture recipient). */
 const DEFAULT_CREATE_RECIPIENT =
-  "GAN3SJKZ7GNHVYCFX7Y3XTDIPZJW6PHMRUL7UDAUHMQ7FIUPDKBFARBC";
+  "GAVRIGZPHFMFYNBXZECCZIYHO2AW2CHCOUAUKLDZM2PKK2SIMLPOBPF7";
 
 function truncate(str: string, head = 8, tail = 4): string {
   if (str.length <= head + tail + 3) return str;
@@ -46,6 +68,7 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
 
   const [corridors, setCorridors] = useState<CorridorOption[]>([]);
   const [corridorsLoading, setCorridorsLoading] = useState(true);
+  const [corridorsError, setCorridorsError] = useState<string | null>(null);
   const [sourceCountry, setSourceCountry] = useState("");
   const [destCountry, setDestCountry] = useState("");
   const [recipient, setRecipient] = useState(DEFAULT_CREATE_RECIPIENT);
@@ -64,16 +87,21 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
   }, [onInvoicesChange]);
 
   useEffect(() => {
-    void loadDemoFixtureStrkeys().then((fixture) => {
-      const defaultRecipient = fixture.sender_strkey ?? DEFAULT_CREATE_RECIPIENT;
-      setRecipient((current) =>
-        !current || current === DEFAULT_CREATE_RECIPIENT ? defaultRecipient : current,
-      );
-    });
+    void loadDemoFixtureStrkeys()
+      .then((fixture) => {
+        const defaultRecipient = fixture.recipient_strkey ?? DEFAULT_CREATE_RECIPIENT;
+        setRecipient((current) =>
+          !current || current === DEFAULT_CREATE_RECIPIENT ? defaultRecipient : current,
+        );
+      })
+      .catch(() => {
+        /* fixture is optional; default recipient still applies */
+      });
   }, []);
 
-  useEffect(() => {
+  const loadCorridors = useCallback(() => {
     setCorridorsLoading(true);
+    setCorridorsError(null);
     void demoIssuer
       .listCorridors()
       .then((next) => {
@@ -83,7 +111,7 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
         setDestCountry((current) => current || defaults.destCountry);
       })
       .catch((error) => {
-        toast.error(error instanceof Error ? error.message : "Failed to load corridors");
+        setCorridorsError(error instanceof Error ? error.message : "Failed to load corridors");
       })
       .finally(() => {
         setCorridorsLoading(false);
@@ -91,10 +119,13 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
   }, [demoIssuer]);
 
   useEffect(() => {
+    loadCorridors();
+  }, [loadCorridors]);
+
+  useEffect(() => {
     if (!corridors.length) return;
-    const next = reconcileCorridorSelection(corridors, sourceCountry, destCountry);
-    if (next.sourceCountry !== sourceCountry || next.destCountry !== destCountry) {
-      setSourceCountry(next.sourceCountry);
+    const next = relaxCorridorReconcile(corridors, sourceCountry, destCountry);
+    if (next) {
       setDestCountry(next.destCountry);
     }
   }, [corridors, destCountry, sourceCountry]);
@@ -130,20 +161,8 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
   const handleSwap = () => {
     if (!canSwapCountries) return;
     setSwapSpin((spin) => spin + 180);
-    const hasReverse = corridors.some(
-      (corridor) =>
-        corridor.enabled &&
-        corridor.source_country === destCountry &&
-        corridor.dest_country === sourceCountry,
-    );
-    if (hasReverse) {
-      setSourceCountry(destCountry);
-      setDestCountry(sourceCountry);
-    } else {
-      const next = reconcileCorridorSelection(corridors, destCountry, sourceCountry);
-      setSourceCountry(next.sourceCountry);
-      setDestCountry(next.destCountry);
-    }
+    setSourceCountry(destCountry);
+    setDestCountry(sourceCountry);
   };
 
   const handleCreate = (event: React.FormEvent) => {
@@ -204,6 +223,17 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
     return <WispPayFormSkeleton />;
   }
 
+  if (corridorsError && corridors.length === 0) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-destructive/30 bg-destructive/5 px-4 py-4">
+        <p className="min-w-0 flex-1 text-xs text-destructive">{COPY.demo.corridorsError}</p>
+        <Button type="button" variant="outline" size="sm" onClick={loadCorridors}>
+          {COPY.demo.corridorsRetry}
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <form
@@ -223,7 +253,7 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
               variant="light"
               onChange={setSourceCountry}
             />
-            <button
+            <motion.button
               type="button"
               aria-label="Swap countries"
               disabled={!canSwapCountries}
@@ -231,10 +261,13 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
               className={cn(
                 "relative z-10 flex size-12 shrink-0 cursor-pointer items-center justify-center border-2 border-brand-dark bg-brand text-brand-foreground shadow-blue-pill outline-none transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-40",
               )}
-              style={{ transform: `rotate(${swapSpin}deg)` }}
+              animate={{ rotate: swapSpin }}
+              transition={{ type: "spring", stiffness: 320, damping: 24 }}
+              whileHover={!canSwapCountries ? undefined : { scale: 1.06 }}
+              whileTap={!canSwapCountries ? undefined : { scale: 0.96 }}
             >
               <ArrowLeftRight size={16} strokeWidth={2.25} />
-            </button>
+            </motion.button>
             <CountrySelect
               label={demoTransfer.destCountry}
               value={destCountry}
@@ -257,10 +290,10 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
             />
           </div>
 
-          <div className="grid gap-2">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          <label className="relative grid gap-2 overflow-visible">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               {create.labelField}
-            </label>
+            </span>
             <input
               type="text"
               value={label}
@@ -268,7 +301,15 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
               onChange={(event) => setLabel(event.target.value)}
               className={fieldClass}
             />
-          </div>
+            <ExplodingInput
+              className="z-50"
+              content={LABEL_PARTICLES}
+              direction={{ horizontal: "left", vertical: "top" }}
+              gravity={0.5}
+              duration={3}
+              count={3}
+            />
+          </label>
 
           <div className="grid gap-2">
             <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">

@@ -6,7 +6,7 @@ export const COPY = {
     sub: "ZK compliance for cross-border Stellar stablecoins — shareable Wisp Pay links for merchants, plus a portable SDK for any issuer.",
     ctas: {
       primary: { label: "Try Wisp Pay →", href: "/wisp-pay" },
-      secondary: { label: "Technical demo", href: "/demo" },
+      secondary: { label: "Walkthrough", href: "/demo" },
     },
     showcase: [
       {
@@ -186,7 +186,7 @@ await client.settleWithWallet(proven, pkg, wallet);`,
     closer: {
       eyebrow: "LIVE ON TESTNET",
       headline: "Ready for live issuer rails.",
-      sub: "Try Wisp Pay for merchant checkout links, or open the technical demo for the full prove → settle pipeline.",
+      sub: "Try Wisp Pay for merchant checkout links, or open the Walkthrough for the full prove → settle pipeline.",
       ctas: {
         primary: { label: "Try Wisp Pay →", href: "/wisp-pay" },
         secondary: { label: "View on GitHub", href: "https://github.com/wurli-sh/wisp" },
@@ -201,6 +201,17 @@ await client.settleWithWallet(proven, pkg, wallet);`,
       { label: "Demo", href: "/demo" },
     ],
     wallet: { connect: "Connect Wallet", choose: "Choose Wallet" },
+  },
+
+  common: {
+    retry: "Retry",
+    installFreighter: "Freighter wallet not detected.",
+    installFreighterLink: "Install Freighter →",
+    freighterUrl: "https://www.freighter.app/",
+    connectError: "Couldn't connect Freighter. Make sure the extension is installed, unlocked, and set to Testnet.",
+    configErrorTitle: "Demo not configured",
+    configErrorBody:
+      "Missing required environment variables: {keys}. Set them before running the live demo.",
   },
 
   circleUsdc: {
@@ -229,11 +240,11 @@ await client.settleWithWallet(proven, pkg, wallet);`,
     subtitle:
       "Create a shareable USDC invoice, pay with a single compliant proof, and verify the receipt on-chain — no PII on the ledger.",
     demoLinkPrefix: "Want the full 11-step pipeline?",
-    demoLinkLabel: "Open technical demo →",
+    demoLinkLabel: "Walkthrough →",
     create: {
       formTitle: "New invoice",
       labelField: "Label (optional)",
-      labelPlaceholder: "Vendor payout, Q2 retainer…",
+      labelPlaceholder: "World Cup Quarter final R2 ticket",
       recipientHint:
         "Your payout wallet — USDC is sent here when someone pays the link.",
       submit: "Create pay link",
@@ -269,13 +280,20 @@ await client.settleWithWallet(proven, pkg, wallet);`,
       successToast: "Payment submitted",
       progressFetch: "Fetching proof package…",
       progressProve: "Generating proof…",
+      progressProveHint: "Loading the proving key (~35MB) — this can take ~30s on first run.",
       progressApprove: "Approving USDC allowance…",
       progressSettle: "Settling on-chain…",
+      kycStatusError: "Couldn't reach the issuer to check verification status.",
+      kycStatusRetry: "Retry",
+      alreadyPaidTitle: "Invoice already paid",
+      alreadyPaidBody:
+        "This invoice has already been settled on-chain. View the receipt for the compliance attestation.",
+      viewReceipt: "View receipt",
       invalidLinkTitle: "Invalid pay link",
       invalidLinkBody:
         "This link is missing invoice data or the payload could not be decoded. Ask the merchant for a fresh pay link.",
       demoHint: "Want step-by-step control?",
-      openDemo: "Open technical demo →",
+      openDemo: "Walkthrough →",
     },
     receipt: {
       emptyHint: "Paste an invoice ID or transaction hash to view a compliance receipt.",
@@ -302,7 +320,7 @@ await client.settleWithWallet(proven, pkg, wallet);`,
       ledgerLabel: "Ledger",
       explorerLink: "View on Stellar explorer",
       noPii: "This receipt shows compliance attestation only — no PII.",
-      openDemo: "Open technical demo →",
+      openDemo: "Walkthrough →",
     },
     demoTransfer: {
       sourceCountry: "Source country",
@@ -316,6 +334,10 @@ await client.settleWithWallet(proven, pkg, wallet);`,
   demo: {
     title: "Generate a compliant transfer",
     honesty: "Real protocol. Outcomes come from Soroban — not mocked success.",
+    corridorsError: "Couldn't load corridors from the issuer.",
+    corridorsRetry: "Retry",
+    kycStatusError: "Couldn't reach the issuer to check verification status.",
+    kycStatusRetry: "Retry",
     kyc: {
       title: "SEP-10 wallet verification",
       subtitle: "Sign a challenge in Freighter to bind your wallet. Demo policy assigns a US-approved sender profile — no identity form.",

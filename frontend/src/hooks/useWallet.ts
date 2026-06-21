@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   getAddress,
   isAllowed,
@@ -7,6 +8,7 @@ import {
   signTransaction,
 } from "@stellar/freighter-api";
 import type { WalletSigner } from "@wisp_/sdk";
+import { COPY } from "@/content/copy";
 import { env } from "@/config/env";
 
 export function useWallet() {
@@ -17,6 +19,7 @@ export function useWallet() {
   const refresh = useCallback(async () => {
     try {
       const connected = await isConnected();
+      setFreighterAvailable(true);
       if (!connected) {
         setAddress(null);
         return;
@@ -48,6 +51,9 @@ export function useWallet() {
       const access = await requestAccess();
       if (access.error) throw new Error(access.error);
       await refresh();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error(msg || COPY.common.connectError);
     } finally {
       setIsConnecting(false);
     }

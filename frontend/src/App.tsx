@@ -6,6 +6,7 @@ import { DemoPageSkeleton } from "@/components/skeletons/DemoSkeletons";
 import { WispPayPageSkeleton } from "@/components/skeletons/WispPaySkeletons";
 import { HomePage } from "@/pages/HomePage";
 import { InvoiceLegacyRedirect, PayRedirect, ReceiptRedirect } from "@/pages/WispPayRoutes";
+import { useIssuerWarmup } from "@/hooks/useIssuerWarmup";
 
 const WispPayPage = lazy(() =>
   import("@/pages/WispPayPage").then((module) => ({ default: module.WispPayPage })),
@@ -15,6 +16,7 @@ const DemoPage = lazy(() =>
 );
 
 export function App() {
+  useIssuerWarmup();
   return (
     <BrowserRouter>
       <Routes>

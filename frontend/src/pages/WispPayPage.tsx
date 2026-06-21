@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { WispPayCreatePanel } from "@/components/wisp-pay/WispPayCreatePanel";
 import { WispPayPanel } from "@/components/wisp-pay/WispPayPanel";
 import { WispPayReceiptPanel } from "@/components/wisp-pay/WispPayReceiptPanel";
+import { ConfigBanner } from "@/components/ui/ConfigBanner";
 import { Tabs } from "@/components/ui/Tabs";
 import { useWispPayUrlState, type WispPayMode } from "@/hooks/useWispPayUrlState";
 import { markInvoicePaid, upsertInvoice } from "@/lib/invoices";
@@ -84,6 +85,8 @@ export function WispPayPage() {
 
   return (
     <div className={cn("mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-8 sm:px-6 lg:gap-8 lg:pb-12", PAGE_PT)}>
+      <ConfigBanner />
+
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-brand">
           {COPY.wispPay.eyebrow}

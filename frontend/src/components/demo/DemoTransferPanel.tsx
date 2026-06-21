@@ -82,6 +82,7 @@ function SwapButton({
       )}
       animate={{ rotate: spin }}
       transition={{ type: "spring", stiffness: 320, damping: 24 }}
+      whileHover={disabled ? undefined : { scale: 1.06 }}
       whileTap={disabled ? undefined : { scale: 0.96 }}
     >
       <ArrowLeftRight size={16} strokeWidth={2.25} className="text-brand-foreground" />
@@ -188,6 +189,11 @@ export function DemoTransferPanel({
   const labelClass = "text-[10px] font-bold uppercase tracking-widest text-muted-foreground";
 
   const hintClass = "text-muted-foreground";
+  const previewLabelClass = "text-[10px] font-bold uppercase tracking-widest text-muted-foreground";
+  const previewValueClass =
+    "min-w-0 truncate text-2xl font-semibold leading-none tracking-tight text-primary sm:text-[1.65rem]";
+  const previewMetaClass =
+    "inline-flex h-7 items-center border-2 border-brand-dark bg-brand px-2.5 text-[10px] font-bold uppercase tracking-wide text-brand-foreground shadow-blue-pill";
 
   const sourceOptions = useMemo(() => {
     const opts = Array.from(
@@ -386,18 +392,13 @@ export function DemoTransferPanel({
             <div className="flex flex-col gap-6 border-t-2 border-border bg-muted/20 px-6 py-7 lg:border-t-0 lg:border-l-2 lg:border-border">
               <SectionTitle variant={panelVariant}>Preview</SectionTitle>
 
-              <div
-                className={cn(
-                  "flex flex-col gap-4 border-2 p-5",
-                  "border-border bg-background",
-                )}
-              >
-                <div className="flex h-7 justify-center overflow-hidden">
+              <div className="border-2 border-border bg-background p-5">
+                <div className="mb-5 flex h-8 justify-center overflow-hidden">
                   <AnimatePresence mode="wait" initial={false}>
                     {sourceCountry && destCountry ? (
                       <motion.div
                         key={corridorLabel}
-                        className="flex items-center gap-2 bg-brand px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand-foreground ring-1 ring-brand/20"
+                        className="flex items-center gap-2 border-2 border-brand-dark bg-brand px-3 text-xs font-bold uppercase tracking-wide text-brand-foreground shadow-blue-pill"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -412,7 +413,7 @@ export function DemoTransferPanel({
                     ) : (
                       <motion.span
                         key="corridor-empty"
-                        className="bg-brand px-3 py-1 text-xs font-bold uppercase tracking-wide text-brand-foreground ring-1 ring-brand/20"
+                        className="flex items-center border-2 border-brand-dark bg-brand px-3 text-xs font-bold uppercase tracking-wide text-brand-foreground shadow-blue-pill"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -424,47 +425,34 @@ export function DemoTransferPanel({
                   </AnimatePresence>
                 </div>
 
-                <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3">
-                  <div className="min-w-0 overflow-hidden">
-                    <p className={cn("mb-2 text-[10px] font-bold uppercase tracking-widest", hintClass)}>
-                      {transfer.youSend}
-                    </p>
-                    <p
-                      className={cn(
-                        "truncate text-xl font-semibold tabular-nums sm:text-2xl",
-                        "text-primary",
-                      )}
-                      title={amount || undefined}
-                    >
+                <div className="grid items-center gap-4 sm:grid-cols-[minmax(0,1fr)_3rem_minmax(0,1fr)]">
+                  <div className="grid min-w-0 gap-3">
+                    <p className={previewLabelClass}>{transfer.youSend}</p>
+                    <p className={cn(previewValueClass, "tabular-nums")} title={amount || undefined}>
                       {previewAmount(amount)}
                     </p>
-                    <span className="mt-2 inline-block bg-brand px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-brand-foreground ring-1 ring-brand/30">
-                      {transfer.asset}
-                    </span>
+                    <div>
+                      <span className={previewMetaClass}>{transfer.asset}</span>
+                    </div>
                   </div>
 
-                  <div className="flex justify-center">
+                  <div className="flex justify-start sm:justify-center">
                     <SwapButton
                       onClick={handleSwap}
                       disabled={!canSwapCountries}
-                      className="size-10"
+                      className="size-12"
                       spin={swapSpin}
                     />
                   </div>
 
-                  <div className="min-w-0 overflow-hidden text-right">
-                    <p className={cn("mb-2 text-[10px] font-bold uppercase tracking-widest", hintClass)}>
-                      {transfer.recipient}
-                    </p>
-                    <p
-                      className={cn(
-                        "truncate text-lg font-semibold sm:text-xl",
-                        "text-primary",
-                      )}
-                      title={recipient || undefined}
-                    >
+                  <div className="grid min-w-0 gap-3 text-left sm:text-right">
+                    <p className={previewLabelClass}>{transfer.recipient}</p>
+                    <p className={previewValueClass} title={recipient || undefined}>
                       {recipient ? truncate(recipient, 8, 6) : "—"}
                     </p>
+                    <div>
+                      <span className={previewMetaClass}>Wallet</span>
+                    </div>
                   </div>
                 </div>
               </div>

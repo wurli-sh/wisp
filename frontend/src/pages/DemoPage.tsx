@@ -14,6 +14,9 @@ import { ApproveRecipientBanner } from "@/components/demo/ApproveRecipientBanner
 import { KycOnboardingModal } from "@/components/demo/KycOnboardingModal";
 import { DemoTransferPanel } from "@/components/demo/DemoTransferPanel";
 import { DemoProgressSidebar } from "@/components/demo/DemoProgressSidebar";
+import { ConfigBanner } from "@/components/ui/ConfigBanner";
+import { FreighterNotice } from "@/components/ui/FreighterNotice";
+import { Button } from "@/components/ui/Button";
 import {
   DemoProgressSkeleton,
   DemoTransferPanelSkeleton,
@@ -35,7 +38,7 @@ import {
   extractTxHash,
   formatUsdcDisplay,
   parseUsdcAmount,
-  reconcileCorridorSelection,
+  relaxCorridorReconcile,
 } from "@/lib/transferUtils";
 
 function stepIndex(flags: boolean[]): number {
@@ -62,10 +65,12 @@ function tamperProof(proven: ProvenTransfer): ProvenTransfer {
 export function DemoPage() {
   const client = useWispClient();
   const demoIssuer = useDemoIssuerClient();
-  const { isConnected, isConnecting, connect, walletSigner, address } = useWallet();
+  const { isConnected, isConnecting, connect, walletSigner, address, freighterAvailable } =
+    useWallet();
 
   const [corridors, setCorridors] = useState<CorridorOption[]>([]);
   const [corridorsLoading, setCorridorsLoading] = useState(true);
+  const [corridorsError, setCorridorsError] = useState<string | null>(null);
   const [sourceCountry, setSourceCountry] = useState("");
   const [destCountry, setDestCountry] = useState("");
   const [recipientInput, setRecipientInput] = useState("");
@@ -83,6 +88,7 @@ export function DemoPage() {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [kycStatus, setKycStatus] = useState<MockKycStatusResponse | null>(null);
   const [kycStatusLoading, setKycStatusLoading] = useState(false);
+  const [kycStatusError, setKycStatusError] = useState<string | null>(null);
   const [kycSkipped, setKycSkipped] = useState(false);
   const [kycActivating, setKycActivating] = useState(false);
   const prevRootsStatusRef = useRef<MockKycStatusResponse["roots_status"] | null>(null);
@@ -160,8 +166,9 @@ export function DemoPage() {
       });
   }, []);
 
-  useEffect(() => {
+  const loadCorridors = useCallback(() => {
     setCorridorsLoading(true);
+    setCorridorsError(null);
     void demoIssuer
       .listCorridors()
       .then((next) => {
@@ -174,12 +181,16 @@ export function DemoPage() {
       .catch((e) => {
         const msg = formatDemoError(e);
         demoLog("corridors.fail", { error: msg });
-        setError(msg);
+        setCorridorsError(msg);
       })
       .finally(() => {
         setCorridorsLoading(false);
       });
   }, [demoIssuer]);
+
+  useEffect(() => {
+    loadCorridors();
+  }, [loadCorridors]);
 
   useEffect(() => {
     if (!address) return;
@@ -193,6 +204,7 @@ export function DemoPage() {
       return;
     }
     setKycStatusLoading(true);
+    setKycStatusError(null);
     try {
       const next = await demoIssuer.getMockKycStatus(address, {
         corridor_id: selectedCorridor?.id,
@@ -205,6 +217,7 @@ export function DemoPage() {
     } catch (e) {
       const msg = formatDemoError(e);
       demoLog("kyc.status.fail", { error: msg });
+      setKycStatusError(msg);
     } finally {
       setKycStatusLoading(false);
     }
@@ -216,6 +229,7 @@ export function DemoPage() {
 
   useEffect(() => {
     setKycStatus(null);
+    setKycStatusError(null);
     setKycStatusLoading(Boolean(address));
   }, [address]);
 
@@ -271,9 +285,8 @@ export function DemoPage() {
 
   useEffect(() => {
     if (!corridors.length) return;
-    const next = reconcileCorridorSelection(corridors, sourceCountry, destCountry);
-    if (next.sourceCountry !== sourceCountry || next.destCountry !== destCountry) {
-      setSourceCountry(next.sourceCountry);
+    const next = relaxCorridorReconcile(corridors, sourceCountry, destCountry);
+    if (next) {
       setDestCountry(next.destCountry);
     }
   }, [corridors, destCountry, sourceCountry]);
@@ -582,6 +595,8 @@ export function DemoPage() {
 
   return (
     <div className={cn("mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-8 sm:px-6 lg:gap-8 lg:pb-12", PAGE_PT)}>
+      <ConfigBanner />
+
       <DemoKycPanel
         status={kycStatus}
         skipped={kycSkipped && !kycApproved}
@@ -590,6 +605,22 @@ export function DemoPage() {
           setKycActivating(false);
         }}
       />
+
+      {kycStatusError && isConnected && (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-destructive/30 bg-destructive/5 px-4 py-2.5">
+          <p className="min-w-0 flex-1 text-xs text-destructive">{COPY.demo.kycStatusError}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void refreshKycStatus()}
+          >
+            {COPY.demo.kycStatusRetry}
+          </Button>
+        </div>
+      )}
+
+      {!isConnected && !freighterAvailable && <FreighterNotice />}
 
       {isConnected && (
         <CircleUsdcTrustlineBanner address={address} walletSigner={walletSigner} />
@@ -638,6 +669,13 @@ export function DemoPage() {
 
       {corridorsLoading ? (
         <DemoTransferPanelSkeleton />
+      ) : corridorsError && corridors.length === 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-destructive/30 bg-destructive/5 px-4 py-4">
+          <p className="min-w-0 flex-1 text-xs text-destructive">{COPY.demo.corridorsError}</p>
+          <Button type="button" variant="outline" size="sm" onClick={loadCorridors}>
+            {COPY.demo.corridorsRetry}
+          </Button>
+        </div>
       ) : (
         <DemoTransferPanel
           isConnected={isConnected}
@@ -673,20 +711,8 @@ export function DemoPage() {
           }}
           onSwapCountries={() => {
             if (!sourceCountry || !destCountry || sourceCountry === destCountry) return;
-            const hasReverse = corridors.some(
-              (corridor) =>
-                corridor.enabled &&
-                corridor.source_country === destCountry &&
-                corridor.dest_country === sourceCountry,
-            );
-            if (hasReverse) {
-              setSourceCountry(destCountry);
-              setDestCountry(sourceCountry);
-            } else {
-              const next = reconcileCorridorSelection(corridors, destCountry, sourceCountry);
-              setSourceCountry(next.sourceCountry);
-              setDestCountry(next.destCountry);
-            }
+            setSourceCountry(destCountry);
+            setDestCountry(sourceCountry);
             resetDerivedState();
           }}
           onConnect={() => void connect()}
