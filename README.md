@@ -7,10 +7,10 @@ Verify users once with a trusted issuer, publish compliance roots on-chain, and 
 
 ## Deployments
 
-### Contracts (Stellar Testnet)
-
 | Resource | Value |
 | -------- | ----- |
+| Frontend | [wisp-zk.vercel.app](https://wisp-zk.vercel.app/) — `/` · `/wisp-pay` · `/demo` |
+| Issuer API | [wisp-issuer-vekn.onrender.com](https://wisp-issuer-vekn.onrender.com) |
 | Network | `Test SDF Network ; September 2015` |
 | RPC | `https://soroban-testnet.stellar.org` |
 | Explorer | [stellar.expert/testnet](https://stellar.expert/explorer/testnet) |
@@ -20,27 +20,7 @@ Verify users once with a trusted issuer, publish compliance roots on-chain, and 
 | VK hash | `3325bfff94f2c530d199c35575dc45cd3e27f752d9402d17e6d64341d3f3f6ae` |
 | Deploy ledger | `3188535` |
 
-IDs are written to `.wisp/*.env` after deploy. Redeploy: [`scripts/deploy/`](scripts/deploy/).
-
-### Frontend
-
-| Target | URL / command |
-| ------ | ------------- |
-| **Live** | [wisp-zk.vercel.app](https://wisp-zk.vercel.app/) |
-| Local | `pnpm dev:frontend` → `:5173` |
-
-Routes: `/` landing · `/wisp-pay` Wisp Pay (Create · Pay · Receipt) · `/demo` prove/settle console · `/invoice` redirects to `/wisp-pay`. Config: [`frontend/.env.example`](frontend/.env.example).
-
-**Wisp Pay** — merchants create compliant USDC payment links (amount, corridor, payee). Links are portable (`?d=` payload survives without local storage). Any KYC-approved wallet can pay; the payee is fixed in the link. Receipt tab audits `ProofSettled` on-chain.
-
-### Backend (issuer-service)
-
-| Target | URL / command |
-| ------ | ------------- |
-| **Live** | [wisp-issuer-vekn.onrender.com](https://wisp-issuer-vekn.onrender.com) |
-| Local | `cargo run -p issuer-service` → `:3000` |
-
-Production uses Postgres (`SUPABASE_DB_URL`), `WISP_ENV=production`. API and env: [Issuer setup](#issuer-setup) · [`backend/crates/issuer-service/`](backend/crates/issuer-service/).
+Contract IDs → `.wisp/*.env` · redeploy [`scripts/deploy/`](scripts/deploy/) · config [`frontend/.env.example`](frontend/.env.example)
 
 ---
 
@@ -59,13 +39,7 @@ Plug-and-play npm packages — install, configure env, run.
 | `@wisp_/sdk` | `0.2.0` | Prove, settle, audit compliant transfers | [`sdk/README.md`](sdk/README.md) |
 | `@wisp_/issuer-sdk` | `0.2.0` | Register issuers, publish roots on-chain | [`issuer-sdk/README.md`](issuer-sdk/README.md) |
 
-Demo UI remains workspace-only: [`@wisp_/web`](frontend/).
-
-```bash
-npm install @wisp_/sdk@0.2.0 @wisp_/js@0.2.0
-```
-
-Publish dry-run: `./scripts/publish/publish-packages.sh --dry-run`
+Install: `npm install @wisp_/sdk @wisp_/js` · demo UI: [`frontend/`](frontend/) (workspace-only) · dry-run: `./scripts/publish/publish-packages.sh --dry-run`
 
 ## Core Architecture
 
@@ -144,6 +118,7 @@ Canonical field order: [`bindings/public-inputs.json`](bindings/public-inputs.js
 
 ## Key Features
 
+- **Wisp Pay** — compliant payment links (fixed payee, any KYC wallet pays); portable `?d=` links; on-chain receipt audit
 - **Verify once, prove per transfer** — KYC tree + client-side Groth16; no PII on-chain
 - **8-in-1 circuit** — sanctions, jurisdiction, expiry, corridor binding in one proof
 - **Soroban-native verifier** — Groth16 in-contract; nullifier anti-replay
