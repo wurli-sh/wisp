@@ -7,6 +7,8 @@ export interface FrontendEnv {
   assetId?: string;
   issuerPublicKey?: string;
   issuerUrl: string;
+  /** Demo operator token for approving corridor destinations (local testnet only). */
+  issuerAdminToken?: string;
   validateStartLedger?: number;
   wasmUrl: string;
   zkeyUrl: string;
@@ -54,6 +56,11 @@ export const env: FrontendEnv = {
   assetId: read("VITE_SAC_CONTRACT_ID"),
   issuerPublicKey: read("VITE_ISSUER_PUBLIC_KEY"),
   issuerUrl: read("VITE_ISSUER_URL") ?? "/issuer",
+  issuerAdminToken:
+    read("VITE_ISSUER_ADMIN_TOKEN") ??
+    ((readWithLegacy("VITE_WISP_FIXTURE_PROFILE") ?? "testnet") === "testnet"
+      ? "demo-token"
+      : undefined),
   validateStartLedger: readNumber(
     "VITE_VALIDATE_START_LEDGER",
     "VITE_COMPLIANCE_DEPLOY_LEDGER",

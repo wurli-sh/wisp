@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeftRight, Loader2, Wallet } from "lucide-react";
+import { ArrowLeftRight, Loader2 } from "lucide-react";
 import type { CorridorOption } from "@wisp_/js";
 import { COPY } from "@/content/copy";
 import { stellarExplorerTx } from "@/config/env";
@@ -281,10 +281,10 @@ export function DemoTransferPanel({
     <div className="mx-auto w-full max-w-5xl">
       <div className="relative overflow-hidden border-2 border-border bg-background text-primary shadow-soft">
         <div className="relative flex flex-col">
-          <div className="flex flex-wrap items-center gap-3 border-b-2 border-border bg-brand-soft/50 px-6 py-5">
-            <div className="flex items-center gap-2">
-              <Wallet size={18} className="text-brand" />
-              <span className="text-lg font-bold text-primary">{transfer.title}</span>
+          <div className="flex items-center gap-1 border-b-2 border-border bg-background px-2 pt-2">
+            <div className="relative flex items-center gap-2 border-2 border-brand-dark bg-brand px-4 py-2.5 text-brand-foreground shadow-blue-pill">
+              <span className="text-xs font-bold uppercase tracking-wider">{transfer.title}</span>
+              <span className="absolute inset-x-2 bottom-0 h-0.5 bg-brand-foreground/80" />
             </div>
           </div>
 

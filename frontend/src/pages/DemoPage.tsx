@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { CorridorOption, DemoTransferRequest, ProofPackage } from "@wisp_/js";
-import type { MockKycStatusResponse, ProvenTransfer, WispClient } from "@wisp_/sdk";
+import type { MockKycStatusResponse, ProvenTransfer } from "@wisp_/sdk";
 import { COPY } from "@/content/copy";
 import { useWispClient } from "@/hooks/useWispClient";
 import { useDemoIssuerClient } from "@/hooks/useDemoIssuerClient";
-import { env } from "@/config/env";
 import { useWallet } from "@/hooks/useWallet";
 import { DemoKycPanel } from "@/components/demo/DemoKycPanel";
+import { CircleUsdcTrustlineBanner } from "@/components/demo/CircleUsdcTrustlineBanner";
+import { ApproveRecipientBanner } from "@/components/demo/ApproveRecipientBanner";
 import { KycOnboardingModal } from "@/components/demo/KycOnboardingModal";
 import { DemoTransferPanel } from "@/components/demo/DemoTransferPanel";
 import { DemoProgressSidebar } from "@/components/demo/DemoProgressSidebar";
@@ -21,6 +22,15 @@ import {
   provenCheckpoint,
 } from "@/lib/demoLog";
 import { kycMissingLabel, kycRootsLabel } from "@/lib/kyc";
+import { validateTransferPackage } from "@/hooks/useCompliantTransfer";
+import {
+  bumpAmountMicro,
+  defaultCountries,
+  extractTxHash,
+  formatUsdcDisplay,
+  parseUsdcAmount,
+  reconcileCorridorSelection,
+} from "@/lib/transferUtils";
 
 function stepIndex(flags: boolean[]): number {
   let count = 0;
@@ -41,75 +51,6 @@ function tamperProof(proven: ProvenTransfer): ProvenTransfer {
       a,
     },
   };
-}
-
-function extractTxHash(
-  result: Awaited<ReturnType<WispClient["settleWithWallet"]>>,
-): string {
-  return result.getTransactionResponse?.txHash ?? result.sendTransactionResponse?.hash ?? "";
-}
-
-function parseUsdcAmount(input: string): string | null {
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-  if (!/^\d+(\.\d{0,6})?$/.test(trimmed)) return null;
-  const [whole, frac = ""] = trimmed.split(".");
-  const normalized = `${whole}${frac.padEnd(6, "0")}`.replace(/^0+(?=\d)/, "");
-  return normalized.length > 0 ? normalized : "0";
-}
-
-function formatUsdcDisplay(micro: string): string {
-  const value = BigInt(micro);
-  const whole = value / 1_000_000n;
-  const frac = value % 1_000_000n;
-  const fracStr = frac.toString().padStart(6, "0").replace(/0+$/, "");
-  return fracStr.length > 0 ? `${whole}.${fracStr}` : whole.toString();
-}
-
-function bumpAmountMicro(micro: string): string {
-  return (BigInt(micro) + 1n).toString();
-}
-
-function defaultCountries(corridors: CorridorOption[]): {
-  sourceCountry: string;
-  destCountry: string;
-} {
-  const first = corridors.find((corridor) => corridor.enabled);
-  return {
-    sourceCountry: first?.source_country ?? "",
-    destCountry: first?.dest_country ?? "",
-  };
-}
-
-function reconcileCorridorSelection(
-  corridors: CorridorOption[],
-  source: string,
-  dest: string,
-): { sourceCountry: string; destCountry: string } {
-  const enabled = corridors.filter((corridor) => corridor.enabled);
-  if (enabled.length === 0) {
-    return { sourceCountry: source, destCountry: dest };
-  }
-
-  const exact = enabled.find(
-    (corridor) => corridor.source_country === source && corridor.dest_country === dest,
-  );
-  if (exact) {
-    return { sourceCountry: source, destCountry: dest };
-  }
-
-  const destsForSource = enabled
-    .filter((corridor) => corridor.source_country === source)
-    .map((corridor) => corridor.dest_country);
-  if (destsForSource.length > 0) {
-    return {
-      sourceCountry: source,
-      destCountry: destsForSource.includes(dest) ? dest : destsForSource[0]!,
-    };
-  }
-
-  const first = enabled[0]!;
-  return { sourceCountry: first.source_country, destCountry: first.dest_country };
 }
 
 export function DemoPage() {
@@ -392,19 +333,8 @@ export function DemoPage() {
 
   const validateFetchedPackage = useCallback(
     async (next: ProofPackage) => {
-      if (!env.issuerPublicKey) {
-        throw new Error("VITE_ISSUER_PUBLIC_KEY is not configured — cannot validate package roots");
-      }
-      if (!env.complianceId) {
-        throw new Error(
-          "VITE_COMPLIANCE_CONTRACT_ID is not configured — cannot validate package roots",
-        );
-      }
       const corridorId = Number(next.transfer?.corridor_id ?? selectedCorridor?.id ?? 1);
-      await client.validatePackage(next, {
-        issuerPublicKey: env.issuerPublicKey,
-        corridorId,
-      });
+      await validateTransferPackage(client, next, corridorId);
       demoLog("validate.ok", { corridor_id: corridorId });
     },
     [client, selectedCorridor?.id],
@@ -649,6 +579,19 @@ export function DemoPage() {
           setKycActivating(false);
         }}
       />
+
+      {isConnected && (
+        <CircleUsdcTrustlineBanner address={address} walletSigner={walletSigner} />
+      )}
+
+      {isConnected && (
+        <ApproveRecipientBanner
+          recipient={recipientInput}
+          corridorId={selectedCorridor?.id ?? null}
+          kycStatus={kycStatus}
+          onApproved={refreshKycStatus}
+        />
+      )}
 
       {error && (
         <p className="whitespace-pre-wrap border-2 border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">

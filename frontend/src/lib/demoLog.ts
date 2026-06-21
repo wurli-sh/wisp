@@ -104,6 +104,10 @@ const CONTRACT_HINTS: [RegExp, string][] = [
     "SAC allowance missing — approve Circle USDC for the compliance contract before settling.",
   ],
   [
+    /resulting balance is not within the allowed range/i,
+    "Insufficient Circle USDC on the SAC — trustline is OK but balance is 0. Fund GAVRI… from faucet.circle.com (Stellar Testnet). Demo USDC (GAIVU issuer) does not count.",
+  ],
+  [
     /trustline entry is missing/i,
     "Circle USDC trustline missing — in Freighter add USDC with issuer GBBD47… (circle.com), then fund from faucet.circle.com (Stellar Testnet).",
   ],
@@ -127,8 +131,16 @@ const ISSUER_HINTS: [RegExp, string][] = [
     "Issuer temporarily unreachable — if you just restarted the backend, wait a few seconds and retry. In local dev, restart ./scripts/dev/bru.sh so Vite proxy and issuer env are in sync.",
   ],
   [
+    /Package issuer roots stale vs chain/i,
+    "Issuer roots on-chain are behind the proof package — republish (curl -X POST -H 'Authorization: Bearer demo-token' http://localhost:3000/v1/admin/roots/publish -d '{\"corridor_id\":1}'), then refetch the proof package and reprove.",
+  ],
+  [
+    /Package corridor roots stale vs chain/i,
+    "Corridor roots on-chain are behind the proof package — republish roots via issuer, then refetch the proof package and reprove.",
+  ],
+  [
     /On-chain issuer\/corridor roots not found/i,
-    "Chain event scan missed issuer roots — restart ./scripts/dev/bru.sh (writes frontend/.env.local with VITE_VALIDATE_START_LEDGER) or set VITE_VALIDATE_START_LEDGER in frontend/.env.",
+    "Chain event scan missed issuer roots — set VITE_VALIDATE_START_LEDGER to your compliance deploy ledger (see .wisp/compliance.env), restart the Vite dev server, and run ./scripts/dev/bru.sh if the issuer is local.",
   ],
   [
     /Issuer .+ is not registered on-chain/i,
@@ -136,7 +148,7 @@ const ISSUER_HINTS: [RegExp, string][] = [
   ],
   [
     /recipient not approved for corridor/i,
-    "Use the demo recipient from the testnet fixture (prefilled on load) or ask the operator to approve this address.",
+    "Recipient not in corridor destination registry — click “Approve recipient destination” in the demo banner, or POST /v1/admin/corridors/1/destinations then republish roots.",
   ],
   [
     /active credential not found/i,

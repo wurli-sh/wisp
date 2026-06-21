@@ -8,6 +8,7 @@ interface ImportMetaEnv {
   readonly VITE_SAC_CONTRACT_ID?: string;
   readonly VITE_ISSUER_PUBLIC_KEY?: string;
   readonly VITE_ISSUER_URL?: string;
+  readonly VITE_ISSUER_ADMIN_TOKEN?: string;
   readonly VITE_VALIDATE_START_LEDGER?: string;
   readonly VITE_COMPLIANCE_DEPLOY_LEDGER?: string;
   readonly VITE_WISP_FIXTURE_PROFILE?: string;
