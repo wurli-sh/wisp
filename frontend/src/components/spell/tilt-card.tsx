@@ -29,8 +29,9 @@ export function TiltCard({
   );
   const [spotlightPos, setSpotlightPos] = useState({ x: 50, y: 50 });
   const [isHovered, setIsHovered] = useState(false);
-  const disableInteraction =
-    useMediaQuery("(max-width: 767px)") || useMediaQuery("(prefers-reduced-motion: reduce)");
+  const isMobile = useMediaQuery("(max-width: 767px)");
+  const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const disableInteraction = isMobile || prefersReducedMotion;
 
   const dir = effect === "evade" ? -1 : 1;
 
