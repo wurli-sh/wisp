@@ -1,3 +1,4 @@
 pitch/*
 !pitch/
 !pitch/*.pdf
+demo/*

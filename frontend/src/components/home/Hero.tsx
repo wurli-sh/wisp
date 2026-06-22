@@ -16,7 +16,7 @@ import {
 
 const DITHER_PROPS = {
   colorBack: "#F4FBFF",
-  colorFront: "#0C100B",
+  colorFront: "#0A0A0A",
   shape: "simplex" as const,
   type: "4x4" as const,
   scale: 0.4,
