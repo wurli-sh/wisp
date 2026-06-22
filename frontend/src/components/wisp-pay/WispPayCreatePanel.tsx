@@ -333,8 +333,8 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
         )}
 
         <div className="mt-6">
-          <motion.div className="inline-flex" whileHover={buttonHover} whileTap={buttonTap}>
-            <Button type="submit" size="lg" className="min-w-44">
+          <motion.div className="w-full sm:inline-flex" whileHover={buttonHover} whileTap={buttonTap}>
+            <Button type="submit" size="lg" className="w-full sm:min-w-44 sm:w-auto">
               {create.submit}
             </Button>
           </motion.div>
@@ -342,7 +342,7 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
       </form>
 
       {createdInvoice && (
-        <div className="border-2 border-brand/25 bg-brand-soft/50 p-6 shadow-soft">
+        <div className="border-2 border-brand/25 bg-brand-soft/50 p-4 shadow-soft sm:p-6">
           <div className="flex flex-wrap items-center gap-2">
             <Check size={16} className="text-brand" />
             <p className="text-sm font-bold text-primary">{create.successTitle}</p>
@@ -367,7 +367,7 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
 
       {invoices.length > 0 && (
         <div className="border-2 border-border bg-background shadow-soft">
-          <div className="border-b-2 border-border px-6 py-4">
+          <div className="border-b-2 border-border px-4 py-4 sm:px-6">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
               {create.listTitle}
             </p>
@@ -375,7 +375,7 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
           </div>
           <ul className="divide-y-2 divide-border">
             {invoices.map((invoice) => (
-              <li key={invoice.id} className="flex flex-wrap items-center gap-3 px-6 py-4">
+              <li key={invoice.id} className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 sm:px-6">
                 <div className="min-w-0 flex-1">
                   <p className="font-mono text-sm font-semibold text-primary">{invoice.id}</p>
                   <p className="text-xs text-muted-foreground">
@@ -384,22 +384,31 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
                     {invoice.label ? ` · ${invoice.label}` : ""}
                   </p>
                 </div>
-                <Badge variant={invoice.status === "paid" ? "brand" : "warning"}>
-                  {invoice.status === "paid" ? create.statusPaid : create.statusPending}
-                </Badge>
-                <Button type="button" variant="outline" size="sm" onClick={() => void copyPayLink(invoice)}>
-                  {create.copyLink}
-                </Button>
-                {invoice.status === "pending" && (
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+                  <Badge variant={invoice.status === "paid" ? "brand" : "warning"} className="w-fit">
+                    {invoice.status === "paid" ? create.statusPaid : create.statusPending}
+                  </Badge>
                   <Button
                     type="button"
-                    variant="danger"
+                    variant="outline"
                     size="sm"
-                    onClick={() => handleRemove(invoice.id)}
+                    className="w-full sm:w-auto"
+                    onClick={() => void copyPayLink(invoice)}
                   >
-                    {create.remove}
+                    {create.copyLink}
                   </Button>
-                )}
+                  {invoice.status === "pending" && (
+                    <Button
+                      type="button"
+                      variant="danger"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                      onClick={() => handleRemove(invoice.id)}
+                    >
+                      {create.remove}
+                    </Button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>

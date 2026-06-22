@@ -13,6 +13,7 @@ interface TabsProps {
   className?: string;
   trailing?: React.ReactNode;
   layoutId?: string;
+  equalWidth?: boolean;
 }
 
 export function Tabs({
@@ -22,12 +23,14 @@ export function Tabs({
   className,
   trailing,
   layoutId = "tabIndicator",
+  equalWidth = false,
 }: TabsProps) {
   return (
     <LayoutGroup id={layoutId}>
       <div
         className={cn(
           "flex items-center gap-1 border-b-2 border-border bg-background px-2 pt-2",
+          equalWidth && "w-full",
           className,
         )}
       >
@@ -39,7 +42,8 @@ export function Tabs({
               type="button"
               onClick={() => onChange(item.key)}
               className={cn(
-                "relative cursor-pointer px-4 py-2.5 text-xs font-bold uppercase tracking-wider outline-none transition-colors duration-200 focus-visible:shadow-glow",
+                "relative cursor-pointer px-3 py-2.5 text-xs font-bold uppercase tracking-wider outline-none transition-colors duration-200 focus-visible:shadow-glow sm:px-4",
+                equalWidth && "min-w-0 flex-1",
                 isActive
                   ? "text-brand-foreground"
                   : "text-muted-foreground hover:bg-brand-soft/70 hover:text-primary",

@@ -114,7 +114,7 @@ export function WispPayPanel({
       )}
 
       <div className="border-2 border-border bg-brand-soft/40">
-        <div className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-border bg-background px-6 py-5">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-border bg-background px-4 py-4 sm:px-6 sm:py-5">
           <div>
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
               {pay.summaryTitle}
@@ -133,8 +133,8 @@ export function WispPayPanel({
           </Badge>
         </div>
 
-        <div className="grid gap-4 p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-border bg-background px-4 py-3">
+        <div className="grid gap-4 p-4 sm:p-6">
+          <div className="flex flex-col items-stretch gap-3 border-2 border-border bg-background px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             <div className="flex min-w-0 items-center gap-3">
               <CountryFlag code={invoice.sourceCountry} size="md" />
               <div className="min-w-0">
@@ -146,11 +146,11 @@ export function WispPayPanel({
                 </p>
               </div>
             </div>
-            <span className="shrink-0 bg-brand px-3 py-1 text-xs font-bold text-brand-foreground">
+            <span className="shrink-0 self-center bg-brand px-3 py-1 text-xs font-bold text-brand-foreground">
               →
             </span>
-            <div className="flex min-w-0 items-center gap-3 text-right">
-              <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-3 sm:ml-auto sm:text-right">
+              <div className="min-w-0 sm:order-first sm:ml-auto">
                 <p className="truncate text-sm font-semibold text-primary">
                   {getCountryDisplayName(invoice.destCountry)}
                 </p>
@@ -246,10 +246,10 @@ export function WispPayPanel({
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap gap-3">
+          <div className="flex w-full flex-col gap-3 sm:flex-row sm:flex-wrap">
             {!flow.isConnected ? (
               <motion.div
-                className="inline-flex"
+                className="w-full sm:inline-flex sm:w-auto"
                 whileHover={flow.isConnecting ? undefined : buttonHover}
                 whileTap={flow.isConnecting ? undefined : buttonTap}
               >
@@ -258,7 +258,7 @@ export function WispPayPanel({
                   size="lg"
                   disabled={flow.isConnecting}
                   onClick={() => void flow.connect()}
-                  className="min-w-44 gap-2"
+                  className="w-full gap-2 sm:min-w-44 sm:w-auto"
                 >
                   <Wallet size={16} />
                   {pay.connectWallet}
@@ -266,7 +266,7 @@ export function WispPayPanel({
               </motion.div>
             ) : (
               <motion.div
-                className="inline-flex"
+                className="w-full sm:inline-flex sm:w-auto"
                 whileHover={!canPay ? undefined : buttonHover}
                 whileTap={!canPay ? undefined : buttonTap}
               >
@@ -284,7 +284,7 @@ export function WispPayPanel({
                       }
                     });
                   }}
-                  className="min-w-44"
+                  className="w-full sm:min-w-44 sm:w-auto"
                 >
                   {flow.busy ? pay.proveAndPayBusy : pay.proveAndPay}
                 </Button>

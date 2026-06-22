@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useMemo } from "react";
 import { COPY } from "@/content/copy";
-import { PAGE_PT } from "@/config/layout";
+import { PAGE_PT, PAGE_PX, PANEL_PX } from "@/config/layout";
 import { cn } from "@/lib/cn";
 import { WispPayCreatePanel } from "@/components/wisp-pay/WispPayCreatePanel";
 import { WispPayPanel } from "@/components/wisp-pay/WispPayPanel";
@@ -84,7 +84,7 @@ export function WispPayPage() {
   };
 
   return (
-    <div className={cn("mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-8 sm:px-6 lg:gap-8 lg:pb-12", PAGE_PT)}>
+    <div className={cn("mx-auto flex w-full max-w-5xl flex-col gap-6 pb-6 lg:gap-8 lg:pb-12", PAGE_PX, PAGE_PT)}>
       <ConfigBanner />
 
       <div>
@@ -100,8 +100,14 @@ export function WispPayPage() {
       </div>
 
       <div className="border-2 border-border bg-background shadow-soft">
-        <Tabs items={[...TAB_ITEMS]} active={mode} onChange={handleTabChange} layoutId="wispPayTab" />
-        <div className="p-6">
+        <Tabs
+          items={[...TAB_ITEMS]}
+          active={mode}
+          onChange={handleTabChange}
+          layoutId="wispPayTab"
+          equalWidth
+        />
+        <div className={PANEL_PX}>
           {mode === "create" && <WispPayCreatePanel />}
           {mode === "pay" && (
             <WispPayPanel

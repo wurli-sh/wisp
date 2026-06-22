@@ -43,7 +43,7 @@ function ReceiptSummaryCard({
 
   return (
     <div className="border-2 border-border bg-brand-soft/40">
-      <div className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-border bg-background px-6 py-5">
+      <div className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-border bg-background px-4 py-4 sm:px-6 sm:py-5">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
             {receipt.summaryTitle}
@@ -62,8 +62,8 @@ function ReceiptSummaryCard({
         </Badge>
       </div>
 
-      <div className="grid gap-4 p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-2 border-border bg-background px-4 py-3">
+      <div className="grid gap-4 p-4 sm:p-6">
+        <div className="flex flex-col items-stretch gap-3 border-2 border-border bg-background px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <CountryFlag code={invoice.sourceCountry} size="md" />
             <div className="min-w-0">
@@ -75,11 +75,11 @@ function ReceiptSummaryCard({
               </p>
             </div>
           </div>
-          <span className="shrink-0 bg-brand px-3 py-1 text-xs font-bold text-brand-foreground">
+          <span className="shrink-0 self-center bg-brand px-3 py-1 text-xs font-bold text-brand-foreground">
             →
           </span>
-          <div className="flex min-w-0 items-center gap-3 text-right">
-            <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-3 sm:ml-auto sm:text-right">
+            <div className="min-w-0 sm:order-first sm:ml-auto">
               <p className="truncate text-sm font-semibold text-primary">
                 {getCountryDisplayName(invoice.destCountry)}
               </p>
@@ -152,14 +152,14 @@ export function WispPayReceiptPanel({
   if (invoice && invoice.status !== "paid" && !effectiveTx) {
     return (
       <div className="flex flex-col gap-6">
-        <div className="border-2 border-border bg-brand-soft/40 p-6">
+        <div className="border-2 border-border bg-brand-soft/40 p-4 sm:p-6">
           <p className="text-sm font-semibold text-primary">{receipt.unpaidTitle}</p>
           <p className="mt-2 text-sm text-muted-foreground">{receipt.unpaidBody}</p>
-          <motion.div className="mt-4 inline-flex" whileHover={buttonHover} whileTap={buttonTap}>
+          <motion.div className="mt-4 w-full sm:inline-flex sm:w-auto" whileHover={buttonHover} whileTap={buttonTap}>
             <Button
               type="button"
               size="lg"
-              className="min-w-44"
+              className="w-full sm:min-w-44 sm:w-auto"
               onClick={() => onGoToPay(invoice.id)}
             >
               {receipt.goToPay}
@@ -245,13 +245,13 @@ export function WispPayReceiptPanel({
         <ReceiptSummaryCard invoice={invoice}>{auditGrid}</ReceiptSummaryCard>
       ) : (
         <div className="border-2 border-border bg-brand-soft/40">
-          <div className="border-b-2 border-border bg-background px-6 py-5">
+          <div className="border-b-2 border-border bg-background px-4 py-4 sm:px-6 sm:py-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand">
               {receipt.summaryTitle}
             </p>
             <p className="mt-2 text-sm text-muted-foreground">{receipt.txOnlyHint}</p>
           </div>
-          <div className="p-6">{auditGrid}</div>
+          <div className="p-4 sm:p-6">{auditGrid}</div>
         </div>
       )}
 
