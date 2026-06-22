@@ -23,14 +23,30 @@ function ComparisonRow({
   return (
     <li
       className={cn(
-        "grid h-11 grid-cols-[4.75rem_minmax(0,1fr)_5rem] items-center gap-x-2 px-4 last:border-b-0",
+        "flex flex-col gap-2 border-b px-4 py-3 last:border-b-0 sm:grid sm:h-11 sm:grid-cols-[4.75rem_minmax(0,1fr)_5.5rem] sm:items-center sm:gap-x-2 sm:py-0",
         isDanger ? "border-destructive/15" : "border-primary/10",
       )}
     >
-      <span className="text-xs font-medium text-muted-foreground">{field}</span>
+      <div className="flex items-center justify-between gap-2 sm:contents">
+        <span className="text-xs font-medium text-muted-foreground">{field}</span>
+        <div className="flex shrink-0 items-center justify-end sm:order-3 sm:w-20">
+          {status === "exposed" && (
+            <span className="inline-flex shrink-0 items-center gap-1 border border-destructive/25 bg-destructive/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-destructive">
+              <Eye size={10} strokeWidth={2.5} aria-hidden />
+              exposed
+            </span>
+          )}
+          {status === "public" && (
+            <Check size={14} className="shrink-0 text-success" strokeWidth={2.5} aria-hidden />
+          )}
+          {status === "proven" && (
+            <Lock size={13} className="shrink-0 text-primary" strokeWidth={2.5} aria-hidden />
+          )}
+        </div>
+      </div>
       <span
         className={cn(
-          "truncate text-right text-xs font-semibold tabular-nums",
+          "text-left text-xs font-semibold tabular-nums sm:text-right",
           isDanger && "text-destructive",
           !isDanger && status === "public" && "text-foreground",
           !isDanger && status === "proven" && "text-primary",
@@ -38,20 +54,6 @@ function ComparisonRow({
       >
         {value}
       </span>
-      <div className="flex w-20 items-center justify-end">
-        {status === "exposed" && (
-          <span className="inline-flex shrink-0 items-center gap-1 border border-destructive/25 bg-destructive/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-destructive">
-            <Eye size={10} strokeWidth={2.5} aria-hidden />
-            exposed
-          </span>
-        )}
-        {status === "public" && (
-          <Check size={14} className="shrink-0 text-success" strokeWidth={2.5} aria-hidden />
-        )}
-        {status === "proven" && (
-          <Lock size={13} className="shrink-0 text-primary" strokeWidth={2.5} aria-hidden />
-        )}
-      </div>
     </li>
   );
 }
@@ -159,7 +161,7 @@ export function ParadoxSection() {
   const { paradoxAct } = COPY;
 
   return (
-    <section className="relative overflow-hidden bg-background py-28 md:py-32">
+    <section className="relative overflow-hidden bg-background py-16 sm:py-28 md:py-32">
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.35]"
         aria-hidden

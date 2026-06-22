@@ -9,7 +9,7 @@ export function EngineSection() {
   const { engine } = COPY;
 
   return (
-    <section id="how-it-works" className="overflow-hidden py-28 md:py-32">
+    <section id="how-it-works" className="overflow-hidden py-16 sm:py-28 md:py-32">
       <div className={cn("mx-auto max-w-6xl px-4 sm:px-6")}>
         <motion.div
           initial="hidden"

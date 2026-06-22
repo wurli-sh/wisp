@@ -32,7 +32,7 @@ export function UseCasesSection() {
   const { builders } = COPY;
 
   return (
-    <section className="bg-background py-28 md:py-32">
+    <section className="bg-background py-16 sm:py-28 md:py-32">
       <div className={cn("mx-auto px-4 sm:px-6", PAGE_MAX)}>
         <motion.div
           initial="hidden"

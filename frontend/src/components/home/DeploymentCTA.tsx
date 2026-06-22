@@ -12,7 +12,7 @@ export function DeploymentCTA() {
   const { closer } = COPY.move;
 
   return (
-    <section className="py-28 md:py-32">
+    <section className="py-16 sm:py-28 md:py-32">
       <div className={cn("mx-auto px-4 sm:px-6", PAGE_MAX)}>
         <motion.div
           initial="hidden"
@@ -48,18 +48,23 @@ export function DeploymentCTA() {
               {closer.sub}
             </p>
             <motion.div
-              className="mt-10 flex flex-wrap items-center justify-center gap-3 sm:gap-4 md:justify-start"
+              className="mt-10 flex w-full max-w-sm flex-col items-stretch gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-4 md:justify-start"
             >
-              <Link to={closer.ctas.primary.href}>
-                <motion.div whileHover={buttonHover} whileTap={buttonTap}>
-                  <Button size="lg" variant="primary">
+              <Link to={closer.ctas.primary.href} className="w-full sm:w-auto">
+                <motion.div whileHover={buttonHover} whileTap={buttonTap} className="w-full sm:w-auto">
+                  <Button size="lg" variant="primary" className="w-full sm:w-auto">
                     {closer.ctas.primary.label}
                   </Button>
                 </motion.div>
               </Link>
-              <a href={closer.ctas.secondary.href} target="_blank" rel="noopener noreferrer">
-                <motion.div whileHover={buttonHover} whileTap={buttonTap}>
-                  <Button size="lg" variant="outline">
+              <a
+                href={closer.ctas.secondary.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto"
+              >
+                <motion.div whileHover={buttonHover} whileTap={buttonTap} className="w-full sm:w-auto">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto">
                     {closer.ctas.secondary.label}
                   </Button>
                 </motion.div>

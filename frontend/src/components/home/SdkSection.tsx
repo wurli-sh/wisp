@@ -27,7 +27,7 @@ export function SdkSection() {
   };
 
   return (
-    <section className="bg-background py-28 md:py-32">
+    <section className="bg-background py-16 sm:py-28 md:py-32">
       <div className={cn("mx-auto px-4 sm:px-6", PAGE_MAX)}>
         <motion.div
           initial="hidden"
@@ -123,7 +123,7 @@ export function SdkSection() {
           whileInView="visible"
           viewport={scrollViewport}
           variants={staggerContainer}
-          className="mx-auto mt-8 grid max-w-2xl grid-cols-3 gap-3"
+          className="mx-auto mt-8 grid max-w-2xl grid-cols-3 gap-2 sm:gap-3"
         >
           {sdk.stats.map((stat) => (
             <motion.div

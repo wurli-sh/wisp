@@ -9,7 +9,7 @@ export function FooterImageSection() {
   return (
     <section
       aria-hidden="true"
-      className="flex w-full justify-center bg-background px-4 pt-8 md:pt-12"
+      className="flex w-full justify-center overflow-hidden bg-background px-4 pt-8 md:pt-12"
     >
       <motion.div
         initial="hidden"

@@ -63,7 +63,7 @@ export function Hero() {
   const { hero } = COPY;
 
   return (
-    <section className="relative flex min-h-dvh items-center justify-center overflow-hidden bg-background pt-18 pb-16 md:pb-20">
+    <section className="relative flex min-h-[calc(100dvh-8rem)] items-center justify-center overflow-hidden bg-background pt-18 pb-12 sm:min-h-dvh sm:pb-16 md:pb-20">
       <HeroDitherSide side="left" />
       <HeroDitherSide side="right" />
 
@@ -90,7 +90,7 @@ export function Hero() {
             variants={fadeInUp}
           >
             {hero.headlineLead}{" "}
-            <HighlightedText variant="sky" from="bottom" delay={0.12} className="whitespace-nowrap">
+            <HighlightedText variant="sky" from="bottom" delay={0.12}>
               {hero.headlineAccent}
             </HighlightedText>
           </motion.h1>
@@ -103,19 +103,19 @@ export function Hero() {
           </motion.p>
 
           <motion.div
-            className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-4"
+            className="mt-8 flex w-full max-w-sm flex-col items-stretch gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-4"
             variants={fadeInUp}
           >
-            <Link to={hero.ctas.primary.href}>
-              <motion.div whileHover={buttonHover} whileTap={buttonTap}>
-                <Button size="lg" variant="primary">
+            <Link to={hero.ctas.primary.href} className="w-full sm:w-auto">
+              <motion.div whileHover={buttonHover} whileTap={buttonTap} className="w-full sm:w-auto">
+                <Button size="lg" variant="primary" className="w-full sm:w-auto">
                   {hero.ctas.primary.label}
                 </Button>
               </motion.div>
             </Link>
-            <a href={hero.ctas.secondary.href}>
-              <motion.div whileHover={buttonHover} whileTap={buttonTap}>
-                <Button size="lg" variant="outline">
+            <a href={hero.ctas.secondary.href} className="w-full sm:w-auto">
+              <motion.div whileHover={buttonHover} whileTap={buttonTap} className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto">
                   {hero.ctas.secondary.label}
                 </Button>
               </motion.div>
