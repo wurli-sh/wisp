@@ -1,12 +1,11 @@
 import { Hero } from "@/components/home/Hero";
 import { ParadoxSection } from "@/components/home/ParadoxSection";
 import { EngineSection } from "@/components/home/EngineSection";
+import { LaunchVideoSection } from "@/components/home/LaunchVideoSection";
 import { UseCasesSection } from "@/components/home/UseCasesSection";
 import { WispPayShowcaseSection } from "@/components/home/WispPayShowcaseSection";
 import { SdkSection } from "@/components/home/SdkSection";
 import { DeploymentCTA } from "@/components/home/DeploymentCTA";
-import { FooterImageSection } from "@/components/home/FooterImageSection";
-
 export function HomePage() {
   return (
     <div className="bg-background">
@@ -17,7 +16,7 @@ export function HomePage() {
       <UseCasesSection />
       <SdkSection />
       <DeploymentCTA />
-      <FooterImageSection />
+      <LaunchVideoSection />
     </div>
   );
 }

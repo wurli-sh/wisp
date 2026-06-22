@@ -27,6 +27,13 @@ export const BRAND_IMAGES = {
   },
 } as const;
 
+export const LAUNCH_VIDEO = {
+  src: "/launch-video.web.mp4",
+  poster: "/launch-video-poster.webp",
+  width: 1280,
+  height: 720,
+} as const;
+
 /** @deprecated Use BRAND_IMAGES.portableSdk.src */
 export const PORTABLE_SDK_SRC = BRAND_IMAGES.portableSdk.src;
 /** @deprecated Use BRAND_IMAGES.stableCoins.src */

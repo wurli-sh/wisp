@@ -153,6 +153,18 @@ await client.settleWithWallet(proven, pkg, wallet);`,
     ],
   },
 
+  launchVideo: {
+    eyebrow: "DEMO VIDEO",
+    headlineLead: "Watch a compliant transfer",
+    headlineAccent: "in 25 seconds.",
+    sub: "KYC binding, proof generation, and on-chain settlement — end to end.",
+    play: "Play walkthrough",
+    playAria: "Play 25-second Wisp walkthrough video with sound",
+    meta: "25s · sound on",
+    demoLink: "Try the interactive walkthrough →",
+    demoHref: "/demo",
+  },
+
   wispPayShowcase: {
     eyebrow: "WISP PAY",
     headlineAccent: "One link.",
