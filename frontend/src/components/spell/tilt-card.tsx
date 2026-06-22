@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback } from "react";
 import { cn } from "@/lib/cn";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 export interface TiltCardProps {
   tiltLimit?: number;
@@ -28,6 +29,9 @@ export function TiltCard({
   );
   const [spotlightPos, setSpotlightPos] = useState({ x: 50, y: 50 });
   const [isHovered, setIsHovered] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 767px)");
+  const prefersReducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
+  const disableInteraction = isMobile || prefersReducedMotion;
 
   const dir = effect === "evade" ? -1 : 1;
 
@@ -64,19 +68,19 @@ export function TiltCard({
   return (
     <div
       ref={cardRef}
-      onPointerEnter={handlePointerEnter}
-      onPointerMove={handlePointerMove}
-      onPointerLeave={handlePointerLeave}
-      className={cn("relative overflow-hidden will-change-transform", className)}
+      onPointerEnter={disableInteraction ? undefined : handlePointerEnter}
+      onPointerMove={disableInteraction ? undefined : handlePointerMove}
+      onPointerLeave={disableInteraction ? undefined : handlePointerLeave}
+      className={cn("relative overflow-hidden", !disableInteraction && "will-change-transform", className)}
       style={{
-        transform,
-        transition: "transform 0.2s ease-out",
-        transformStyle: "preserve-3d",
+        transform: disableInteraction ? undefined : transform,
+        transition: disableInteraction ? undefined : "transform 0.2s ease-out",
+        transformStyle: disableInteraction ? undefined : "preserve-3d",
         ...style,
       }}
     >
       {children}
-      {spotlight && (
+      {spotlight && !disableInteraction && (
         <div
           className="pointer-events-none absolute inset-0 z-10 overflow-hidden"
           style={{ opacity: isHovered ? 1 : 0, transition: "opacity 0.3s" }}

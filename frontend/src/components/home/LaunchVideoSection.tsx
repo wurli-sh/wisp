@@ -5,7 +5,7 @@ import { BRAND_IMAGES, LAUNCH_VIDEO } from "@/config/brand";
 import { PAGE_MAX } from "@/config/layout";
 import { COPY } from "@/content/copy";
 import { cn } from "@/lib/cn";
-import { fadeInUp, scrollViewport } from "@/lib/animations";
+import { sectionReveal, useSectionReveal } from "@/hooks/useSectionReveal";
 
 function LaunchVideoPlayer() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -44,7 +44,7 @@ function LaunchVideoPlayer() {
           src={LAUNCH_VIDEO.src}
           controls
           playsInline
-          preload="auto"
+          preload="metadata"
           width={LAUNCH_VIDEO.width}
           height={LAUNCH_VIDEO.height}
         />
@@ -93,16 +93,18 @@ function LaunchVideoPlayer() {
 }
 
 export function LaunchVideoSection() {
+  const { sectionRef, showContent } = useSectionReveal();
+
   return (
     <section
       aria-hidden="true"
       className="flex w-full justify-center overflow-hidden bg-background px-4 pt-8 md:pt-12"
     >
       <motion.div
-        initial="hidden"
-        whileInView="visible"
-        viewport={scrollViewport}
-        variants={fadeInUp}
+        ref={sectionRef}
+        initial={false}
+        animate={showContent ? "visible" : "hidden"}
+        variants={sectionReveal}
         className={cn("w-full overflow-hidden", PAGE_MAX)}
       >
         <LaunchVideoPlayer />

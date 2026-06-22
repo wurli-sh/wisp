@@ -1,8 +1,10 @@
 import { useEffect, useRef, type CSSProperties } from "react";
 import createGlobe from "cobe";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 
 const GLOBE_MAX = 580;
-const DPR = 2;
+const DESKTOP_DPR = 2;
+const MOBILE_DPR = 1;
 
 const GLOBE_BLUE: [number, number, number] = [0.184, 0.435, 0.89];
 
@@ -117,30 +119,51 @@ function ArcLabel({ id, label }: { id: string; label: string }) {
 export function CorridorGlobe() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const visibleRef = useRef(false);
+  const isMobile = useMediaQuery("(max-width: 767px)");
+  const dpr = isMobile ? MOBILE_DPR : DESKTOP_DPR;
+  const mapSamples = isMobile ? 8000 : 20000;
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        visibleRef.current = entry?.isIntersecting ?? false;
+      },
+      { rootMargin: "120px" },
+    );
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
 
     let phi = 0;
     let frame = 0;
+    let mounted = true;
 
     const getPixelSize = () => {
-      const width = Math.min(containerRef.current?.offsetWidth ?? GLOBE_MAX, GLOBE_MAX);
-      return width * DPR;
+      const width = Math.min(container.offsetWidth || GLOBE_MAX, GLOBE_MAX);
+      return width * dpr;
     };
 
     const pixelSize = getPixelSize();
 
     const globe = createGlobe(canvas, {
-      devicePixelRatio: DPR,
+      devicePixelRatio: dpr,
       width: pixelSize,
       height: pixelSize,
       phi: 0,
       theta: 0.2,
       dark: 0,
       diffuse: 1.2,
-      mapSamples: 20000,
+      mapSamples,
       mapBrightness: 6,
       mapBaseBrightness: 0,
       baseColor: [1, 1, 1],
@@ -168,8 +191,10 @@ export function CorridorGlobe() {
     };
 
     const animate = () => {
-      phi += 0.003;
-      globe.update({ phi });
+      if (mounted && visibleRef.current) {
+        phi += 0.003;
+        globe.update({ phi });
+      }
       frame = requestAnimationFrame(animate);
     };
 
@@ -177,18 +202,19 @@ export function CorridorGlobe() {
     frame = requestAnimationFrame(animate);
 
     return () => {
+      mounted = false;
       cancelAnimationFrame(frame);
       window.removeEventListener("resize", onResize);
       globe.destroy();
     };
-  }, []);
+  }, [dpr, mapSamples]);
 
   return (
     <div
       ref={containerRef}
       className="relative mx-auto aspect-square w-full max-w-[480px]"
     >
-      <canvas ref={canvasRef} className="h-full w-full" width={GLOBE_MAX * DPR} height={GLOBE_MAX * DPR} />
+      <canvas ref={canvasRef} className="h-full w-full" width={GLOBE_MAX * dpr} height={GLOBE_MAX * dpr} />
       {CORRIDOR_MARKERS.map((marker) => (
         <MarkerLabel key={marker.id} id={marker.id} label={marker.label} />
       ))}
