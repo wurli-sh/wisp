@@ -5,7 +5,7 @@ import { COPY } from "@/content/copy";
 import { cn } from "@/lib/cn";
 import { Badge } from "@/components/ui/Badge";
 import { HighlightedText } from "@/components/spell/highlighted-text";
-import { fadeInUp, scrollViewport, staggerContainer } from "@/lib/animations";
+import { sectionReveal, sectionStagger, useSectionReveal } from "@/hooks/useSectionReveal";
 
 function ComparisonRow({
   field,
@@ -75,8 +75,6 @@ function ComparisonCard({
   pill,
   badgeVariant,
   rows,
-  motionX,
-  delay = 0,
 }: {
   tone: "danger" | "safe";
   icon: React.ReactNode;
@@ -85,17 +83,11 @@ function ComparisonCard({
   pill: string;
   badgeVariant: "danger" | "success";
   rows: readonly ComparisonRowData[];
-  motionX: number;
-  delay?: number;
 }) {
   const isDanger = tone === "danger";
 
   return (
-    <motion.article
-      initial={{ opacity: 0, x: motionX }}
-      whileInView={{ opacity: 1, x: 0 }}
-      viewport={scrollViewport}
-      transition={{ delay }}
+    <article
       className={cn(
         "flex h-full flex-col border-2 bg-linear-to-b to-background",
         isDanger
@@ -153,12 +145,13 @@ function ComparisonCard({
           <Badge variant={badgeVariant}>{pill}</Badge>
         </div>
       </div>
-    </motion.article>
+    </article>
   );
 }
 
 export function ParadoxSection() {
   const { paradoxAct } = COPY;
+  const { sectionRef, showContent } = useSectionReveal();
 
   return (
     <section className="relative overflow-hidden bg-background py-16 sm:py-28 md:py-32">
@@ -175,64 +168,60 @@ export function ParadoxSection() {
 
       <div className={cn("relative mx-auto px-4 sm:px-6", PAGE_MAX)}>
         <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={scrollViewport}
-          variants={staggerContainer}
-          className="text-center"
+          ref={sectionRef}
+          initial={false}
+          animate={showContent ? "visible" : "hidden"}
+          variants={sectionStagger}
         >
-          <motion.p
-            variants={fadeInUp}
-            className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
-          >
-            {paradoxAct.eyebrow}
-          </motion.p>
-          <motion.h2
-            variants={fadeInUp}
-            className="mt-4 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
-          >
-            {paradoxAct.headline}{" "}
-            <HighlightedText variant="sky" from="bottom" inView delay={0.06}>
-              {paradoxAct.headlineAccent}
-            </HighlightedText>
-          </motion.h2>
+          <motion.div variants={sectionReveal} className="text-center">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              {paradoxAct.eyebrow}
+            </p>
+            <h2 className="mt-4 text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              {paradoxAct.headline}{" "}
+              <HighlightedText variant="sky" from="bottom" active={showContent} delay={0.18}>
+                {paradoxAct.headlineAccent}
+              </HighlightedText>
+            </h2>
+          </motion.div>
+
+          <div className="relative mt-16">
+            <div
+              className="pointer-events-none absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 lg:block"
+              aria-hidden
+            >
+              <span className="inline-flex h-10 w-10 items-center justify-center border-2 border-border-strong bg-background text-[10px] font-bold uppercase tracking-wider text-muted-foreground shadow-soft">
+                vs
+              </span>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch lg:gap-8">
+              <motion.div variants={sectionReveal}>
+                <ComparisonCard
+                  tone="danger"
+                  icon={<Eye size={16} strokeWidth={2} aria-hidden />}
+                  label={paradoxAct.withoutZk.label}
+                  tagline={paradoxAct.withoutZk.tagline}
+                  pill={paradoxAct.withoutZk.pill}
+                  badgeVariant="danger"
+                  rows={paradoxAct.withoutZk.rows}
+                />
+              </motion.div>
+
+              <motion.div variants={sectionReveal}>
+                <ComparisonCard
+                  tone="safe"
+                  icon={<ShieldCheck size={16} strokeWidth={2} aria-hidden />}
+                  label={paradoxAct.withZk.label}
+                  tagline={paradoxAct.withZk.tagline}
+                  pill={paradoxAct.withZk.pill}
+                  badgeVariant="success"
+                  rows={paradoxAct.withZk.rows}
+                />
+              </motion.div>
+            </div>
+          </div>
         </motion.div>
-
-        <div className="relative mt-16">
-          <div
-            className="pointer-events-none absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 lg:block"
-            aria-hidden
-          >
-            <span className="inline-flex h-10 w-10 items-center justify-center border-2 border-border-strong bg-background text-[10px] font-bold uppercase tracking-wider text-muted-foreground shadow-soft">
-              vs
-            </span>
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch lg:gap-8">
-            <ComparisonCard
-              tone="danger"
-              icon={<Eye size={16} strokeWidth={2} aria-hidden />}
-              label={paradoxAct.withoutZk.label}
-              tagline={paradoxAct.withoutZk.tagline}
-              pill={paradoxAct.withoutZk.pill}
-              badgeVariant="danger"
-              rows={paradoxAct.withoutZk.rows}
-              motionX={-16}
-            />
-
-            <ComparisonCard
-              tone="safe"
-              icon={<ShieldCheck size={16} strokeWidth={2} aria-hidden />}
-              label={paradoxAct.withZk.label}
-              tagline={paradoxAct.withZk.tagline}
-              pill={paradoxAct.withZk.pill}
-              badgeVariant="success"
-              rows={paradoxAct.withZk.rows}
-              motionX={16}
-              delay={0.08}
-            />
-          </div>
-        </div>
       </div>
     </section>
   );

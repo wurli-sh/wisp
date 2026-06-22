@@ -5,7 +5,7 @@ import { cn } from "@/lib/cn";
 import { Logo } from "@/components/ui/Logo";
 import { TiltCard } from "@/components/spell/tilt-card";
 import { HighlightedText } from "@/components/spell/highlighted-text";
-import { fadeInUp, scrollViewport, staggerContainer } from "@/lib/animations";
+import { sectionReveal, sectionStagger, useSectionReveal } from "@/hooks/useSectionReveal";
 
 function WispPayCard() {
   const { card } = COPY.wispPayShowcase;
@@ -64,65 +64,51 @@ function WispPayCard() {
 
 export function WispPayShowcaseSection() {
   const { wispPayShowcase } = COPY;
+  const { sectionRef, showContent } = useSectionReveal();
 
   return (
     <section className="py-16 sm:py-28 md:py-32">
       <div className={cn("mx-auto px-4 sm:px-6", PAGE_MAX)}>
         <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={scrollViewport}
-          variants={staggerContainer}
-          className="text-center"
+          ref={sectionRef}
+          initial={false}
+          animate={showContent ? "visible" : "hidden"}
+          variants={sectionStagger}
         >
-          <motion.p
-            variants={fadeInUp}
-            className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
-          >
-            {wispPayShowcase.eyebrow}
-          </motion.p>
-          <motion.h2
-            variants={fadeInUp}
-            className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
-          >
-            <HighlightedText variant="sky" from="bottom" inView delay={0.08}>
-              {wispPayShowcase.headlineAccent}
-            </HighlightedText>{" "}
-            {wispPayShowcase.headlineRest}
-          </motion.h2>
-          <motion.p
-            variants={fadeInUp}
-            className="mx-auto mt-3 max-w-xl text-pretty text-sm text-muted-foreground sm:text-base"
-          >
-            {wispPayShowcase.sub}
-          </motion.p>
-        </motion.div>
+          <motion.div variants={sectionReveal} className="text-center">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              {wispPayShowcase.eyebrow}
+            </p>
+            <h2 className="text-balance text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+              <HighlightedText variant="sky" from="bottom" active={showContent} delay={0.18}>
+                {wispPayShowcase.headlineAccent}
+              </HighlightedText>{" "}
+              {wispPayShowcase.headlineRest}
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-pretty text-sm text-muted-foreground sm:text-base">
+              {wispPayShowcase.sub}
+            </p>
+          </motion.div>
 
-        <motion.div
-          className="mt-12"
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={scrollViewport}
-        >
-          <WispPayCard />
-        </motion.div>
+          <motion.div variants={sectionReveal} className="mt-12">
+            <WispPayCard />
+          </motion.div>
 
-        <motion.ul
-          initial="hidden"
-          whileInView="visible"
-          viewport={scrollViewport}
-          variants={staggerContainer}
-          className="mt-10 grid gap-px border-2 border-border bg-border md:grid-cols-3"
-        >
-          {wispPayShowcase.perks.map((perk) => (
-            <motion.li key={perk.label} variants={fadeInUp} className="bg-card px-5 py-4 text-center md:text-left">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                {perk.label}
-              </p>
-              <p className="mt-1.5 text-sm text-muted-foreground">{perk.detail}</p>
-            </motion.li>
-          ))}
-        </motion.ul>
+          <ul className="mt-10 grid gap-px border-2 border-border bg-border md:grid-cols-3">
+            {wispPayShowcase.perks.map((perk) => (
+              <motion.li
+                key={perk.label}
+                variants={sectionReveal}
+                className="bg-card px-5 py-4 text-center md:text-left"
+              >
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                  {perk.label}
+                </p>
+                <p className="mt-1.5 text-sm text-muted-foreground">{perk.detail}</p>
+              </motion.li>
+            ))}
+          </ul>
+        </motion.div>
       </div>
     </section>
   );
