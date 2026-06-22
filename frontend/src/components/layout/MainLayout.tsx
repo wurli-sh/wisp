@@ -4,9 +4,9 @@ import { Navbar } from "./Navbar";
 
 export function MainLayout() {
   return (
-    <div className="flex h-dvh flex-col bg-background text-foreground">
+    <div className="min-h-svh bg-background text-foreground">
       <Navbar />
-      <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+      <main className="pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">
         <Outlet />
       </main>
       <MobileTabBar />

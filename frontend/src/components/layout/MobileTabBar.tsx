@@ -32,7 +32,7 @@ export function MobileTabBar() {
   return (
     <nav
       aria-label="Mobile navigation"
-      className="shrink-0 border-t-2 border-border bg-brand-soft/80 backdrop-blur-md sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-front border-t-2 border-border bg-brand-soft/80 backdrop-blur-md sm:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
     >
       <div className="flex h-14 items-stretch">
