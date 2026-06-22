@@ -17,22 +17,31 @@ export function EngineSection() {
           initial={false}
           animate={showContent ? "visible" : "hidden"}
           variants={sectionStagger}
+          className="mb-12 text-center"
         >
-          <motion.div variants={sectionReveal} className="mb-12 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              {engine.eyebrow}
-            </p>
-            <h2 className="mt-3 text-3xl font-bold text-charcoal sm:text-4xl">
-              {engine.headlineLead}{" "}
-              <HighlightedText variant="sky" from="bottom" active={showContent} delay={0.18}>
-                {engine.headlineAccent}
-              </HighlightedText>
-            </h2>
-          </motion.div>
+          <motion.p
+            variants={sectionReveal}
+            className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+          >
+            {engine.eyebrow}
+          </motion.p>
+          <motion.h2
+            variants={sectionReveal}
+            className="mt-3 text-3xl font-bold text-charcoal sm:text-4xl"
+          >
+            {engine.headlineLead}{" "}
+            <HighlightedText variant="sky" from="bottom" active={showContent} delay={0.18}>
+              {engine.headlineAccent}
+            </HighlightedText>
+          </motion.h2>
+        </motion.div>
 
-          <motion.div variants={sectionReveal}>
-            <EnginePipeline />
-          </motion.div>
+        <motion.div
+          initial={false}
+          animate={showContent ? "visible" : "hidden"}
+          variants={sectionReveal}
+        >
+          <EnginePipeline />
         </motion.div>
       </div>
     </section>

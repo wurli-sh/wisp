@@ -1,10 +1,9 @@
 import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import { COPY } from "@/content/copy";
 import { HighlightedText } from "@/components/spell/highlighted-text";
 import { Button } from "@/components/ui/Button";
-import { MD_UP, useMediaQuery } from "@/hooks/useMediaQuery";
 import { buttonHover, buttonTap } from "@/lib/animations";
 
 const HeroDitherSide = lazy(() =>
@@ -30,24 +29,20 @@ const heroReveal = {
 
 export function Hero() {
   const { hero } = COPY;
-  const showDither = useMediaQuery(MD_UP);
-  const reduceMotion = useReducedMotion();
 
   return (
     <section className="relative flex min-h-[calc(100svh-4.5rem)] items-center justify-center overflow-hidden bg-background pt-18 pb-12 sm:min-h-svh sm:pb-16 md:pb-20">
-      {showDither && (
-        <Suspense fallback={null}>
-          <HeroDitherSide side="left" />
-          <HeroDitherSide side="right" />
-        </Suspense>
-      )}
+      <Suspense fallback={null}>
+        <HeroDitherSide side="left" />
+        <HeroDitherSide side="right" />
+      </Suspense>
 
       <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center px-4 text-center sm:px-6">
         <motion.div
           className="flex w-full flex-col items-center"
           variants={heroStagger}
-          initial={reduceMotion ? false : "hidden"}
-          animate={reduceMotion ? undefined : "visible"}
+          initial="hidden"
+          animate="visible"
         >
           <motion.h1
             className="text-balance text-4xl font-bold leading-[1.1] tracking-tight text-charcoal sm:text-5xl lg:text-6xl"
