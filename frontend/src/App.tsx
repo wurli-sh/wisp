@@ -45,7 +45,7 @@ export function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
-      <Toaster position="top-right" richColors closeButton />
+      <Toaster position="top-center" richColors closeButton className="sm:!top-4" />
     </BrowserRouter>
   );
 }

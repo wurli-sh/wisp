@@ -10,3 +10,9 @@ export const PAGE_CONTENT_GAP_LG = "3rem";
 
 export const PAGE_PT =
   "pt-[calc(1rem+3.5rem+2rem)] lg:pt-[calc(1rem+3.5rem+3rem)]";
+
+export const MOBILE_TAB_HEIGHT = "3.5rem";
+
+export const PAGE_PX = "px-4 sm:px-6";
+export const PANEL_PX = "p-4 sm:p-6";
+export const PANEL_PX_WIDE = "px-4 py-5 sm:px-6 sm:py-7";

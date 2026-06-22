@@ -109,9 +109,10 @@ export function Navbar() {
                 aria-haspopup="menu"
                 aria-expanded={walletMenuOpen}
                 onClick={() => setWalletMenuOpen(!walletMenuOpen)}
-                className="pill-gradient flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap bg-brand px-4 py-2 text-xs font-semibold text-brand-foreground shadow-blue-pill hover:bg-brand-dark sm:px-5 sm:text-sm"
+                className="pill-gradient flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap bg-brand px-3 py-2 text-xs font-semibold text-brand-foreground shadow-blue-pill hover:bg-brand-dark sm:px-5 sm:text-sm"
               >
-                {COPY.nav.wallet.connect}
+                <span className="sm:hidden">Connect</span>
+                <span className="hidden sm:inline">{COPY.nav.wallet.connect}</span>
               </motion.button>
 
               <DropdownPanel
