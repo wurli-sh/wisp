@@ -44,7 +44,7 @@ export function encodeInvoicePayloadForTest(payload: E2eInvoicePayload): string 
 
 export function sampleInvoicePayload(overrides: Partial<E2eInvoicePayload> = {}): E2eInvoicePayload {
   return {
-    amountMicro: "100000000",
+    amountMicro: "250000000",
     sourceCountry: "US",
     destCountry: "MX",
     corridorId: 1,
