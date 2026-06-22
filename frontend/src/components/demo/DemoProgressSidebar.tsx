@@ -92,7 +92,7 @@ export function DemoProgressSidebar({ activeStep }: DemoProgressSidebarProps) {
           })}
         </div>
 
-        <div className="flex w-full gap-1">
+        <div className="hidden w-full gap-1 sm:flex">
           {milestones.map((milestone, index) => {
             const prevEnd = index > 0 ? milestones[index - 1]!.end : -1;
             const state = milestoneState(activeStep, milestone, prevEnd);

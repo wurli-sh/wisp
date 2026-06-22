@@ -214,7 +214,7 @@ export function KycOnboardingModal({
         />
 
         <motion.div
-          className="relative w-full max-w-[420px] overflow-hidden border-2 border-primary/15 bg-background shadow-elev"
+          className="relative flex max-h-[90dvh] w-full max-w-[420px] flex-col overflow-hidden border-2 border-primary/15 bg-background shadow-elev"
           variants={modalContent}
           initial="hidden"
           animate="visible"
@@ -249,7 +249,7 @@ export function KycOnboardingModal({
             </div>
           )}
 
-          <div className="px-6 pt-4 pb-6">
+          <div className="overflow-y-auto px-4 pt-4 pb-6 sm:px-6" style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}>
             <AnimatePresence mode="wait">
               {step === "welcome" && (
                 <motion.div

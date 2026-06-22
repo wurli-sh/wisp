@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import type { CorridorOption, DemoTransferRequest, ProofPackage } from "@wisp_/js";
 import type { MockKycStatusResponse, ProvenTransfer } from "@wisp_/sdk";
 import { COPY } from "@/content/copy";
-import { PAGE_PT } from "@/config/layout";
+import { PAGE_PT, PAGE_PX } from "@/config/layout";
 import { useWispClient } from "@/hooks/useWispClient";
 import { useDemoIssuerClient } from "@/hooks/useDemoIssuerClient";
 import { useWallet } from "@/hooks/useWallet";
@@ -594,7 +594,7 @@ export function DemoPage() {
   const corridorId = selectedCorridor?.id.toString() ?? "";
 
   return (
-    <div className={cn("mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 pb-8 sm:px-6 lg:gap-8 lg:pb-12", PAGE_PT)}>
+    <div className={cn("mx-auto flex w-full max-w-5xl flex-col gap-6 pb-6 lg:gap-8 lg:pb-12", PAGE_PX, PAGE_PT)}>
       <ConfigBanner />
 
       <DemoKycPanel

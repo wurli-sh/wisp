@@ -296,7 +296,7 @@ export function DemoTransferPanel({
 
           <div className="grid lg:grid-cols-[1.1fr_0.9fr]">
             <form
-              className="flex flex-col gap-6 bg-background px-6 py-7"
+              className="flex flex-col gap-6 bg-background px-4 py-5 sm:px-6 sm:py-7"
               onSubmit={(event) => {
                 event.preventDefault();
                 if (!primary.disabled) primary.onClick();
@@ -389,7 +389,7 @@ export function DemoTransferPanel({
               )}
             </form>
 
-            <div className="flex flex-col gap-6 border-t-2 border-border bg-muted/20 px-6 py-7 lg:border-t-0 lg:border-l-2 lg:border-border">
+            <div className="flex flex-col gap-6 border-t-2 border-border bg-muted/20 px-4 py-5 sm:px-6 sm:py-7 lg:border-t-0 lg:border-l-2 lg:border-border">
               <SectionTitle variant={panelVariant}>Preview</SectionTitle>
 
               <div className="border-2 border-border bg-background p-5">
@@ -521,12 +521,12 @@ export function DemoTransferPanel({
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 border-t-2 border-border bg-muted/30 px-6 py-6">
-            <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-col gap-4 border-t-2 border-border bg-muted/30 px-4 py-4 sm:px-6 sm:py-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <Button
                 variant="danger"
                 size="sm"
-                className="border-destructive/50 bg-destructive/15 shadow-none"
+                className="w-full border-destructive/50 bg-destructive/15 shadow-none sm:w-auto"
                 disabled={isLoading || !hasProof}
                 onClick={onTryInvalid}
               >
@@ -535,7 +535,7 @@ export function DemoTransferPanel({
               <Button
                 variant="outline"
                 size="sm"
-                className="border-2 border-border bg-background text-muted-foreground shadow-none hover:bg-muted/60 hover:text-primary"
+                className="w-full border-2 border-border bg-background text-muted-foreground shadow-none hover:bg-muted/60 hover:text-primary sm:w-auto"
                 disabled={isLoading || !canReplay}
                 onClick={onTryReplay}
               >
