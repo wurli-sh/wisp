@@ -7,7 +7,7 @@ import type { CorridorOption } from "@wisp_/js";
 import { COPY } from "@/content/copy";
 import { CountrySelect } from "@/components/demo/CountrySelect";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
+import { Button, MotionButton } from "@/components/ui/Button";
 import { useDemoIssuerClient } from "@/hooks/useDemoIssuerClient";
 import { loadDemoFixtureStrkeys } from "@/lib/demoLog";
 import {
@@ -333,11 +333,15 @@ export function WispPayCreatePanel({ onInvoicesChange }: WispPayCreatePanelProps
         )}
 
         <div className="mt-6">
-          <motion.div className="w-full sm:inline-flex" whileHover={buttonHover} whileTap={buttonTap}>
-            <Button type="submit" size="lg" className="w-full sm:min-w-44 sm:w-auto">
-              {create.submit}
-            </Button>
-          </motion.div>
+          <MotionButton
+            type="submit"
+            size="lg"
+            className="w-full sm:min-w-44 sm:w-auto"
+            whileHover={buttonHover}
+            whileTap={buttonTap}
+          >
+            {create.submit}
+          </MotionButton>
         </div>
       </form>
 

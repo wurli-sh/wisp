@@ -1,5 +1,6 @@
 <img src="docs/wisp-banner.png" width="100%" alt="Wisp" />
 
+[Live demo](https://wisp-zk.vercel.app/) - [Demo walkthrough](https://youtu.be/UHWUuvz-Ljs) - [Launch video](https://youtu.be/OyBCN86dz0I) - [Pitch deck](https://drive.google.com/file/d/1GVZRHVbwfI0sD7-63aLxeeEUPXd1JjeB/view?usp=sharing)
 
 Verify users once with a trusted issuer, publish compliance roots on-chain, and generate client-side Groth16 proofs per transfer. Soroban verifies the proof, records the nullifier, and gates settlement — no customer documents on-chain.
 
