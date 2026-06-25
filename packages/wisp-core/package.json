@@ -1,0 +1,39 @@
+{
+  "name": "@wisp_/core",
+  "version": "0.2.0",
+  "description": "Core Wisp protocol validation and type helpers",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wurli-sh/wisp.git",
+    "directory": "packages/wisp-core"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test src/*.test.ts",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@wisp_/bindings": "workspace:*",
+    "@wisp_/js": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

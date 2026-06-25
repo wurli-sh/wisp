@@ -1,0 +1,292 @@
+import { normalizeField } from "@wisp_/js";
+import { rpc, scValToNative, xdr } from "@stellar/stellar-sdk";
+import { clampStartLedger, DEFAULT_EVENT_SCAN_LEDGERS, isLedgerRangeError, parseOldestLedgerFromError, resolveEventStartLedger, } from "./ledger-window.js";
+function topicSymbol(topic) {
+    try {
+        const native = scValToNative(topic);
+        return typeof native === "string" ? native : null;
+    }
+    catch {
+        return null;
+    }
+}
+function asBuffer(value) {
+    if (Buffer.isBuffer(value))
+        return value;
+    if (value instanceof Uint8Array)
+        return Buffer.from(value);
+    if (typeof value === "string") {
+        const hex = value.replace(/^0x/, "");
+        if (/^[0-9a-f]+$/i.test(hex)) {
+            return Buffer.from(hex.padStart(64, "0"), "hex");
+        }
+    }
+    throw new Error(`expected bytes32, got ${typeof value}`);
+}
+function bytes32ToFieldDecimal(bytes) {
+    const padded = bytes.length === 32
+        ? bytes
+        : Buffer.from(bytes.toString("hex").padStart(64, "0"), "hex");
+    return normalizeField(BigInt(`0x${padded.toString("hex")}`).toString()).toString();
+}
+function addressToStrkey(value) {
+    if (typeof value === "string")
+        return value;
+    if (value && typeof value === "object" && "toString" in value) {
+        const rendered = String(value);
+        if (/^[GC]/.test(rendered))
+            return rendered;
+    }
+    throw new Error(`unsupported address value: ${typeof value}`);
+}
+async function pageContractEvents(cfg, topicFilter, opts = {}) {
+    if (!cfg.complianceId)
+        throw new Error("COMPLIANCE_CONTRACT_ID not set");
+    const server = new rpc.Server(cfg.rpcUrl);
+    const explicitStart = await resolveEventStartLedger(server, cfg, opts.startLedger);
+    const latest = await server.getLatestLedger();
+    const hasDeployLedger = opts.startLedger != null || cfg.validateStartLedger != null;
+    let startLedger = hasDeployLedger
+        ? explicitStart
+        : Math.max(explicitStart, latest.sequence - DEFAULT_EVENT_SCAN_LEDGERS);
+    startLedger = clampStartLedger(startLedger, latest.sequence);
+    const maxPages = opts.maxPages ?? 40;
+    const pageSize = 200;
+    let cursor = null;
+    const events = [];
+    const fetchPage = async (start, pageCursor) => {
+        if (pageCursor) {
+            return server.getEvents({
+                cursor: pageCursor,
+                filters: [{ type: "contract", contractIds: [cfg.complianceId], topics: [topicFilter] }],
+                limit: pageSize,
+            });
+        }
+        return server.getEvents({
+            startLedger: start,
+            filters: [{ type: "contract", contractIds: [cfg.complianceId], topics: [topicFilter] }],
+            limit: pageSize,
+        });
+    };
+    for (let page = 0; page < maxPages; page += 1) {
+        let resp;
+        try {
+            resp = await fetchPage(startLedger, cursor);
+        }
+        catch (err) {
+            if (page !== 0 || cursor != null || !isLedgerRangeError(err))
+                throw err;
+            const parsed = parseOldestLedgerFromError(err);
+            startLedger = clampStartLedger(parsed ?? Math.max(1, latest.sequence - DEFAULT_EVENT_SCAN_LEDGERS), latest.sequence);
+            resp = await fetchPage(startLedger, null);
+        }
+        for (const event of resp.events) {
+            if (!event.inSuccessfulContractCall)
+                continue;
+            const topics = (event.topic ?? [])
+                .map((topic) => topicSymbol(topic))
+                .filter((topic) => Boolean(topic));
+            events.push({
+                ledger: event.ledger,
+                txHash: event.txHash,
+                topics,
+                data: scValToNative(event.value),
+            });
+        }
+        if (!resp.cursor || resp.cursor === cursor)
+            break;
+        cursor = resp.cursor;
+    }
+    return events.sort((a, b) => b.ledger - a.ledger);
+}
+function issuerTopicFilters() {
+    return [
+        [xdr.ScVal.scvSymbol("issuer").toXDR("base64"), xdr.ScVal.scvSymbol("registered").toXDR("base64")],
+        [xdr.ScVal.scvSymbol("issuer").toXDR("base64"), xdr.ScVal.scvSymbol("metadata").toXDR("base64")],
+        [xdr.ScVal.scvSymbol("issuer").toXDR("base64"), xdr.ScVal.scvSymbol("enabled").toXDR("base64")],
+        [xdr.ScVal.scvSymbol("issuer").toXDR("base64"), xdr.ScVal.scvSymbol("root").toXDR("base64")],
+    ];
+}
+function corridorTopicFilters() {
+    return [
+        [xdr.ScVal.scvSymbol("corridor").toXDR("base64"), xdr.ScVal.scvSymbol("registered").toXDR("base64")],
+        [xdr.ScVal.scvSymbol("corridor").toXDR("base64"), xdr.ScVal.scvSymbol("updated").toXDR("base64")],
+    ];
+}
+function parseIssuerRecordEvent(event) {
+    if (event.topics[1] !== "registered")
+        return null;
+    const data = event.data;
+    if (!data || typeof data !== "object")
+        return null;
+    return {
+        issuer: addressToStrkey(data.issuer),
+        metadata_uri: String(data.metadata_uri ?? ""),
+        enabled: Boolean(data.enabled),
+        registered_at_ledger: Number(data.registered_at_ledger ?? event.ledger),
+        updated_at_ledger: Number(data.updated_at_ledger ?? event.ledger),
+        registration_seq: Number(data.registration_seq ?? 0),
+        ledger: event.ledger,
+        txHash: event.txHash,
+        eventTopic: "registered",
+    };
+}
+function parseIssuerMetadataEvent(event) {
+    if (event.topics[1] !== "metadata")
+        return null;
+    const data = event.data;
+    if (!data || typeof data !== "object")
+        return null;
+    return {
+        issuer: addressToStrkey(data.issuer),
+        metadata_uri: String(data.new_metadata_uri ?? ""),
+        updated_at_ledger: Number(data.updated_at_ledger ?? event.ledger),
+    };
+}
+function parseIssuerEnabledEvent(event) {
+    if (event.topics[1] !== "enabled")
+        return null;
+    const data = event.data;
+    if (!data || typeof data !== "object")
+        return null;
+    return {
+        issuer: addressToStrkey(data.issuer),
+        enabled: Boolean(data.enabled),
+    };
+}
+function parseIssuerRootsEvent(event, issuerStrkey) {
+    if (event.topics[1] !== "root")
+        return null;
+    const data = event.data;
+    if (!data || typeof data !== "object")
+        return null;
+    const issuer = addressToStrkey(data.issuer);
+    if (issuer !== issuerStrkey)
+        return null;
+    return {
+        issuer,
+        merkle_root: bytes32ToFieldDecimal(asBuffer(data.merkle_root)),
+        sanctions_root: bytes32ToFieldDecimal(asBuffer(data.sanctions_root)),
+        jurisdiction_root: bytes32ToFieldDecimal(asBuffer(data.jurisdiction_root)),
+        ledger: event.ledger,
+        txHash: event.txHash,
+        eventTopic: "root",
+    };
+}
+function parseCorridorRootsEvent(event, issuerStrkey, corridorId) {
+    const kind = event.topics[1];
+    if (kind !== "registered" && kind !== "updated")
+        return null;
+    const data = event.data;
+    if (!data || typeof data !== "object")
+        return null;
+    const issuer = addressToStrkey(data.issuer);
+    const id = Number(data.corridor_id);
+    if (issuer !== issuerStrkey || id !== corridorId)
+        return null;
+    return {
+        issuer,
+        corridor_id: id,
+        corridor_config_hash: bytes32ToFieldDecimal(asBuffer(data.corridor_config_hash)),
+        source_jurisdiction_root: bytes32ToFieldDecimal(asBuffer(data.source_jurisdiction_root)),
+        dest_address_root: bytes32ToFieldDecimal(asBuffer(data.dest_address_root)),
+        enabled: Boolean(data.enabled),
+        ledger: event.ledger,
+        txHash: event.txHash,
+        eventTopic: kind,
+    };
+}
+async function pageIssuerEvents(cfg, opts = {}) {
+    const batches = await Promise.all(issuerTopicFilters().map((filter) => pageContractEvents(cfg, filter, opts)));
+    return batches.flat().sort((a, b) => b.ledger - a.ledger);
+}
+async function pageCorridorEvents(cfg, opts = {}) {
+    const batches = await Promise.all(corridorTopicFilters().map((filter) => pageContractEvents(cfg, filter, opts)));
+    return batches.flat().sort((a, b) => b.ledger - a.ledger);
+}
+export async function getLatestIssuerRecord(cfg, issuerStrkey, opts = {}) {
+    const events = await pageIssuerEvents(cfg, opts);
+    let record = null;
+    let metadata = null;
+    let enabled = null;
+    for (const event of events) {
+        if (!metadata) {
+            const patch = parseIssuerMetadataEvent(event);
+            if (patch?.issuer === issuerStrkey)
+                metadata = patch;
+        }
+        if (!enabled) {
+            const patch = parseIssuerEnabledEvent(event);
+            if (patch?.issuer === issuerStrkey)
+                enabled = patch;
+        }
+        if (!record) {
+            const parsed = parseIssuerRecordEvent(event);
+            if (parsed?.issuer === issuerStrkey)
+                record = parsed;
+        }
+        if (record && metadata && enabled)
+            break;
+    }
+    if (!record)
+        return null;
+    if (metadata) {
+        record.metadata_uri = metadata.metadata_uri;
+        record.updated_at_ledger = metadata.updated_at_ledger;
+    }
+    if (enabled) {
+        record.enabled = enabled.enabled;
+    }
+    return record;
+}
+export async function listIssuerRegistryEntries(cfg, opts = {}) {
+    const events = await pageIssuerEvents(cfg, { startLedger: opts.startLedger });
+    const limit = Math.max(1, Math.min(opts.limit ?? 20, 100));
+    const cursor = Math.max(0, opts.cursor ?? 0);
+    const byIssuer = new Map();
+    for (const event of events) {
+        const record = parseIssuerRecordEvent(event);
+        if (!record)
+            continue;
+        if (byIssuer.has(record.issuer))
+            continue;
+        byIssuer.set(record.issuer, record);
+    }
+    const issuers = [...byIssuer.values()]
+        .sort((a, b) => b.updated_at_ledger - a.updated_at_ledger)
+        .slice(cursor, cursor + limit);
+    const nextCursor = cursor + limit < byIssuer.size ? cursor + limit : null;
+    return { issuers, nextCursor };
+}
+export async function getLatestIssuerRoots(cfg, issuerStrkey, opts = {}) {
+    const events = await pageIssuerEvents(cfg, opts);
+    for (const event of events) {
+        const parsed = parseIssuerRootsEvent(event, issuerStrkey);
+        if (parsed)
+            return parsed;
+    }
+    return null;
+}
+export async function getLatestCorridorRoots(cfg, issuerStrkey, corridorId, opts = {}) {
+    const events = await pageCorridorEvents(cfg, opts);
+    for (const event of events) {
+        const parsed = parseCorridorRootsEvent(event, issuerStrkey, corridorId);
+        if (parsed)
+            return parsed;
+    }
+    return null;
+}
+export async function getLatestChainRoots(cfg, issuerStrkey, corridorId, opts = {}) {
+    const [issuer, corridor] = await Promise.all([
+        getLatestIssuerRoots(cfg, issuerStrkey, opts),
+        getLatestCorridorRoots(cfg, issuerStrkey, corridorId, opts),
+    ]);
+    if (!issuer || !corridor)
+        return null;
+    return { issuer, corridor };
+}
+export async function getLatestIssuerEnabled(cfg, issuerStrkey, opts = {}) {
+    const record = await getLatestIssuerRecord(cfg, issuerStrkey, opts);
+    return record?.enabled ?? null;
+}
+//# sourceMappingURL=roots.js.map

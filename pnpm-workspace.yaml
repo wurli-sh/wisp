@@ -1,5 +1,9 @@
 packages:
   - "frontend"
+  - "packages/wisp-core"
+  - "packages/wisp-client"
+  - "packages/wisp-flows"
+  - "packages/wisp-demo"
   - "packages/wisp-js"
   - "sdk"
   - "issuer-sdk"

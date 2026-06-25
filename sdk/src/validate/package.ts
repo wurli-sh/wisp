@@ -7,24 +7,26 @@ import {
   type ProofPackage,
 } from "@wisp_/js";
 import { rpc } from "@stellar/stellar-sdk";
-import type { WispConfig } from "../config.js";
-import {
-  getLatestChainRoots,
-  getLatestCorridorRoots,
-  getLatestIssuerRecord,
-  getLatestIssuerRoots,
-  type ChainRootsBundle,
-} from "../audit/roots.js";
-import { getVerifierVkHash, vkHashesMatch } from "../audit/verifier.js";
-import { issuerRootsMatch, corridorRootsMatch } from "./roots-compare.js";
-import { validatePackageStructure, validatePackageStrict } from "./structure.js";
-import type { ResolvedIssuer } from "../issuer/resolve.js";
 import {
   CorridorDisabledForIssuerError,
   CorridorMissingForIssuerError,
   IssuerNotRegisteredError,
   IssuerRootsMissingError,
-} from "../errors.js";
+  corridorRootsMatch,
+  issuerRootsMatch,
+  validatePackageStructure,
+} from "@wisp_/core";
+import {
+  getLatestChainRoots,
+  getLatestCorridorRoots,
+  getLatestIssuerRecord,
+  getLatestIssuerRoots,
+  getVerifierVkHash,
+  vkHashesMatch,
+} from "@wisp_/client";
+import type { ChainRootsBundle, ResolvedIssuer } from "@wisp_/client";
+import type { WispConfig } from "../config.js";
+import { validatePackageStrict } from "./structure.js";
 
 export const MAX_ROOT_AGE_LEDGERS = 172_800;
 

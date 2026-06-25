@@ -1,4 +1,4 @@
-export { DemoIssuerClient } from "../issuer/demo-client.js";
+export { DemoIssuerClient } from "@wisp_/demo";
 export type {
   CorridorDestinationRecord,
   MockKycChallengeResponse,
@@ -11,5 +11,5 @@ export type {
   MockKycSubmitStatus,
   PublishRootsResponse,
   PublishRootsResult,
-} from "../issuer/demo-client.js";
-export { HttpIssuerAdapter } from "../issuer/http-adapter.js";
+} from "@wisp_/demo";
+export { HttpIssuerAdapter } from "@wisp_/client";

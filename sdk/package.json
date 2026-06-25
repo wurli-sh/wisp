@@ -20,6 +20,18 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "default": "./dist/core.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "default": "./dist/client.js"
+    },
+    "./flows": {
+      "types": "./dist/flows.d.ts",
+      "default": "./dist/flows.js"
+    },
     "./demo": {
       "types": "./dist/demo/index.d.ts",
       "default": "./dist/demo/index.js"
@@ -33,6 +45,10 @@
   },
   "dependencies": {
     "@wisp_/bindings": "workspace:*",
+    "@wisp_/client": "workspace:*",
+    "@wisp_/core": "workspace:*",
+    "@wisp_/demo": "workspace:*",
+    "@wisp_/flows": "workspace:*",
     "@wisp_/compliance": "workspace:*",
     "@wisp_/js": "workspace:*",
     "@wisp_/verifier": "workspace:*",

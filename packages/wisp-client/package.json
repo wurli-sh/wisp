@@ -1,0 +1,40 @@
+{
+  "name": "@wisp_/client",
+  "version": "0.2.0",
+  "description": "Client transports and chain access helpers for Wisp",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wurli-sh/wisp.git",
+    "directory": "packages/wisp-client"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^14.5.0",
+    "@wisp_/compliance": "workspace:*",
+    "@wisp_/core": "workspace:*",
+    "@wisp_/js": "workspace:*",
+    "@wisp_/verifier": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}

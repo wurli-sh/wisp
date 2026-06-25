@@ -1,6 +1,15 @@
 import { loadConfig, type WispConfig } from "./config.js";
-import type { IssuerAdapter } from "./issuer/adapter.js";
-import { HttpIssuerAdapter } from "./issuer/http-adapter.js";
+import type { IssuerAdapter } from "@wisp_/client";
+import { HttpIssuerAdapter } from "@wisp_/client";
+import type {
+  CreateAndSettleTransferInput,
+  CreateAndSettleTransferResult,
+  ProofPackageSource,
+} from "@wisp_/flows";
+import {
+  createAndSettleTransfer,
+  createAndSettleTransferWithRetry,
+} from "@wisp_/flows";
 import { proveFromPackageBrowser } from "./prove/browser.js";
 import { proveFromPackage, type ProvenTransfer } from "./prove/prover.js";
 import {
@@ -11,13 +20,13 @@ import {
   approveSacForComplianceWithKeypair,
   type WalletSigner,
 } from "./settle/compliant-transfer.js";
-import { auditNullifier } from "./audit/index.js";
 import {
   getProofSettledByNullifier,
   getProofSettledByTxHash,
   listProofSettledEvents,
   type ProofSettledEvent,
-} from "./audit/events.js";
+  auditNullifier,
+} from "@wisp_/client";
 import {
   getLatestChainRoots,
   getLatestCorridorRoots,
@@ -30,13 +39,13 @@ import {
   type ChainIssuerRecord,
   type ChainIssuerRoots,
   type ChainRootsBundle,
-} from "./audit/roots.js";
+} from "@wisp_/client";
 import {
   listIssuers,
   resolveIssuer,
   resolveIssuerFromUrl,
   type ResolvedIssuer,
-} from "./issuer/resolve.js";
+} from "@wisp_/client";
 import { fieldDecimalToBytes32, normalizeField } from "./settle/encoding.js";
 import type { ProofPackage } from "@wisp_/js";
 import {
@@ -45,6 +54,28 @@ import {
   type ValidatePackageResult,
   MAX_ROOT_AGE_LEDGERS,
 } from "./validate/package.js";
+import {
+  CorridorDisabledForIssuerError,
+  CorridorMissingForIssuerError,
+  IssuerMetadataMismatchError,
+  IssuerNotRegisteredError,
+  IssuerRootsMissingError,
+  corridorRootsMatch,
+  issuerRootsMatch,
+  rootsMatch,
+  validatePackageStructure,
+} from "@wisp_/core";
+import type {
+  MockKycChallengeResponse,
+  MockKycLifecycleStatus,
+  MockKycMissing,
+  MockKycRootsStatus,
+  MockKycStatusResponse,
+  MockKycSubmitRequest,
+  MockKycSubmitResponse,
+  MockKycSubmitStatus,
+} from "@wisp_/demo";
+import { DemoIssuerClient } from "@wisp_/demo";
 
 export class WispClient {
   readonly cfg: WispConfig;
@@ -152,6 +183,26 @@ export class WispClient {
   listIssuers(opts?: { cursor?: number; limit?: number; startLedger?: number }) {
     return listIssuers(this.cfg, opts);
   }
+
+  createAndSettleTransfer(
+    input: Omit<CreateAndSettleTransferInput, "client" | "issuer"> & { issuer?: ProofPackageSource },
+  ): Promise<CreateAndSettleTransferResult> {
+    return createAndSettleTransfer({
+      ...input,
+      client: this,
+      issuer: input.issuer ?? this.issuer,
+    });
+  }
+
+  createAndSettleTransferWithRetry(
+    input: Omit<CreateAndSettleTransferInput, "client" | "issuer"> & { issuer?: ProofPackageSource },
+  ): Promise<CreateAndSettleTransferResult> {
+    return createAndSettleTransferWithRetry({
+      ...input,
+      client: this,
+      issuer: input.issuer ?? this.issuer,
+    });
+  }
 }
 
 export { loadConfig } from "./config.js";
@@ -171,18 +222,17 @@ export {
 export type { WalletSigner } from "./settle/compliant-transfer.js";
 export { approveSacForCompliance, approveSacForComplianceWithKeypair } from "./settle/compliant-transfer.js";
 export type { ProvenTransfer } from "./prove/prover.js";
-export type { ResolvedIssuer } from "./issuer/resolve.js";
-export { resolveIssuer, resolveIssuerFromUrl, listIssuers } from "./issuer/resolve.js";
-export type { IssuerAdapter, IssuerWellKnown, CorridorDetail, ProofPackageRequest } from "./issuer/adapter.js";
-export { HttpIssuerAdapter, IssuerClient } from "./issuer/http-adapter.js";
+export type { ResolvedIssuer } from "@wisp_/client";
+export { resolveIssuer, resolveIssuerFromUrl, listIssuers } from "@wisp_/client";
+export type { IssuerAdapter, IssuerWellKnown, CorridorDetail, ProofPackageRequest } from "@wisp_/client";
+export { HttpIssuerAdapter, IssuerClient } from "@wisp_/client";
 export {
   validatePackage,
   MAX_ROOT_AGE_LEDGERS,
   type ValidatePackageOptions,
   type ValidatePackageResult,
 } from "./validate/package.js";
-export { rootsMatch, issuerRootsMatch, corridorRootsMatch } from "./validate/roots-compare.js";
-export { validatePackageStructure } from "./validate/structure.js";
+export { rootsMatch, issuerRootsMatch, corridorRootsMatch, validatePackageStructure } from "@wisp_/core";
 export type { DemoStrkeys } from "./config.js";
 export {
   CorridorDisabledForIssuerError,
@@ -190,7 +240,21 @@ export {
   IssuerMetadataMismatchError,
   IssuerNotRegisteredError,
   IssuerRootsMissingError,
-} from "./errors.js";
+} from "@wisp_/core";
+export type {
+  CreateAndSettleTransferInput,
+  CreateAndSettleTransferResult,
+  ProofPackageSource,
+  TransferStage,
+} from "@wisp_/flows";
+export {
+  DuplicateNullifierError,
+  createAndSettleTransfer,
+  createAndSettleTransferWithRetry,
+  fetchTransferPackage,
+  proveTransferPackage,
+  validateTransferPackage,
+} from "@wisp_/flows";
 export type {
   MockKycChallengeResponse,
   MockKycLifecycleStatus,
@@ -200,8 +264,8 @@ export type {
   MockKycSubmitRequest,
   MockKycSubmitResponse,
   MockKycSubmitStatus,
-} from "./issuer/demo-client.js";
-export { DemoIssuerClient } from "./issuer/demo-client.js";
+} from "@wisp_/demo";
+export { DemoIssuerClient } from "@wisp_/demo";
 export {
   CIRCLE_TESTNET_USDC_CODE,
   CIRCLE_TESTNET_USDC_ISSUER,

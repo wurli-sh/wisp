@@ -11,6 +11,9 @@ importers:
 
   .:
     devDependencies:
+      '@wisp_/bindings':
+        specifier: workspace:*
+        version: link:bindings
       '@wisp_/issuer-sdk':
         specifier: workspace:*
         version: link:issuer-sdk
@@ -186,6 +189,82 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  packages/wisp-client:
+    dependencies:
+      '@stellar/stellar-sdk':
+        specifier: ^14.5.0
+        version: 14.6.1
+      '@wisp_/compliance':
+        specifier: workspace:*
+        version: link:../../bindings/generated/compliance
+      '@wisp_/core':
+        specifier: workspace:*
+        version: link:../wisp-core
+      '@wisp_/js':
+        specifier: workspace:*
+        version: link:../wisp-js
+      '@wisp_/verifier':
+        specifier: workspace:*
+        version: link:../../bindings/generated/verifier
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.19.21
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  packages/wisp-core:
+    dependencies:
+      '@wisp_/bindings':
+        specifier: workspace:*
+        version: link:../../bindings
+      '@wisp_/js':
+        specifier: workspace:*
+        version: link:../wisp-js
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.19.21
+      tsx:
+        specifier: ^4.19.0
+        version: 4.22.4
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  packages/wisp-demo:
+    dependencies:
+      '@wisp_/client':
+        specifier: workspace:*
+        version: link:../wisp-client
+      '@wisp_/js':
+        specifier: workspace:*
+        version: link:../wisp-js
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.19.21
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  packages/wisp-flows:
+    dependencies:
+      '@wisp_/js':
+        specifier: workspace:*
+        version: link:../wisp-js
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.19.21
+      tsx:
+        specifier: ^4.19.0
+        version: 4.22.4
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   packages/wisp-js:
     dependencies:
       ffjavascript:
@@ -210,9 +289,21 @@ importers:
       '@wisp_/bindings':
         specifier: workspace:*
         version: link:../bindings
+      '@wisp_/client':
+        specifier: workspace:*
+        version: link:../packages/wisp-client
       '@wisp_/compliance':
         specifier: workspace:*
         version: link:../bindings/generated/compliance
+      '@wisp_/core':
+        specifier: workspace:*
+        version: link:../packages/wisp-core
+      '@wisp_/demo':
+        specifier: workspace:*
+        version: link:../packages/wisp-demo
+      '@wisp_/flows':
+        specifier: workspace:*
+        version: link:../packages/wisp-flows
       '@wisp_/js':
         specifier: workspace:*
         version: link:../packages/wisp-js
