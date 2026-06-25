@@ -9,10 +9,12 @@ name = "issuer-service"
 path = "src/main.rs"
 
 [dependencies]
+issuer-sdk = { path = "../issuer-sdk" }
 wisp-crypto = { path = "../wisp-crypto" }
 wisp-types = { path = "../wisp-types" }
 ark-bn254 = "0.6"
 ark-ff = "0.6"
+async-trait = "0.1"
 axum = "0.8"
 ed25519-dalek = { version = "2", features = ["rand_core"] }
 hex = "0.4.3"
