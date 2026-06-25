@@ -1,12 +1,12 @@
 export const COPY = {
   hero: {
-    eyebrow: "ZK COMPLIANCE FOR STELLAR STABLECOINS",
-    headlineLead: "Stealth rails for",
-    headlineAccent: "stablecoin compliance.",
-    sub: "ZK compliance for cross-border Stellar stablecoins — shareable Wisp Pay links for merchants, plus a portable SDK for any issuer.",
+    eyebrow: "ZK COMPLIANCE LAYER FOR STELLAR",
+    headlineLead: "Show the proof",
+    headlineAccent: "Ghost the identity.",
+    sub: "Drop-in ZK compliance for stablecoin transfers — KYC, sanctions, and jurisdiction enforced on-chain, identities never exposed.",
     ctas: {
-      primary: { label: "Try Wisp Pay →", href: "/wisp-pay" },
-      secondary: { label: "Walkthrough", href: "/demo" },
+      primary: { label: "See it work →", href: "/demo" },
+      secondary: { label: "Try Wisp Pay", href: "/wisp-pay" },
     },
     showcase: [
       {
@@ -71,7 +71,7 @@ export const COPY = {
       compliance: {
         title: "Wisp",
         kicker: "compliance layer",
-        caption: "Wisp packages corridor rules into one browser proof — or one Wisp Pay checkout click.",
+        caption: "Wisp packages all 8 corridor checks into one browser proof — reusable on any transfer.",
         steps: [
           { label: "Awaiting credential", detail: "Idle" },
           { label: "Generating proof…", detail: "Groth16 · BN254" },
@@ -109,8 +109,8 @@ export const COPY = {
     eyebrow: "CROSS-BORDER",
     headlineRest: "Built for",
     headlineAccent: "cross-border stablecoin flows.",
-    sub: "Wisp targets regulated corridors where issuers need compliant Stellar settlement — merchants can share Wisp Pay links without rebuilding policy.",
-    featuredNote: "US→MX live on testnet · Wisp Pay on /wisp-pay",
+    sub: "Wisp targets regulated corridors where issuers need compliant Stellar settlement — drop it into any app without rebuilding policy.",
+    featuredNote: "US→MX live on testnet · see it in the Wisp Pay demo",
     benefits: [
       {
         name: "Remittance corridors",
@@ -166,29 +166,54 @@ await client.settleWithWallet(proven, pkg, wallet);`,
   },
 
   wispPayShowcase: {
-    eyebrow: "WISP PAY",
-    headlineAccent: "One link.",
-    headlineRest: "Compliant checkout.",
-    sub: "Merchants lock payee, amount, and corridor. Payers connect any wallet and prove in one click.",
-    card: {
-      brand: "Wisp Pay",
-      merchant: "World Cup Tickets",
-      amount: "250.00",
-      currency: "USDC",
-      corridor: "US → MX",
+    eyebrow: "ISSUER NETWORK",
+    headlineAccent: "One circuit.",
+    headlineRest: "Every jurisdiction.",
+    sub: "Each issuer enforces its own KYC, sanctions list, and corridors — all proven against one shared verifier and the same 8 checks.",
+    issuers: [
+      {
+        theme: "us" as const,
+        name: "Liberty Trust",
+        region: "United States",
+        tag: "US",
+        address: "GA_LIBERTY…7BX",
+        rows: [
+          { label: "Jurisdiction", value: "US · 840" },
+          { label: "Sanctions", value: "OFAC SDN list" },
+          { label: "KYC provider", value: "Persona" },
+          { label: "Corridor", value: "US → MX" },
+        ],
+      },
+      {
+        theme: "eu" as const,
+        name: "EuroVerify",
+        region: "European Union",
+        tag: "EU",
+        address: "GB_EUROVRFY…K2A",
+        rows: [
+          { label: "Jurisdiction", value: "EEA · 276 · 250" },
+          { label: "Sanctions", value: "EU + UN consolidated" },
+          { label: "KYC provider", value: "Sumsub" },
+          { label: "Corridor", value: "DE → US" },
+        ],
+      },
+    ],
+    shared: {
+      label: "SHARED PROTOCOL",
+      value: "Same verifier · 17 public inputs · 8 checks · no PII on-chain",
     },
     perks: [
       {
-        label: "Share anywhere",
-        detail: "Portable link — no app or account.",
+        label: "Shared circuit",
+        detail: "One verifier validates every issuer's proof.",
       },
       {
-        label: "Any wallet",
-        detail: "Connect Freighter, click Prove & Pay.",
+        label: "Own roots",
+        detail: "Each publishes its own KYC, sanctions & jurisdiction roots.",
       },
       {
-        label: "On-chain receipt",
-        detail: "ProofSettled event — verifiable, no PII.",
+        label: "No lock-in",
+        detail: "Users prove against whichever issuer KYC'd them.",
       },
     ],
   },
@@ -197,9 +222,9 @@ await client.settleWithWallet(proven, pkg, wallet);`,
     closer: {
       eyebrow: "LIVE ON TESTNET",
       headline: "Ready for live issuer rails.",
-      sub: "Try Wisp Pay for merchant checkout links, or open the Walkthrough for the full prove → settle pipeline.",
+      sub: "See the full prove → settle pipeline in the Walkthrough — or try the Wisp Pay demo built on top of it.",
       ctas: {
-        primary: { label: "Try Wisp Pay →", href: "/wisp-pay" },
+        primary: { label: "See it work →", href: "/demo" },
         secondary: { label: "View on GitHub", href: "https://github.com/wurli-sh/wisp" },
       },
     },
