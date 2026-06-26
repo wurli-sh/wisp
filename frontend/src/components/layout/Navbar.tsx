@@ -68,25 +68,17 @@ export function Navbar() {
                     className={cn(
                       "relative shrink-0 px-3 py-1.5 text-xs font-medium outline-none transition-colors duration-200 focus-visible:shadow-glow sm:px-4 sm:text-sm",
                       isActive
-                        ? "text-inverse-foreground"
+                        ? "text-primary"
                         : "text-muted-foreground hover:text-primary",
                     )}
                   >
                     {isActive && (
-                      <>
-                        <motion.div
-                          layoutId="nav-panel"
-                          initial={false}
-                          className="absolute inset-0 bg-charcoal-soft/90 shadow-soft/20"
-                          transition={indicatorSpring}
-                        />
-                        <motion.div
-                          layoutId="nav-bar"
-                          initial={false}
-                          className="absolute inset-x-2 bottom-0 h-0.5 bg-inverse-foreground/80"
-                          transition={indicatorSpring}
-                        />
-                      </>
+                      <motion.div
+                        layoutId="nav-bar"
+                        initial={false}
+                        className="absolute inset-x-1 bottom-0 h-1 bg-brand-dark/70"
+                        transition={indicatorSpring}
+                      />
                     )}
                     <span className="relative z-10">{label}</span>
                   </Link>
