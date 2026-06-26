@@ -2,7 +2,7 @@ import { forwardRef } from "react";
 import { motion, type HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/cn";
 
-type ButtonVariant = "primary" | "secondary" | "outline" | "danger";
+type ButtonVariant = "primary" | "brand" | "secondary" | "outline" | "danger";
 type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -14,6 +14,8 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
     "border-2 border-charcoal bg-charcoal text-brand-foreground shadow-none hover:border-primary-dark hover:bg-primary-dark",
+  brand:
+    "pill-gradient bg-brand text-brand-foreground shadow-blue-pill hover:bg-brand-dark",
   secondary: "pill-gradient bg-brand-soft text-brand shadow-blue-pill hover:bg-brand/10",
   outline: "border-2 border-border bg-background text-foreground shadow-soft hover:bg-muted",
   danger: "border-2 border-destructive/30 bg-destructive/10 text-destructive hover:bg-destructive/15",
