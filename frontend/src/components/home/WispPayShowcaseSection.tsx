@@ -163,18 +163,6 @@ export function WispPayShowcaseSection() {
             ))}
           </div>
 
-          <motion.div
-            variants={sectionReveal}
-            className="mt-6 border-2 border-border bg-card px-5 py-4 text-center"
-          >
-            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              {wispPayShowcase.shared.label}
-            </p>
-            <p className="mt-1.5 text-sm font-medium text-foreground">
-              {wispPayShowcase.shared.value}
-            </p>
-          </motion.div>
-
           <ul className="mt-6 grid gap-px border-2 border-border bg-border md:grid-cols-3">
             {wispPayShowcase.perks.map((perk) => (
               <motion.li
