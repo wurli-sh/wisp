@@ -1,6 +1,8 @@
 # @wisp_/issuer-sdk
 
-TypeScript SDK for operating an Wisp issuer — register on-chain, manage corridors, publish compliance roots.
+TypeScript SDK for operating a Wisp issuer — register on-chain, manage corridors, publish compliance roots, and conformance-test your issuer API.
+
+Pairs with the portable Wisp layers: read on-chain state with [`@wisp_/client`](../packages/wisp-client/README.md), validate packages with [`@wisp_/core`](../packages/wisp-core/README.md), and keep your KYC stack of choice — Wisp only consumes the published roots.
 
 ## Install
 
@@ -75,8 +77,12 @@ Validate your issuer HTTP API against the Wisp spec:
 import { runIssuerConformance } from "@wisp_/issuer-sdk";
 
 const result = await runIssuerConformance({
-  baseUrl: "http://127.0.0.1:3000",
-  apiToken: process.env.ISSUER_API_TOKEN,
+  issuerUrl: "http://127.0.0.1:3000",
+  issuerPublicKey: process.env.ISSUER_PUBLIC_KEY!,
+  sender: "G...",
+  recipient: "G...",
+  corridorId: 1,
+  simulateSettle: false,
 });
 ```
 
@@ -92,7 +98,7 @@ export COMPLIANCE_CONTRACT_ID=…
 cargo run -p issuer-service
 ```
 
-Then use `@wisp_/sdk` (`DemoIssuerClient`, `HttpIssuerAdapter`) to fetch packages for client-side proving.
+Then use `HttpIssuerAdapter` for real issuer APIs and `DemoIssuerClient` only for the demo fixture + mock-KYC flow.
 
 ## API surface
 
@@ -113,6 +119,8 @@ pnpm --filter @wisp_/issuer-sdk test
 ## Related
 
 - End-user prove/settle: [`@wisp_/sdk`](../sdk/README.md)
+- Protocol validation + types: [`@wisp_/core`](../packages/wisp-core/README.md)
+- Issuer transports + chain reads: [`@wisp_/client`](../packages/wisp-client/README.md)
 - Witness/crypto: [`@wisp_/js`](../packages/wisp-js/README.md)
 - Contract clients: `@wisp_/compliance@0.2.0`, `@wisp_/verifier@0.2.0`
 - Issuer HTTP service: [`backend/crates/issuer-service/`](../backend/crates/issuer-service/)

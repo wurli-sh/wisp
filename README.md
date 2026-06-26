@@ -10,7 +10,7 @@ Verify users once with a trusted issuer, publish compliance roots on-chain, and 
 
 | Resource | Value |
 | -------- | ----- |
-| Frontend | [wisp-zk.vercel.app](https://wisp-zk.vercel.app/) — `/` · `/wisp-pay` · `/demo` |
+| Frontend | [wisp-zk.vercel.app](https://wisp-zk.vercel.app/) — `/` · `/demo` |
 | Issuer API | [wisp-issuer-vekn.onrender.com](https://wisp-issuer-vekn.onrender.com) |
 | Network | `Test SDF Network ; September 2015` |
 | RPC | `https://soroban-testnet.stellar.org` |
@@ -25,20 +25,31 @@ Contract IDs → `.wisp/*.env` · redeploy [`scripts/deploy/`](scripts/deploy/) 
 
 ---
 
-## Published Packages
+## Packages
 
-Plug-and-play npm packages — install, configure env, run.
+Wisp ships as a **modular, portable SDK** — compose only the layers your stack needs. Issuer and compliance integrations can drop in `@wisp_/core`, `@wisp_/client`, or `@wisp_/flows` without pulling in the prover, demo issuer, or React UI. The umbrella `@wisp_/sdk` bundles everything and re-exports each layer via subpaths (`@wisp_/sdk/core`, `/client`, `/flows`, `/demo`).
+
+**Portable building blocks** — pick what you embed:
+
+| Package | Version | Purpose | Chain deps | README |
+| ------- | ------- | ------- | ---------- | ------ |
+| `@wisp_/core` | `0.2.0` | Protocol validation, root comparison, shared types | none | [`packages/wisp-core/README.md`](packages/wisp-core/README.md) |
+| `@wisp_/js` | `0.2.0` | Poseidon2, Merkle, nullifier, witness builder | none | [`packages/wisp-js/README.md`](packages/wisp-js/README.md) |
+| `@wisp_/client` | `0.2.0` | Issuer HTTP adapter + on-chain root / registry / event reads | Stellar | [`packages/wisp-client/README.md`](packages/wisp-client/README.md) |
+| `@wisp_/flows` | `0.2.0` | Client-agnostic prove → audit → settle orchestration | none | [`packages/wisp-flows/README.md`](packages/wisp-flows/README.md) |
+| `@wisp_/demo` | `0.2.0` | Demo issuer + mock KYC clients | none | [`packages/wisp-demo/README.md`](packages/wisp-demo/README.md) |
+
+**Bundled SDKs + contract ABI:**
 
 | Package | Version | Purpose | README |
 | ------- | ------- | ------- | ------ |
-| `@wisp_/js` | `0.2.0` | Poseidon2, Merkle, nullifier, witness builder | [`packages/wisp-js/README.md`](packages/wisp-js/README.md) |
+| `@wisp_/sdk` | `0.2.0` | Umbrella: prove, settle, audit + subpath re-exports | [`sdk/README.md`](sdk/README.md) |
+| `@wisp_/issuer-sdk` | `0.2.0` | Register issuers, manage corridors, publish roots on-chain | [`issuer-sdk/README.md`](issuer-sdk/README.md) |
+| `@wisp_/bindings` | `0.2.0` | Canonical proof package + public input ABI | [`bindings/README.md`](bindings/README.md) |
 | `@wisp_/compliance` | `0.2.0` | Generated client for the compliance contract | [`bindings/README.md`](bindings/README.md) |
 | `@wisp_/verifier` | `0.2.0` | Generated client for the Groth16 verifier contract | [`bindings/README.md`](bindings/README.md) |
-| `@wisp_/bindings` | `0.2.0` | Canonical proof package + public input ABI | [`bindings/README.md`](bindings/README.md) |
-| `@wisp_/sdk` | `0.2.0` | Prove, settle, audit compliant transfers | [`sdk/README.md`](sdk/README.md) |
-| `@wisp_/issuer-sdk` | `0.2.0` | Register issuers, publish roots on-chain | [`issuer-sdk/README.md`](issuer-sdk/README.md) |
 
-Install: `npm install @wisp_/sdk @wisp_/js` · demo UI: [`frontend/`](frontend/) (workspace-only) · dry-run: `./scripts/publish/publish-packages.sh --dry-run`
+Install everything: `npm install @wisp_/sdk @wisp_/js` · embed a layer: `npm install @wisp_/core @wisp_/client` · demo UI: [`frontend/`](frontend/) (workspace-only) · dry-run: `./scripts/publish/publish-packages.sh --dry-run`
 
 ## Core Architecture
 
@@ -52,25 +63,34 @@ Soroban compliance contract
 ```
 
 ```
-frontend/          React demo UI (landing, Wisp Pay, Walkthrough)
+your app / frontend
   ↓
-@wisp_/sdk       issuer client · prove · settle · audit
+@wisp_/sdk         umbrella: prove · settle · audit
+  ├─ @wisp_/core     validation · root compare · types  (no chain deps)
+  ├─ @wisp_/client   issuer HTTP adapter · on-chain reads · events
+  ├─ @wisp_/flows    prove → audit → settle orchestration
+  └─ @wisp_/js       Poseidon2 · Merkle · nullifier · witness
   ↓
-issuer-service     proof packages · merkle paths · root publish
+issuer-service / @wisp_/issuer-sdk   proof packages · roots · corridors
   ↓
 Soroban            verifier (Groth16) → compliance (nullifier + SAC gate)
 ```
 
 ```
 wisp/
-├── backend/           Soroban contracts + issuer-service
-├── circuits/circom/   Circom circuit + ceremony
-├── bindings/          Canonical ABI + generated clients
-├── packages/wisp-js/
-├── sdk/
-├── issuer-sdk/
-├── frontend/
-└── scripts/           dev · deploy · ceremony
+├── backend/             Soroban contracts + issuer-service
+├── circuits/circom/     Circom circuit + ceremony
+├── bindings/            Canonical ABI + generated clients
+├── packages/
+│   ├── wisp-js/         crypto primitives
+│   ├── wisp-core/       protocol validation + types
+│   ├── wisp-client/     issuer + chain transports
+│   ├── wisp-flows/      end-user transfer flows
+│   └── wisp-demo/       demo issuer + mock KYC
+├── sdk/                 @wisp_/sdk umbrella
+├── issuer-sdk/          @wisp_/issuer-sdk
+├── frontend/            demo UI (workspace-only)
+└── scripts/             dev · deploy · ceremony
 ```
 
 ---
@@ -87,12 +107,12 @@ Canonical field order: [`bindings/public-inputs.json`](bindings/public-inputs.js
 
 ## Key Features
 
-- **Wisp Pay** — compliant payment links (fixed payee, any KYC wallet pays); portable `?d=` links; on-chain receipt audit
+- **Portable SDK** — modular `@wisp_/core` · `@wisp_/client` · `@wisp_/flows` packages drop into any issuer or compliance integration; no demo or UI baggage
 - **Verify once, prove per transfer** — KYC tree + client-side Groth16; no PII on-chain
 - **8-in-1 circuit** — sanctions, jurisdiction, expiry, corridor binding in one proof
 - **Soroban-native verifier** — Groth16 in-contract; nullifier anti-replay
 - **Travel-rule corridors** — US→MX and extensible corridor config hashes
-- **Full TypeScript stack** — `@wisp_/js`, `@wisp_/sdk`, `@wisp_/issuer-sdk`
+- **Full TypeScript stack** — composable `@wisp_/*` packages + `@wisp_/issuer-sdk`
 - **Ceremony-ready** — multi-party setup scripts + VK drift checks in CI
 
 ---
@@ -105,7 +125,7 @@ Canonical field order: [`bindings/public-inputs.json`](bindings/public-inputs.js
 | Contracts | Soroban SDK 25, Rust `no_std`, release LTO |
 | ZK | Circom 2.2.3, snarkjs, Groth16, BN254, Poseidon2 |
 | Backend | Rust issuer-service (Axum) |
-| SDKs | `@wisp_/js`, `@wisp_/sdk`, `@wisp_/issuer-sdk` |
+| SDKs | `@wisp_/core` · `@wisp_/client` · `@wisp_/flows` · `@wisp_/js` · `@wisp_/sdk` · `@wisp_/issuer-sdk` |
 | Settlement | Stellar SAC + `compliant_transfer` |
 | Design | Space Grotesk · `#141812` · `#B7E7FF` |
 
@@ -122,8 +142,8 @@ Canonical field order: [`bindings/public-inputs.json`](bindings/public-inputs.js
 | `pnpm build:js` | Build all publishable TypeScript packages |
 | `pnpm gen:bindings` | Regenerate ABI bindings |
 | `pnpm prove` / `pnpm verify` | Local prove + verify |
-| `pnpm dev:frontend` | Demo UI dev server (`/` · `/wisp-pay` Pay Links · `/demo`) |
-| `pnpm test:e2e:frontend` | Playwright e2e (Pay Links + demo smoke) |
+| `pnpm dev:frontend` | Demo UI dev server (`/` · `/demo`) |
+| `pnpm test:e2e:frontend` | Playwright e2e (demo smoke) |
 | `pnpm demo:phase4` | Frontend gate: artifacts + build + e2e |
 | `pnpm test:js` | JS test suite |
 | `cargo test -p verifier -p compliance` | Contract tests |
@@ -179,19 +199,26 @@ export NETWORK=testnet SOURCE=amoeba-admin
 ```bash
 export ISSUER_STATE_PATH=.wisp/issuer-state.json
 export ISSUER_API_TOKEN=demo-token
+export ISSUER_PUBLIC_URL=http://127.0.0.1:3000
 export COMPLIANCE_CONTRACT_ID=<from .wisp/compliance.env>
 export ISSUER_PUBLIC_KEY=<issuer G-address>
 cargo run -p issuer-service
 ```
 
-**Key endpoints:**
+**Core issuer endpoints:**
 
 | Method | Path |
 | ------ | ---- |
 | GET | `/health` |
+| GET | `/.well-known/wisp-issuer.json` |
+| POST | `/v1/proof-packages` |
+| GET | `/v1/corridors` |
+| GET | `/v1/corridor/:id` |
 | GET | `/v1/fixtures/demo-transfer` |
 | GET | `/v1/merkle-path/:wallet` |
 | POST | `/v1/admin/roots/publish` (Bearer) |
+
+`HttpIssuerAdapter` uses the well-known + proof-package routes above. `DemoIssuerClient` adds the demo fixture and mock-KYC endpoints for local walkthroughs only.
 
 **Publish roots:**
 

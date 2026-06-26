@@ -74,5 +74,8 @@ pnpm --filter @wisp_/js build
 ## Related
 
 - Full SDK: [`@wisp_/sdk`](../../sdk/README.md)
+- Protocol validation + types: [`@wisp_/core`](../wisp-core/README.md)
+- Transports + chain reads: [`@wisp_/client`](../wisp-client/README.md)
+- Transfer orchestration: [`@wisp_/flows`](../wisp-flows/README.md)
 - ABI spec: [`bindings/README.md`](../../bindings/README.md)
 - Rust crypto: `backend/crates/wisp-crypto`

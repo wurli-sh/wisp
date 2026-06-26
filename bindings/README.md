@@ -16,6 +16,13 @@ npm install @wisp_/verifier@0.2.0
 | `@wisp_/compliance` | Generated Soroban client for the compliance contract |
 | `@wisp_/verifier` | Generated Soroban client for the verifier contract |
 
+`@wisp_/bindings` is exposed via subpaths:
+
+```ts
+import type { ProofPackage } from "@wisp_/bindings/proofPackage";
+import { PUBLIC_INPUTS } from "@wisp_/bindings/publicInputs";
+```
+
 ## Public inputs (17 fields)
 
 Field order is defined in [`public-inputs.json`](public-inputs.json) and generated into:
