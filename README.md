@@ -1,6 +1,6 @@
 <img src="docs/wisp-banner.png" width="100%" alt="Wisp" />
 
-[Live demo](https://wisp-zk.vercel.app/) - [Demo video](https://www.youtube.com/watch?v=jAiUz92IPZQ) - [First launch](https://www.youtube.com/watch?v=p3UdTfTjNd4) - [Second launch](https://www.youtube.com/watch?v=tTyu3Z3pJ5o) - [Pitch deck](https://drive.google.com/file/d/1Pz9oVlbFe6Wx1JJngxHkyrusLuk-FOSa/view?usp=sharing)
+[Live demo](https://wisp-zk.vercel.app/) - [Demo video](https://www.youtube.com/watch?v=jAiUz92IPZQ) - [Super Launch I](https://www.youtube.com/watch?v=p3UdTfTjNd4) - [Super Launch II](https://www.youtube.com/watch?v=tTyu3Z3pJ5o) - [Pitch deck](https://drive.google.com/file/d/1Pz9oVlbFe6Wx1JJngxHkyrusLuk-FOSa/view?usp=sharing)
 
 Verify users once with a trusted issuer, publish compliance roots on-chain, and generate client-side Groth16 proofs per transfer. Soroban verifies the proof, records the nullifier, and gates settlement — no customer documents on-chain.
 
@@ -238,3 +238,13 @@ Production: set `SUPABASE_DB_URL`, `WISP_ENV=production`, `ISSUER_REQUIRE_DB=1`.
 - **Mainnet ceremony gate** — requires multi-party phase 2 with `published: true` and `verifier_contract_synced: true` in ceremony manifest
 
 Runbooks: [`scripts/deploy/`](scripts/deploy/) · [`scripts/dev/`](scripts/dev/)
+
+---
+
+## Super Launch Trailer
+
+Watch the Wisp Super Launch trailer:
+
+<a href="https://www.youtube.com/watch?v=p3UdTfTjNd4" aria-label="Watch the Wisp Super Launch I trailer on YouTube">
+  <img src="https://img.youtube.com/vi/p3UdTfTjNd4/maxresdefault.jpg" width="100%" alt="Wisp Super Launch I trailer thumbnail" />
+</a>
