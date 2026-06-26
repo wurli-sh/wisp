@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { LayoutGroup, motion } from "framer-motion";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, ClipboardCopy, ExternalLink, LogOut } from "lucide-react";
 import { NAV_MAX } from "@/config/layout";
@@ -11,21 +11,80 @@ import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/cn";
 
 const indicatorSpring = { type: "spring" as const, stiffness: 420, damping: 32 };
+const NAV_INDICATOR_INSET = 4;
+
+function getActiveNavHref(pathname: string): string {
+  if (
+    pathname === "/wisp-pay" ||
+    pathname.startsWith("/wisp-pay") ||
+    pathname.startsWith("/pay/") ||
+    pathname.startsWith("/receipt/") ||
+    pathname === "/invoice"
+  ) {
+    return "/wisp-pay";
+  }
+
+  if (pathname === "/demo" || pathname.startsWith("/demo") || pathname.startsWith("/compliance")) {
+    return "/demo";
+  }
+
+  return "/";
+}
 
 export function Navbar() {
   const { pathname } = useLocation();
+  const reduceMotion = useReducedMotion();
   const { address, isConnected, isConnecting, connect, disconnect } = useWallet();
   const [walletMenuOpen, setWalletMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [logoLoaded, setLogoLoaded] = useState(false);
+  const [indicator, setIndicator] = useState<{ x: number; width: number } | null>(null);
+  const navListRef = useRef<HTMLDivElement>(null);
+  const navLinkRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
   const connectTriggerRef = useRef<HTMLButtonElement>(null);
   const connectedTriggerRef = useRef<HTMLButtonElement>(null);
 
   const display = address ? `${address.slice(0, 5)}...${address.slice(-4)}` : "";
+  const activeHref = getActiveNavHref(pathname);
 
   useEffect(() => {
     setWalletMenuOpen(false);
   }, [pathname]);
+
+  useLayoutEffect(() => {
+    const navList = navListRef.current;
+    const activeLink = navLinkRefs.current[activeHref];
+
+    if (!navList || !activeLink) return;
+
+    let frame = 0;
+    const updateIndicator = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const navRect = navList.getBoundingClientRect();
+        const linkRect = activeLink.getBoundingClientRect();
+        setIndicator({
+          x: linkRect.left - navRect.left + NAV_INDICATOR_INSET,
+          width: Math.max(0, linkRect.width - NAV_INDICATOR_INSET * 2),
+        });
+      });
+    };
+
+    updateIndicator();
+    window.addEventListener("resize", updateIndicator);
+
+    const observer = new ResizeObserver(updateIndicator);
+    observer.observe(navList);
+    observer.observe(activeLink);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("resize", updateIndicator);
+    };
+  }, [activeHref]);
+
+  const indicatorTransition = reduceMotion ? { duration: 0 } : indicatorSpring;
 
   return (
     <header className="pointer-events-none fixed inset-x-0 top-0 z-front flex w-full justify-center px-4 pt-4 sm:px-6">
@@ -56,36 +115,38 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden min-w-0 items-center justify-center sm:flex sm:flex-1">
-          <LayoutGroup id="navIndicator">
-            <div className="flex items-center justify-center gap-0.5 whitespace-nowrap sm:gap-1">
-              {COPY.nav.links.map(({ href, label }) => {
-                const isActive =
-                  pathname === href || (href !== "/" && pathname.startsWith(href));
-                return (
-                  <Link
-                    key={href}
-                    to={href}
-                    className={cn(
-                      "relative shrink-0 px-3 py-1.5 text-xs font-medium outline-none transition-colors duration-200 focus-visible:shadow-glow sm:px-4 sm:text-sm",
-                      isActive
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-primary",
-                    )}
-                  >
-                    {isActive && (
-                      <motion.div
-                        layoutId="nav-bar"
-                        initial={false}
-                        className="absolute inset-x-1 bottom-0 h-1 bg-brand-dark/70"
-                        transition={indicatorSpring}
-                      />
-                    )}
-                    <span className="relative z-10">{label}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </LayoutGroup>
+          <div
+            ref={navListRef}
+            className="relative flex items-center justify-center gap-0.5 whitespace-nowrap sm:gap-1"
+          >
+            {indicator && (
+              <motion.div
+                aria-hidden
+                className="pointer-events-none absolute bottom-0 left-0 h-1 bg-brand-dark/70"
+                animate={{ x: indicator.x, width: indicator.width }}
+                initial={false}
+                transition={indicatorTransition}
+              />
+            )}
+            {COPY.nav.links.map(({ href, label }) => {
+              const isActive = activeHref === href;
+              return (
+                <Link
+                  key={href}
+                  ref={(node) => {
+                    navLinkRefs.current[href] = node;
+                  }}
+                  to={href}
+                  className={cn(
+                    "relative shrink-0 px-3 py-1.5 text-xs font-medium outline-none transition-colors duration-200 focus-visible:shadow-glow sm:px-4 sm:text-sm",
+                    isActive ? "text-primary" : "text-muted-foreground hover:text-primary",
+                  )}
+                >
+                  <span className="relative z-10">{label}</span>
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
         <div className="flex shrink-0 justify-end">
