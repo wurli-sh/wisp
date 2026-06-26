@@ -1,11 +1,11 @@
 export const COPY = {
   hero: {
     eyebrow: "ZK COMPLIANCE LAYER FOR STELLAR",
-    headlineLead: "Show the proof",
-    headlineAccent: "Ghost the identity.",
-    sub: "Drop-in ZK compliance for stablecoin transfers — KYC, sanctions, and jurisdiction enforced on-chain, identities never exposed.",
+    headlineLead: "The ZK compliance Layer",
+    headlineAccent: ".",
+    sub: "Drop-in ZK compliance for Stellar stablecoins and RWAs. KYC once, then prove sanctions, jurisdiction, and travel-rule on-chain — identities never exposed.",
     ctas: {
-      primary: { label: "See it work →", href: "/demo" },
+      primary: { label: "See it work", href: "/demo" },
       secondary: { label: "Try Wisp Pay", href: "/wisp-pay" },
     },
     showcase: [

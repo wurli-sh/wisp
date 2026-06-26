@@ -1,16 +1,10 @@
-import { lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import { COPY } from "@/content/copy";
-import { HighlightedText } from "@/components/spell/highlighted-text";
 import { Button } from "@/components/ui/Button";
+import { AsciiSpiral } from "@/components/home/AsciiSpiral";
 import { buttonHover, buttonTap } from "@/lib/animations";
-
-const HeroDitherSide = lazy(() =>
-  import("@/components/home/HeroDitherSide").then((module) => ({
-    default: module.HeroDitherSide,
-  })),
-);
 
 const heroStagger = {
   hidden: {},
@@ -20,9 +14,10 @@ const heroStagger = {
 } as const;
 
 const heroReveal = {
-  hidden: { opacity: 0 },
+  hidden: { opacity: 0, y: 12 },
   visible: {
     opacity: 1,
+    y: 0,
     transition: { duration: 0.45, ease: "easeOut" },
   },
 } as const;
@@ -31,57 +26,65 @@ export function Hero() {
   const { hero } = COPY;
 
   return (
-    <section className="relative flex min-h-[calc(100svh-4.5rem)] items-center justify-center overflow-hidden bg-background pt-18 pb-12 sm:min-h-svh sm:pb-16 md:pb-20">
-      <Suspense fallback={null}>
-        <HeroDitherSide side="left" />
-        <HeroDitherSide side="right" />
-      </Suspense>
-
-      <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center px-4 text-center sm:px-6">
+    <section className="relative flex flex-col items-center overflow-hidden bg-background px-4 pt-28 pb-16 text-center sm:px-6 sm:pt-36 sm:pb-28 md:pb-32">
+      <motion.div
+        className="relative z-10 flex w-full max-w-3xl flex-col items-center"
+        variants={heroStagger}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* ASCII spiral — rotated 90°, centered at the top. The wrapper is
+            shorter than the <pre>'s layout box and clips the empty grid
+            rows (overflow-hidden) so the spiral never sits behind the
+            headline below it. */}
         <motion.div
-          className="flex w-full flex-col items-center"
-          variants={heroStagger}
-          initial="hidden"
-          animate="visible"
+          className="flex h-[140px] w-full items-center justify-center overflow-hidden sm:h-[170px] md:h-[200px]"
+          variants={heroReveal}
         >
-          <motion.h1
-            className="text-balance text-4xl font-bold leading-[1.1] tracking-tight text-charcoal sm:text-5xl lg:text-6xl"
-            variants={heroReveal}
-          >
-            {hero.headlineLead}{" "}
-            <HighlightedText variant="sky" from="bottom" delay={0.22}>
-              {hero.headlineAccent}
-            </HighlightedText>
-          </motion.h1>
-
-          <motion.p
-            className="mt-5 max-w-2xl text-balance text-sm leading-relaxed text-muted-foreground sm:text-base"
-            variants={heroReveal}
-          >
-            {hero.sub}
-          </motion.p>
-
-          <motion.div
-            className="mt-8 flex w-full max-w-sm flex-col items-stretch gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-4"
-            variants={heroReveal}
-          >
-            <Link to={hero.ctas.primary.href} className="w-full sm:w-auto">
-              <motion.div whileHover={buttonHover} whileTap={buttonTap} className="w-full sm:w-auto">
-                <Button size="lg" variant="primary" className="w-full sm:w-auto">
-                  {hero.ctas.primary.label}
-                </Button>
-              </motion.div>
-            </Link>
-            <a href={hero.ctas.secondary.href} className="w-full sm:w-auto">
-              <motion.div whileHover={buttonHover} whileTap={buttonTap} className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto">
-                  {hero.ctas.secondary.label}
-                </Button>
-              </motion.div>
-            </a>
-          </motion.div>
+          <AsciiSpiral className="rotate-90 text-[2.6px] sm:text-[3.2px] md:text-[3.8px]" />
         </motion.div>
-      </div>
+
+        <motion.h1
+          className="mt-10 text-balance text-3xl font-bold leading-[1.08] tracking-tight text-charcoal sm:text-4xl lg:text-5xl"
+          variants={heroReveal}
+        >
+          {hero.headlineLead}
+          <span
+            aria-hidden
+            className="ml-[0.06em] inline-block h-[0.18em] w-[0.18em] bg-brand align-baseline"
+          />
+          <span className="sr-only">{hero.headlineAccent}</span>
+        </motion.h1>
+
+        <motion.p
+          className="mt-5 max-w-2xl text-balance text-sm leading-relaxed text-muted-foreground/90 sm:text-base"
+          variants={heroReveal}
+        >
+          {hero.sub}
+        </motion.p>
+
+        <motion.div
+          className="mt-8 flex w-full max-w-sm flex-col items-stretch gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-4"
+          variants={heroReveal}
+        >
+          <Link to={hero.ctas.primary.href} className="group w-full sm:w-auto">
+            <motion.div whileHover={buttonHover} whileTap={buttonTap} className="w-full sm:w-auto">
+              <Button size="lg" variant="primary" className="w-full sm:w-auto">
+                {hero.ctas.primary.label}
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Button>
+            </motion.div>
+          </Link>
+          <a href={hero.ctas.secondary.href} className="group w-full sm:w-auto">
+            <motion.div whileHover={buttonHover} whileTap={buttonTap} className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto">
+                {hero.ctas.secondary.label}
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Button>
+            </motion.div>
+          </a>
+        </motion.div>
+      </motion.div>
     </section>
   );
 }
