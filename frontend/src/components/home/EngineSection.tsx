@@ -41,7 +41,7 @@ export function EngineSection() {
           animate={showContent ? "visible" : "hidden"}
           variants={sectionReveal}
         >
-          <EnginePipeline />
+          <EnginePipeline active={showContent} />
         </motion.div>
       </div>
     </section>

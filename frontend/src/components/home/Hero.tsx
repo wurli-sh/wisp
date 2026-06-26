@@ -26,7 +26,7 @@ export function Hero() {
   const { hero } = COPY;
 
   return (
-    <section className="relative flex flex-col items-center overflow-hidden bg-background px-4 pt-28 pb-16 text-center sm:px-6 sm:pt-36 sm:pb-28 md:pb-32">
+    <section className="relative flex min-h-[calc(100svh-2rem)] flex-col items-center justify-center overflow-hidden bg-background px-4 pt-32 pb-20 text-center sm:min-h-[calc(100svh-3rem)] sm:px-6 sm:pt-40 sm:pb-32 md:pt-44 md:pb-36">
       <motion.div
         className="relative z-10 flex w-full max-w-3xl flex-col items-center"
         variants={heroStagger}

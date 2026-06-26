@@ -21,8 +21,8 @@ function MobileConnector({ metric }: { metric?: { value: string; label: string }
   );
 }
 
-export function EnginePipeline() {
-  const phase = useEngineFlow();
+export function EnginePipeline({ active = true }: { active?: boolean }) {
+  const phase = useEngineFlow(active);
   const cardsRowRef = useRef<HTMLDivElement>(null);
   const issuerRef = useRef<HTMLDivElement>(null);
   const complianceRef = useRef<HTMLDivElement>(null);

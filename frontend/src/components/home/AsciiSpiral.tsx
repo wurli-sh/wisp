@@ -27,8 +27,50 @@ import { cn } from "@/lib/cn";
 import { SPIRAL_PAYLOAD_B64 } from "./asciiSpiralData";
 
 const FRAME_INTERVAL_MS = 33; // ~30fps
+const FALLBACK_FRAME_COUNT = 75;
+const FALLBACK_GRID_SIZE = 80;
+
+function buildFallbackFrames(): string[] {
+  return Array.from({ length: FALLBACK_FRAME_COUNT }, (_, frame) => {
+    const tilt = 0.42;
+    const spin = (frame / FALLBACK_FRAME_COUNT) * Math.PI * 2;
+    const lines: string[] = [];
+
+    for (let y = 0; y < FALLBACK_GRID_SIZE; y++) {
+      let line = "";
+      const ny = (y / (FALLBACK_GRID_SIZE - 1) - 0.5) * 2;
+
+      for (let x = 0; x < FALLBACK_GRID_SIZE; x++) {
+        const nx = (x / (FALLBACK_GRID_SIZE - 1) - 0.5) * 2;
+        const diskX = nx;
+        const diskY = ny / tilt;
+        const radius = Math.hypot(diskX, diskY);
+
+        if (radius > 0.92 || radius < 0.18) {
+          line += " ";
+          continue;
+        }
+
+        const angle = Math.atan2(diskY, diskX);
+        const wave = Math.sin(angle * 5 + spin) * 0.5 + Math.cos(radius * 18 - spin * 1.5) * 0.5;
+        const edgeFade = 1 - Math.abs(radius - 0.55) / 0.42;
+        const density = wave * 0.45 + edgeFade * 0.85;
+
+        line += density > 0.82 ? "▪" : density > 0.58 ? "▫" : density > 0.36 ? "·" : " ";
+      }
+
+      lines.push(line);
+    }
+
+    return lines.join("\n");
+  });
+}
 
 async function decodeFrames(payload: string): Promise<string[]> {
+  if (typeof DecompressionStream === "undefined") {
+    return buildFallbackFrames();
+  }
+
   const binary = Uint8Array.from(atob(payload), (c) => c.charCodeAt(0));
   const stream = new Blob([binary as BlobPart])
     .stream()
@@ -126,7 +168,7 @@ export function AsciiSpiral({ className }: AsciiSpiralProps) {
       if (inView) rafId = requestAnimationFrame(render);
     };
 
-    decodeFrames(SPIRAL_PAYLOAD_B64).then((decoded) => {
+    decodeFrames(SPIRAL_PAYLOAD_B64).catch(() => buildFallbackFrames()).then((decoded) => {
       if (cancelled) return;
       // Pre-compute per-frame HTML once so the rAF loop is O(1).
       htmlFrames = decoded.map(buildFrameHtml);

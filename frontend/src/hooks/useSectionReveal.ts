@@ -9,10 +9,11 @@ export const sectionStagger = {
 } as const;
 
 export const sectionReveal = {
-  hidden: { opacity: 0 },
+  hidden: { opacity: 0, y: 18 },
   visible: {
     opacity: 1,
-    transition: { duration: 0.4, ease: "easeOut" },
+    y: 0,
+    transition: { duration: 0.45, ease: "easeOut" },
   },
 } as const;
 

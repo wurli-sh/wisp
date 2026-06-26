@@ -10,13 +10,18 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-export function useEngineFlow(): FlowPhase {
+export function useEngineFlow(active = true): FlowPhase {
   const [phase, setPhase] = useState<FlowPhase>("issuer");
 
   useEffect(() => {
-    if (prefersReducedMotion()) return;
+    if (!active || prefersReducedMotion()) {
+      setPhase("issuer");
+      return;
+    }
 
     let index = 0;
+    setPhase(PHASE_ORDER[index]!);
+
     const tick = () => {
       index = (index + 1) % PHASE_ORDER.length;
       setPhase(PHASE_ORDER[index]!);
@@ -24,7 +29,7 @@ export function useEngineFlow(): FlowPhase {
 
     const id = window.setInterval(tick, PHASE_DURATION_MS);
     return () => window.clearInterval(id);
-  }, []);
+  }, [active]);
 
   return phase;
 }
