@@ -28,8 +28,12 @@ Publish **must** follow this order — each layer depends on the previous:
 | 2 | `@wisp_/compliance` | `bindings/generated/compliance/` |
 | 3 | `@wisp_/verifier` | `bindings/generated/verifier/` |
 | 4 | `@wisp_/bindings` | `bindings/` |
-| 5 | `@wisp_/sdk` | `sdk/` |
-| 6 | `@wisp_/issuer-sdk` | `issuer-sdk/` |
+| 5 | `@wisp_/core` | `packages/wisp-core/` |
+| 6 | `@wisp_/client` | `packages/wisp-client/` |
+| 7 | `@wisp_/demo` | `packages/wisp-demo/` |
+| 8 | `@wisp_/flows` | `packages/wisp-flows/` |
+| 9 | `@wisp_/sdk` | `sdk/` |
+| 10 | `@wisp_/issuer-sdk` | `issuer-sdk/` |
 
 **Not published:** `@wisp_/web` (`frontend/`) — demo app only. Root `wisp` package stays `private`.
 

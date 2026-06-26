@@ -27,6 +27,10 @@ PACKAGES=(
   "@wisp_/compliance"
   "@wisp_/verifier"
   "@wisp_/bindings"
+  "@wisp_/core"
+  "@wisp_/client"
+  "@wisp_/demo"
+  "@wisp_/flows"
   "@wisp_/sdk"
   "@wisp_/issuer-sdk"
 )
