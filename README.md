@@ -4,6 +4,8 @@
 
 Verify users once with a trusted issuer, publish compliance roots on-chain, and generate client-side Groth16 proofs per transfer. Soroban verifies the proof, records the nullifier, and gates settlement — no customer documents on-chain.
 
+> Beta / demo release only. The published `@wisp_/*` packages and reference issuer flows are for evaluation and test consumption, not production compliance or production funds movement.
+
 ---
 
 ## Deployments
@@ -27,29 +29,22 @@ Contract IDs → `.wisp/*.env` · redeploy [`scripts/deploy/`](scripts/deploy/) 
 
 ## Packages
 
-Wisp ships as a **modular, portable SDK** — compose only the layers your stack needs. Issuer and compliance integrations can drop in `@wisp_/core`, `@wisp_/client`, or `@wisp_/flows` without pulling in the prover, demo issuer, or React UI. The umbrella `@wisp_/sdk` bundles everything and re-exports each layer via subpaths (`@wisp_/sdk/core`, `/client`, `/flows`, `/demo`).
-
-**Portable building blocks** — pick what you embed:
-
-| Package | Version | Purpose | Chain deps | README |
-| ------- | ------- | ------- | ---------- | ------ |
-| `@wisp_/core` | `0.2.0` | Protocol validation, root comparison, shared types | none | [`packages/wisp-core/README.md`](packages/wisp-core/README.md) |
-| `@wisp_/js` | `0.2.0` | Poseidon2, Merkle, nullifier, witness builder | none | [`packages/wisp-js/README.md`](packages/wisp-js/README.md) |
-| `@wisp_/client` | `0.2.0` | Issuer HTTP adapter + on-chain root / registry / event reads | Stellar | [`packages/wisp-client/README.md`](packages/wisp-client/README.md) |
-| `@wisp_/flows` | `0.2.0` | Client-agnostic prove → audit → settle orchestration | none | [`packages/wisp-flows/README.md`](packages/wisp-flows/README.md) |
-| `@wisp_/demo` | `0.2.0` | Demo issuer + mock KYC clients | none | [`packages/wisp-demo/README.md`](packages/wisp-demo/README.md) |
-
-**Bundled SDKs + contract ABI:**
+Wisp ships as published `@wisp_/*` beta packages (`0.2.1`). Use the umbrella SDK for most integrations, or install individual layers when you need a smaller surface.
 
 | Package | Version | Purpose | README |
 | ------- | ------- | ------- | ------ |
-| `@wisp_/sdk` | `0.2.0` | Umbrella: prove, settle, audit + subpath re-exports | [`sdk/README.md`](sdk/README.md) |
-| `@wisp_/issuer-sdk` | `0.2.0` | Register issuers, manage corridors, publish roots on-chain | [`issuer-sdk/README.md`](issuer-sdk/README.md) |
-| `@wisp_/bindings` | `0.2.0` | Canonical proof package + public input ABI | [`bindings/README.md`](bindings/README.md) |
-| `@wisp_/compliance` | `0.2.0` | Generated client for the compliance contract | [`bindings/README.md`](bindings/README.md) |
-| `@wisp_/verifier` | `0.2.0` | Generated client for the Groth16 verifier contract | [`bindings/README.md`](bindings/README.md) |
+| `@wisp_/sdk` | `0.2.1` | Umbrella: prove, settle, audit + subpath re-exports | [`sdk/README.md`](sdk/README.md) |
+| `@wisp_/issuer-sdk` | `0.2.1` | Register issuers, manage corridors, publish roots on-chain | [`issuer-sdk/README.md`](issuer-sdk/README.md) |
+| `@wisp_/js` | `0.2.1` | Poseidon2, Merkle, nullifier, witness builder | [`packages/wisp-js/README.md`](packages/wisp-js/README.md) |
+| `@wisp_/core` | `0.2.1` | Protocol validation, root comparison, shared types | [`packages/wisp-core/README.md`](packages/wisp-core/README.md) |
+| `@wisp_/client` | `0.2.1` | Issuer HTTP adapter + chain reads | [`packages/wisp-client/README.md`](packages/wisp-client/README.md) |
+| `@wisp_/flows` | `0.2.1` | Client-agnostic prove -> audit -> settle orchestration | [`packages/wisp-flows/README.md`](packages/wisp-flows/README.md) |
+| `@wisp_/demo` | `0.2.1` | Demo issuer + mock KYC clients | [`packages/wisp-demo/README.md`](packages/wisp-demo/README.md) |
+| `@wisp_/bindings` | `0.2.1` | Canonical proof package + public input ABI | [`bindings/README.md`](bindings/README.md) |
+| `@wisp_/compliance` | `0.2.1` | Generated client for the compliance contract | [`bindings/README.md`](bindings/README.md) |
+| `@wisp_/verifier` | `0.2.1` | Generated client for the Groth16 verifier contract | [`bindings/README.md`](bindings/README.md) |
 
-Install everything: `npm install @wisp_/sdk @wisp_/js` · embed a layer: `npm install @wisp_/core @wisp_/client` · demo UI: [`frontend/`](frontend/) (workspace-only) · dry-run: `./scripts/publish/publish-packages.sh --dry-run`
+Install: `npm install @wisp_/sdk @wisp_/js` · issuer ops: `npm install @wisp_/issuer-sdk` · minimal layers: `npm install @wisp_/core @wisp_/client`
 
 ## Core Architecture
 

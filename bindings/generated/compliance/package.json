@@ -1,6 +1,6 @@
 {
   "name": "@wisp_/compliance",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Generated Soroban client for the Wisp compliance contract",
   "license": "MIT",
   "type": "module",

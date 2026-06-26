@@ -1,6 +1,6 @@
 {
   "name": "@wisp_/js",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Wisp cryptographic primitives — Poseidon2, Merkle trees, nullifiers, witness builder",
   "license": "MIT",
   "type": "module",

@@ -3,11 +3,13 @@
 Demo issuer helpers and mock KYC clients for Wisp. Use these to fetch demo proof packages and exercise a mock KYC lifecycle against the reference issuer-service — useful for local development, walkthroughs, and tests.
 
 > Demo / development helper only. Production integrations use [`@wisp_/client`](../wisp-client/README.md)'s `HttpIssuerAdapter` against a real issuer API.
+>
+> Beta / demo release only. Intended for evaluation and local or testnet walkthroughs.
 
 ## Install
 
 ```bash
-npm install @wisp_/demo@0.2.0
+npm install @wisp_/demo@0.2.1
 ```
 
 ## Quick start

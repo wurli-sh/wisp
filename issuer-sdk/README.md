@@ -2,12 +2,14 @@
 
 TypeScript SDK for operating a Wisp issuer — register on-chain, manage corridors, publish compliance roots, and conformance-test your issuer API.
 
+> Beta / demo release only. Intended for evaluation and testnet issuer integrations; not production compliance infrastructure.
+
 Pairs with the portable Wisp layers: read on-chain state with [`@wisp_/client`](../packages/wisp-client/README.md), validate packages with [`@wisp_/core`](../packages/wisp-core/README.md), and keep your KYC stack of choice — Wisp only consumes the published roots.
 
 ## Install
 
 ```bash
-npm install @wisp_/issuer-sdk@0.2.0 @wisp_/sdk@0.2.0 @wisp_/js@0.2.0
+npm install @wisp_/issuer-sdk@0.2.1 @wisp_/sdk@0.2.1 @wisp_/js@0.2.1
 ```
 
 ## Quick start
@@ -122,5 +124,5 @@ pnpm --filter @wisp_/issuer-sdk test
 - Protocol validation + types: [`@wisp_/core`](../packages/wisp-core/README.md)
 - Issuer transports + chain reads: [`@wisp_/client`](../packages/wisp-client/README.md)
 - Witness/crypto: [`@wisp_/js`](../packages/wisp-js/README.md)
-- Contract clients: `@wisp_/compliance@0.2.0`, `@wisp_/verifier@0.2.0`
+- Contract clients: `@wisp_/compliance@0.2.1`, `@wisp_/verifier@0.2.1`
 - Issuer HTTP service: [`backend/crates/issuer-service/`](../backend/crates/issuer-service/)

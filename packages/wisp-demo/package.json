@@ -1,6 +1,6 @@
 {
   "name": "@wisp_/demo",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Demo issuer helpers and mock KYC clients for Wisp",
   "license": "MIT",
   "type": "module",

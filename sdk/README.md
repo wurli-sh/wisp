@@ -2,6 +2,8 @@
 
 TypeScript SDK for proving, settling, and auditing Wisp compliant transfers on Stellar.
 
+> Beta / demo release only. Intended for evaluation and testnet flows; expect API and protocol changes before production use.
+
 This is the **umbrella** package. It bundles the modular Wisp layers and re-exports each via a subpath, so you can install everything here or embed just the layer you need:
 
 | Import | Re-exports | Standalone package |
@@ -17,7 +19,7 @@ Issuer and compliance integrations that don't need the prover can depend on the 
 ## Install
 
 ```bash
-npm install @wisp_/sdk@0.2.0 @wisp_/js@0.2.0
+npm install @wisp_/sdk@0.2.1 @wisp_/js@0.2.1
 ```
 
 Peer deps are bundled; you also need circuit artifacts (WASM + zkey) for proving.
@@ -118,4 +120,4 @@ pnpm --filter @wisp_/sdk test
 - Crypto primitives: [`@wisp_/js`](../packages/wisp-js/README.md)
 - Issuer operations: [`@wisp_/issuer-sdk`](../issuer-sdk/README.md)
 - Public input ABI: [`@wisp_/bindings`](../bindings/README.md)
-- Contract clients: `@wisp_/compliance@0.2.0`, `@wisp_/verifier@0.2.0`
+- Contract clients: `@wisp_/compliance@0.2.1`, `@wisp_/verifier@0.2.1`

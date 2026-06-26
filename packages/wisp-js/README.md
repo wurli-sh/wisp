@@ -2,12 +2,14 @@
 
 Wisp cryptographic primitives — Poseidon2, Merkle trees, nullifiers, and Circom witness builder.
 
+> Beta / demo release only. Intended for evaluation and testnet integrations; interfaces may change.
+
 Low-level building block; most apps should use [`@wisp_/sdk`](../../sdk/README.md) for the full prove/settle flow.
 
 ## Install
 
 ```bash
-npm install @wisp_/js@0.2.0
+npm install @wisp_/js@0.2.1
 ```
 
 ## Quick start

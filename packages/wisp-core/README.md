@@ -2,12 +2,14 @@
 
 Portable Wisp protocol core — package validation, public-input rebinding, root comparison, typed errors, and shared types. **Zero chain dependencies** (only `@wisp_/js` + `@wisp_/bindings`), so it drops straight into any issuer or compliance integration.
 
+> Beta / demo release only. Intended for evaluation and testnet integrations; interfaces may change.
+
 Use this when you need to validate proof packages or compare on-chain roots without pulling in Stellar transports, the prover, or the demo issuer.
 
 ## Install
 
 ```bash
-npm install @wisp_/core@0.2.0
+npm install @wisp_/core@0.2.1
 ```
 
 ## Quick start

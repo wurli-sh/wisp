@@ -1,6 +1,6 @@
 {
   "name": "@wisp_/sdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "TypeScript SDK for proving, settling, and auditing Wisp compliant transfers on Stellar",
   "license": "MIT",
   "type": "module",

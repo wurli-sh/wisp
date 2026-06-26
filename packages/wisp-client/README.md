@@ -2,10 +2,12 @@
 
 Wisp client transports and chain access — issuer HTTP adapter plus typed reads of on-chain issuer registry, compliance roots, corridor config, `ProofSettled` events, and verifier VK hash. This is the portable I/O layer that issuer and compliance integrations embed without the prover or demo issuer.
 
+> Beta / demo release only. Intended for evaluation and testnet integrations; interfaces may change.
+
 ## Install
 
 ```bash
-npm install @wisp_/client@0.2.0
+npm install @wisp_/client@0.2.1
 ```
 
 ## Quick start

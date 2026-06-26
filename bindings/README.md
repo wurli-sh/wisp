@@ -2,12 +2,14 @@
 
 Canonical ABI and encoding rules for the compliance corridor Groth16 circuit.
 
+> Beta / demo release only. Intended for evaluation and testnet integrations; bindings and contract surfaces may change.
+
 ## Published packages
 
 ```bash
-npm install @wisp_/bindings@0.2.0
-npm install @wisp_/compliance@0.2.0
-npm install @wisp_/verifier@0.2.0
+npm install @wisp_/bindings@0.2.1
+npm install @wisp_/compliance@0.2.1
+npm install @wisp_/verifier@0.2.1
 ```
 
 | Package | Purpose |

@@ -1,6 +1,6 @@
 {
   "name": "@wisp_/issuer-sdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "TypeScript SDK for operating an Wisp issuer service and publishing roots",
   "license": "MIT",
   "type": "module",

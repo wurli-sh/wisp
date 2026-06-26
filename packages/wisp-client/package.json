@@ -1,6 +1,6 @@
 {
   "name": "@wisp_/client",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Client transports and chain access helpers for Wisp",
   "license": "MIT",
   "type": "module",

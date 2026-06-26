@@ -1,6 +1,6 @@
 {
   "name": "@wisp_/flows",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "High-level end-user flows for Wisp transfers",
   "license": "MIT",
   "type": "module",

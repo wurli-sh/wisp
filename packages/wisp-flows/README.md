@@ -2,12 +2,14 @@
 
 High-level, **client-agnostic** orchestration for Wisp transfers: fetch package → validate → prove → duplicate-check → approve → simulate → settle, with staged progress callbacks and duplicate-nullifier retry.
 
+> Beta / demo release only. Intended for evaluation and testnet integrations; interfaces may change.
+
 Flows depend only on `@wisp_/js` and program against a `TransferClientLike` interface — so you can drive them with `@wisp_/sdk`'s `WispClient`, a custom client, or a test double. Ideal for embedding the full transfer pipeline into your own UI or service.
 
 ## Install
 
 ```bash
-npm install @wisp_/flows@0.2.0
+npm install @wisp_/flows@0.2.1
 ```
 
 ## Quick start
