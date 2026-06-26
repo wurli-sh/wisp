@@ -4,7 +4,7 @@
   "scripts": {
     "compile:circuit": "cd circuits/circom && ./scripts/compile.sh",
     "setup:circuit": "cd circuits/circom && ./scripts/setup.sh",
-    "build:js": "pnpm --filter @wisp_/compliance exec tsc && pnpm --filter @wisp_/verifier exec tsc && pnpm --filter @wisp_/js run build && pnpm --filter @wisp_/core run build && pnpm --filter @wisp_/client run build && pnpm --filter @wisp_/demo run build && pnpm --filter @wisp_/flows run build && pnpm --filter @wisp_/bindings run build && pnpm --filter @wisp_/sdk run build && pnpm --filter @wisp_/issuer-sdk run build",
+    "build:js": "pnpm --filter @wisp_/compliance exec tsc && pnpm --filter @wisp_/verifier exec tsc && pnpm --filter @wisp_/js run build && pnpm --filter @wisp_/bindings run build && pnpm --filter @wisp_/core run build && pnpm --filter @wisp_/client run build && pnpm --filter @wisp_/demo run build && pnpm --filter @wisp_/flows run build && pnpm --filter @wisp_/sdk run build && pnpm --filter @wisp_/issuer-sdk run build",
     "gen:bindings": "node --import tsx bindings/scripts/generate.ts",
     "gen:crypto-fixtures": "node --import tsx bindings/scripts/gen-crypto-fixtures.ts && node --import tsx bindings/scripts/gen-addresses.ts",
     "gen:fixtures": "node --import tsx circuits/circom/scripts/gen-fixture.ts",
