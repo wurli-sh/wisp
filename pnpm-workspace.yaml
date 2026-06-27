@@ -1,5 +1,7 @@
 packages:
   - "frontend"
+  - "examples/quickstart"
+  - "examples/issuer-quickstart"
   - "packages/wisp-core"
   - "packages/wisp-client"
   - "packages/wisp-flows"

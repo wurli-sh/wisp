@@ -1,0 +1,21 @@
+{
+  "name": "@wisp_/quickstart",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Copy-paste integration examples for @wisp_/sdk (browser + Node)",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "node": "node --import tsx src/node-quickstart.ts"
+  },
+  "dependencies": {
+    "@wisp_/js": "workspace:*",
+    "@wisp_/sdk": "workspace:*",
+    "@stellar/freighter-api": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -46,6 +46,15 @@ Wisp ships as published `@wisp_/*` beta packages (`0.2.1`). Use the umbrella SDK
 
 Install: `npm install @wisp_/sdk @wisp_/js` · issuer ops: `npm install @wisp_/issuer-sdk` · minimal layers: `npm install @wisp_/core @wisp_/client`
 
+## Examples
+
+Copy-paste, typechecked integration starting points:
+
+| Example | For | Entry |
+| ------- | --- | ----- |
+| [`examples/quickstart`](examples/quickstart/README.md) | Payer / consumer apps | `@wisp_/sdk/browser` (browser) · `@wisp_/sdk` (Node) |
+| [`examples/issuer-quickstart`](examples/issuer-quickstart/README.md) | Issuer operators | `@wisp_/issuer-sdk` (Node) |
+
 ## Core Architecture
 
 ```

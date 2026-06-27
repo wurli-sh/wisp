@@ -1,0 +1,21 @@
+{
+  "name": "@wisp_/issuer-quickstart",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Copy-paste integration example for @wisp_/issuer-sdk (Node operator tool)",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "node": "node --import tsx src/issuer-quickstart.ts"
+  },
+  "dependencies": {
+    "@wisp_/issuer-sdk": "workspace:*",
+    "@wisp_/sdk": "workspace:*",
+    "@stellar/stellar-sdk": "^14.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

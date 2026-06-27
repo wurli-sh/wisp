@@ -17,6 +17,9 @@ importers:
       '@wisp_/issuer-sdk':
         specifier: workspace:*
         version: link:issuer-sdk
+      '@wisp_/js':
+        specifier: workspace:*
+        version: link:packages/wisp-js
       '@wisp_/sdk':
         specifier: workspace:*
         version: link:sdk
@@ -87,6 +90,50 @@ importers:
       circomlib:
         specifier: ^2.0.5
         version: 2.0.5
+
+  examples/issuer-quickstart:
+    dependencies:
+      '@stellar/stellar-sdk':
+        specifier: ^14.5.0
+        version: 14.6.1
+      '@wisp_/issuer-sdk':
+        specifier: workspace:*
+        version: link:../../issuer-sdk
+      '@wisp_/sdk':
+        specifier: workspace:*
+        version: link:../../sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.19.21
+      tsx:
+        specifier: ^4.19.0
+        version: 4.22.4
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  examples/quickstart:
+    dependencies:
+      '@stellar/freighter-api':
+        specifier: ^5.0.0
+        version: 5.0.0
+      '@wisp_/js':
+        specifier: workspace:*
+        version: link:../../packages/wisp-js
+      '@wisp_/sdk':
+        specifier: workspace:*
+        version: link:../../sdk
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.0
+        version: 22.19.21
+      tsx:
+        specifier: ^4.19.0
+        version: 4.22.4
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
 
   frontend:
     dependencies:
@@ -210,6 +257,9 @@ importers:
       '@types/node':
         specifier: ^22.10.0
         version: 22.19.21
+      tsx:
+        specifier: ^4.19.0
+        version: 4.22.4
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -245,6 +295,9 @@ importers:
       '@types/node':
         specifier: ^22.10.0
         version: 22.19.21
+      tsx:
+        specifier: ^4.19.0
+        version: 4.22.4
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
