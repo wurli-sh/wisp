@@ -16,8 +16,10 @@
 import { Keypair, TransactionBuilder } from "@stellar/stellar-sdk";
 import {
   WispIssuerClient,
+  computeIssuerRoots,
   loadIssuerConfig,
   runIssuerConformance,
+  type IssuerRoots,
   type IssuerTransactionSigner,
 } from "@wisp_/issuer-sdk";
 
@@ -25,6 +27,46 @@ function required(name: string): string {
   const v = process.env[name];
   if (!v) throw new Error(`missing required env: ${name}`);
   return v;
+}
+
+/**
+ * Bring-your-own-KYC: derive the six roots from your KYC dataset entirely in
+ * TypeScript — no Rust issuer-service required. In a real deployment `members`
+ * comes from your KYC store (each activated wallet + the credential commitment
+ * it registered + its jurisdiction code) and `destinations` is your corridor's
+ * approved recipient registry.
+ *
+ * Activate with `ROOTS_SOURCE=kyc`. Otherwise the example expects the roots as
+ * env vars (the "I already computed roots elsewhere" path).
+ */
+function rootsFromKyc(corridorId: number): IssuerRoots {
+  return computeIssuerRoots({
+    members: [
+      {
+        wallet: required("SENDER_PUBLIC_KEY"),
+        credentialCommitment: required("SENDER_CREDENTIAL_COMMITMENT"),
+        jurisdictionCode: Number(process.env.SENDER_JURISDICTION_CODE ?? "840"),
+      },
+    ],
+    destinations: [required("RECIPIENT_PUBLIC_KEY")],
+    corridor: {
+      id: corridorId,
+      sourceCountry: process.env.SOURCE_COUNTRY ?? "US",
+      enabled: true,
+      travelRuleThreshold: process.env.TRAVEL_RULE_THRESHOLD ?? 0,
+    },
+  });
+}
+
+function rootsFromEnv(): IssuerRoots {
+  return {
+    merkleRoot: required("MERKLE_ROOT"),
+    sanctionsRoot: required("SANCTIONS_ROOT"),
+    jurisdictionRoot: required("JURISDICTION_ROOT"),
+    sourceJurisdictionRoot: required("SOURCE_JURISDICTION_ROOT"),
+    destAddressRoot: required("DEST_ADDRESS_ROOT"),
+    corridorConfigHash: required("CORRIDOR_CONFIG_HASH"),
+  };
 }
 
 /** Operator keypair → `IssuerTransactionSigner`. Swap for a wallet/HSM adapter. */
@@ -54,16 +96,11 @@ async function main(): Promise<void> {
   const metadataUri =
     process.env.METADATA_URI ?? "https://issuer.example/.well-known/wisp-issuer.json";
 
-  // Root hashes you computed off-chain (hex strings, Buffers, or Uint8Arrays).
-  // Replace these with your real Merkle/sanctions/jurisdiction + corridor roots.
-  const roots = {
-    merkleRoot: required("MERKLE_ROOT"),
-    sanctionsRoot: required("SANCTIONS_ROOT"),
-    jurisdictionRoot: required("JURISDICTION_ROOT"),
-    sourceJurisdictionRoot: required("SOURCE_JURISDICTION_ROOT"),
-    destAddressRoot: required("DEST_ADDRESS_ROOT"),
-    corridorConfigHash: required("CORRIDOR_CONFIG_HASH"),
-  };
+  // Roots either derived from your KYC dataset in-process (ROOTS_SOURCE=kyc) or
+  // supplied as pre-computed canonical field decimals via env.
+  const roots =
+    (process.env.ROOTS_SOURCE ?? "env") === "kyc" ? rootsFromKyc(corridorId) : rootsFromEnv();
+  console.log("roots:", roots);
 
   // One-call orchestration: registers the issuer (if not yet registered),
   // publishes issuer roots, then registers or updates the corridor — all signed

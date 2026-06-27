@@ -21,13 +21,15 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 
 ## Architecture
 
-- **circuits/circom/** — BN254 Groth16 circuit with Poseidon2, 8 compliance checks, 17 public inputs
+- **circuits/circom/** — BN254 Groth16 circuit with Poseidon2, 8 compliance checks, 19 public inputs
 - **backend/programs/** — Soroban smart contracts (verifier, compliance, mock-sac)
 - **backend/crates/** — Rust crates for off-chain crypto, types, and issuer service
 - **bindings/** — Canonical ABI, generated contract clients, shared JSON fixtures
 - **packages/wisp-js/** — Shared JS crypto (`@wisp_/js`: Poseidon2, Merkle, field ops, nullifier, witness)
 - **sdk/** — TypeScript SDK (`@wisp_/sdk`) for proving, settling, and auditing compliant transfers
 - **issuer-sdk/** — Issuer-side TypeScript SDK (`@wisp_/issuer-sdk`) for integration
+- **backend/crates/issuer-core/** — Internal Rust business logic linked into `issuer-service`;
+  not a sidecar and not the public issuer SDK
 - **scripts/** — deploy, dev, fixture, and ceremony tooling
 - **frontend/** — Vite demo UI (`@wisp_/web`: landing, `/wisp-pay`, `/demo`; legacy `/invoice` → `/wisp-pay`)
 - **docs/** — Design notes, gap analyses, and planning documents

@@ -7,7 +7,7 @@ not put operator keys in a browser).
 
 | File | Purpose |
 |------|---------|
-| `src/issuer-quickstart.ts` | Register issuer · publish roots · register corridor · (optional) conformance test |
+| `src/issuer-quickstart.ts` | Compute roots from KYC (optional) · register issuer · publish roots · register corridor · (optional) conformance test |
 
 ## Install
 
@@ -41,10 +41,22 @@ and `registerCorridorAndSend` (see `manual()` in the source).
 
 ## Run
 
+**Bring-your-own-KYC** — derive the roots in-process, no Rust service:
+
 ```bash
 COMPLIANCE_CONTRACT_ID=C... ISSUER_PUBLIC_KEY=G... OPERATOR_SECRET=S... \
-MERKLE_ROOT=0x... SANCTIONS_ROOT=0x... JURISDICTION_ROOT=0x... \
-SOURCE_JURISDICTION_ROOT=0x... DEST_ADDRESS_ROOT=0x... CORRIDOR_CONFIG_HASH=0x... \
+ROOTS_SOURCE=kyc SOURCE_COUNTRY=US \
+SENDER_PUBLIC_KEY=G... SENDER_CREDENTIAL_COMMITMENT=123... SENDER_JURISDICTION_CODE=840 \
+RECIPIENT_PUBLIC_KEY=G... \
+pnpm --filter @wisp_/issuer-quickstart node
+```
+
+**Pre-computed roots** — supply canonical field decimals via env:
+
+```bash
+COMPLIANCE_CONTRACT_ID=C... ISSUER_PUBLIC_KEY=G... OPERATOR_SECRET=S... \
+MERKLE_ROOT=... SANCTIONS_ROOT=... JURISDICTION_ROOT=... \
+SOURCE_JURISDICTION_ROOT=... DEST_ADDRESS_ROOT=... CORRIDOR_CONFIG_HASH=... \
 # optional conformance test of your HTTP API:
 ISSUER_URL=http://127.0.0.1:3000 SENDER_PUBLIC_KEY=G... RECIPIENT_PUBLIC_KEY=G... \
 pnpm --filter @wisp_/issuer-quickstart node
@@ -58,12 +70,18 @@ pnpm --filter @wisp_/issuer-quickstart node
 | `OPERATOR_SECRET` | yes | Operator signing key (`S...`) |
 | `ISSUER_PUBLIC_KEY` | — | Issuer identity on-chain (defaults to operator) |
 | `STELLAR_RPC_URL` / `NETWORK_PASSPHRASE` | — | Soroban network |
+| `ROOTS_SOURCE` | — | `kyc` to derive roots via `computeIssuerRoots`; otherwise read from env |
+| `SENDER_CREDENTIAL_COMMITMENT` / `SENDER_JURISDICTION_CODE` / `SOURCE_COUNTRY` | for `kyc` | KYC inputs for root derivation |
 | `ISSUER_URL` | — | If set, runs `runIssuerConformance` against your HTTP API |
 
 ## What you swap for production
 
 - `keypairSigner` → your wallet/HSM/KMS `IssuerTransactionSigner`.
-- Real root hashes from your KYC/sanctions/jurisdiction Merkle trees.
+- Feed `computeIssuerRoots` your full KYC set (all activated members + the
+  corridor's destination registry) instead of the single-member sample, or
+  supply roots you computed elsewhere.
+- Wire a real sanctions screening provider into the sanctions tree — the helper
+  emits the empty-tree sanctions root.
 - Keep any KYC stack you like — Wisp only consumes the published roots.
 
 ## Typecheck

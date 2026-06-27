@@ -17,11 +17,11 @@ Verify users once with a trusted issuer, publish compliance roots on-chain, and 
 | Network | `Test SDF Network ; September 2015` |
 | RPC | `https://soroban-testnet.stellar.org` |
 | Explorer | [stellar.expert/testnet](https://stellar.expert/explorer/testnet) |
-| Verifier | `CBOQVGV7SIFNBDM26GFFAHWQ6DKUBAX4K2OR44KEWJJCYQH4SJL3G2AG` |
-| Compliance | `CBN7EJWN6BDGBAKT3MMSHLMTXCKDLXRSPD2XMQYSR3KWCUBRU5PT5CH4` |
+| Verifier | `CAEJ63XT46UUNCJNZS5IWVLQQSOV3FHCEHJMFJZHAYA4BTBIWQAJKZZ2` |
+| Compliance | `CDISQDZ6MUT5KCSP4WRPWJAETN7XA7XOXEL5W2DZ6LZ35USNY3RC6OJN` |
 | Circle USDC SAC | `CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA` |
-| VK hash | `3325bfff94f2c530d199c35575dc45cd3e27f752d9402d17e6d64341d3f3f6ae` |
-| Deploy ledger | `3188535` |
+| VK hash | `3ea87034b94f427de47c7884cee93c3dea107d579a6b90e04b7343ebac222319` |
+| Deploy ledger | `3307817` |
 
 Contract IDs → `.wisp/*.env` · redeploy [`scripts/deploy/`](scripts/deploy/) · config [`frontend/.env.example`](frontend/.env.example)
 
@@ -60,8 +60,11 @@ Copy-paste, typechecked integration starting points:
 ```
 Issuer (off-chain KYC)
   → publishes merkle / sanctions / jurisdiction / corridor roots on-chain
+  → wallet signs challenge to derive credentialSecret and activate credential
 Browser / Node prover
-  → fetches proof package → witness (@wisp_/js) → Groth16 (17 public inputs)
+  → wallet signs proof challenge → issuer returns draft (no nullifier)
+  → finalizeProofPackageDraft builds nullifier client-side
+  → witness (@wisp_/js) → Groth16 (19 public inputs)
 Soroban compliance contract
   → rebinds public inputs → verifies via verifier → nullifier → SAC transfer
 ```
@@ -83,6 +86,7 @@ Soroban            verifier (Groth16) → compliance (nullifier + SAC gate)
 ```
 wisp/
 ├── backend/             Soroban contracts + issuer-service
+│   └── crates/issuer-core  Internal Rust logic linked by issuer-service (not a public SDK)
 ├── circuits/circom/     Circom circuit + ceremony
 ├── bindings/            Canonical ABI + generated clients
 ├── packages/
@@ -101,7 +105,7 @@ wisp/
 
 ## ZK Implementation
 
-**Stack:** Groth16 · BN254 · Poseidon2 t=4 · 20-level Merkle/SMT · **17 public inputs**
+**Stack:** Groth16 · BN254 · Poseidon2 t=4 · 20-level Merkle/SMT · **19 public inputs**
 
 ![ZK Implementation — ComplianceCorridor circuit, witness generation, and Soroban settlement](docs/zk-implementation.png)
 
@@ -112,8 +116,10 @@ Canonical field order: [`bindings/public-inputs.json`](bindings/public-inputs.js
 ## Key Features
 
 - **Portable SDK** — modular `@wisp_/core` · `@wisp_/client` · `@wisp_/flows` packages drop into any issuer or compliance integration; no demo or UI baggage
+- **Wallet-bound credential activation** — wallet signs a SEP-10/SEP-53 challenge to derive a unique credential secret and activate an issuer-scoped membership commitment
 - **Verify once, prove per transfer** — KYC tree + client-side Groth16; no PII on-chain
 - **8-in-1 circuit** — sanctions, jurisdiction, expiry, corridor binding in one proof
+- **19 public inputs** — includes `issuer_lo` / `issuer_hi` to bind each proof to the issuing entity
 - **Soroban-native verifier** — Groth16 in-contract; nullifier anti-replay
 - **Travel-rule corridors** — US→MX and extensible corridor config hashes
 - **Full TypeScript stack** — composable `@wisp_/*` packages + `@wisp_/issuer-sdk`
@@ -180,8 +186,13 @@ VERIFIER_CONTRACT_ID=...
 SAC_CONTRACT_ID=...
 ISSUER_PUBLIC_KEY=...
 ISSUER_URL=http://127.0.0.1:3000
-WISP_FIXTURE_PROFILE=testnet    # or local
+KYC_MODE=sep10                 # or mock (local demo only)
+WEB_AUTH_DOMAIN=localhost       # SEP-10 auth domain
+HORIZON_URL=https://horizon-testnet.stellar.org
+WISP_FIXTURE_PROFILE=testnet   # or local; disabled in production
 ```
+
+**Production mode** — add `ISSUER_MODE=production` and `WISP_FIXTURE_PROFILE=disabled` to disable demo/mock-KYC/temporary-auth routes. Provider webhooks are security-upgraded in production (returns 503).
 
 **Testnet deploy** (funded `amoeba-admin` identity):
 
@@ -215,14 +226,16 @@ cargo run -p issuer-service
 | ------ | ---- |
 | GET | `/health` |
 | GET | `/.well-known/wisp-issuer.json` |
-| POST | `/v1/proof-packages` |
-| GET | `/v1/corridors` |
-| GET | `/v1/corridor/:id` |
-| GET | `/v1/fixtures/demo-transfer` |
-| GET | `/v1/merkle-path/:wallet` |
-| POST | `/v1/admin/roots/publish` (Bearer) |
+| GET | `/credentials/:wallet` |
+| POST | `/credentials/activation-challenges` |
+| POST | `/credentials/activate` |
+| POST | `/proof-packages/challenges` |
+| POST | `/proof-packages` |
+| GET | `/corridors` |
+| GET | `/corridors/:id` |
+| POST | `/admin/roots/publish` (Bearer) |
 
-`HttpIssuerAdapter` uses the well-known + proof-package routes above. `DemoIssuerClient` adds the demo fixture and mock-KYC endpoints for local walkthroughs only.
+`HttpIssuerAdapter` uses the well-known + proof-package routes above. `DemoIssuerClient` adds the demo fixture and mock-KYC endpoints for local walkthroughs only. Provider webhooks and SEP-10 auth are **disabled in production mode** (`ISSUER_MODE=production`).
 
 **Publish roots:**
 
@@ -240,6 +253,9 @@ Production: set `SUPABASE_DB_URL`, `WISP_ENV=production`, `ISSUER_REQUIRE_DB=1`.
 ## Trust & Security
 
 - **Regulated compliance, not privacy** — parties and amounts are public; proof attests compliance without PII
+- **Wallet-bound credential activation** — credential secret derived from wallet signature (SEP-10/SEP-53); commitment binds issuer, sender, jurisdiction, and expiry
+- **Challenge-based proof issuance** — wallet must sign per-transfer challenge before issuer releases proof package draft
+- **Client-side nullifier** — nullifier computed locally, never transmitted to issuer
 - **Nullifier anti-replay** — unique nullifier recorded on-chain per proof
 - **VK drift checks** — CI verifies verifier hash matches ceremony artifacts
 - **Admin-guarded contracts** — pausable, event-emitting Soroban programs
