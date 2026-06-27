@@ -52,7 +52,11 @@ function addressPayload(address: string): Buffer {
   if (/^[GC][A-Z2-7]{55}$/i.test(trimmed)) {
     return strKeyToPayload(trimmed);
   }
-  return Buffer.from(trimmed.replace(/^0x/, "").padStart(64, "0"), "hex");
+  const hex = trimmed.replace(/^0x/i, "");
+  if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
+    throw new Error("address must be a valid Stellar G/C StrKey or exactly 32-byte hex");
+  }
+  return Buffer.from(hex, "hex");
 }
 
 function limbsFromAddress(address: string): { lo: bigint; hi: bigint } {

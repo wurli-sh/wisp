@@ -61,6 +61,9 @@ export function validatePackageStructure(pkg: ProofPackage): void {
     if (value == null || String(value).length === 0) {
       throw new Error(`ProofPackage roots missing ${key}`);
     }
+    if (!/^-?\d+$/.test(String(value))) {
+      throw new Error(`ProofPackage roots.${key} must be a decimal field element`);
+    }
   }
 
   for (const key of PATH_KEYS) {
@@ -72,11 +75,20 @@ export function validatePackageStructure(pkg: ProofPackage): void {
     if (!Array.isArray(indices) || indices.length !== MERKLE_DEPTH) {
       throw new Error(`ProofPackage paths.${key}_indices must have length ${MERKLE_DEPTH}`);
     }
+    if (path.some((value) => !/^-?\d+$/.test(String(value)))) {
+      throw new Error(`ProofPackage paths.${key} must contain decimal field elements`);
+    }
+    if (indices.some((value) => value !== 0 && value !== 1)) {
+      throw new Error(`ProofPackage paths.${key}_indices must contain only 0 or 1`);
+    }
   }
 
   for (const key of PUBLIC_INPUT_KEYS) {
     if (pkg.public_inputs[key] == null) {
       throw new Error(`ProofPackage public_inputs missing ${key}`);
+    }
+    if (!/^-?\d+$/.test(String(pkg.public_inputs[key]))) {
+      throw new Error(`ProofPackage public_inputs.${key} must be a decimal field element`);
     }
   }
 

@@ -9,8 +9,16 @@ export function clampStartLedger(start: number, latestSeq: number): number {
   return Math.max(start, oldestRetained);
 }
 
+function errorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object" && "message" in err) {
+    return String((err as { message?: unknown }).message ?? "");
+  }
+  return String(err);
+}
+
 export function parseOldestLedgerFromError(err: unknown): number | null {
-  const msg = err instanceof Error ? err.message : String(err);
+  const msg = errorMessage(err);
   const rangeMatch = msg.match(/(\d+)\s*[-–]\s*(\d+)/);
   if (rangeMatch) {
     const low = Number(rangeMatch[1]);
@@ -30,7 +38,7 @@ export function parseOldestLedgerFromError(err: unknown): number | null {
 }
 
 export function isLedgerRangeError(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
+  const msg = errorMessage(err);
   return /ledger|startLedger|oldest|retention|range|invalid.*start/i.test(msg);
 }
 

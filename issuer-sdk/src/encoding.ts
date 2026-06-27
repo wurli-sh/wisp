@@ -1,4 +1,4 @@
-import { normalizeField } from "@wisp_/js";
+import { BN254_R, normalizeField } from "@wisp_/js";
 import type { RootHashInput } from "./types.js";
 
 function bytesToCanonicalHex(bytes: Uint8Array): string {
@@ -39,6 +39,9 @@ export function normalizeRootHashToBytes(input: RootHashInput): Buffer {
   }
 
   if (isDecimalInput(value)) {
+    if (BigInt(value) >= BN254_R) {
+      throw new Error("decimal root/hash input must be a canonical BN254 field element");
+    }
     const field = normalizeField(value);
     return Buffer.from(field.toString(16).padStart(64, "0"), "hex");
   }

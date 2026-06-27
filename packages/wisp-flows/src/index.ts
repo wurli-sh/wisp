@@ -156,17 +156,13 @@ export async function createAndSettleTransfer(
   input: CreateAndSettleTransferInput,
 ): Promise<CreateAndSettleTransferResult> {
   emitStage(input.onStage, "fetch", { request: input.request });
-  const fetched = await fetchTransferPackage({
-    client: input.client,
-    issuer: input.issuer,
-    request: input.request,
-    validation: input.validation,
-  });
+  const pkg = await createProofPackageFromIssuer(input.issuer, input.request);
 
   emitStage(input.onStage, "validate", { corridorId: input.validation.corridorId });
+  const validation = await validateTransferPackage(input.client, pkg, input.validation);
 
   emitStage(input.onStage, "prove", {});
-  const proven = await proveTransferPackage(input.client, fetched.package, input.proof);
+  const proven = await proveTransferPackage(input.client, pkg, input.proof);
 
   emitStage(input.onStage, "duplicate-check", {});
   if (!input.skipDuplicateCheck) {
@@ -178,27 +174,27 @@ export async function createAndSettleTransfer(
 
   emitStage(input.onStage, "approve", {});
   const approval = await input.client.approveSacForCompliance(
-    fetched.package,
+    pkg,
     input.walletSigner,
   );
 
   emitStage(input.onStage, "simulate", {});
   const simulation = await input.client.simulateSettle(
     proven,
-    fetched.package,
+    pkg,
     input.walletSigner.publicKey,
   );
 
   emitStage(input.onStage, "settle", {});
   const settlement = await input.client.settleWithWallet(
     proven,
-    fetched.package,
+    pkg,
     input.walletSigner,
   );
 
   return {
-    package: fetched.package,
-    validation: fetched.validation,
+    package: pkg,
+    validation,
     proven,
     approval,
     simulation,
@@ -216,6 +212,6 @@ export async function createAndSettleTransferWithRetry(
     if (!(error instanceof DuplicateNullifierError)) {
       throw error;
     }
-    return createAndSettleTransfer({ ...input, skipDuplicateCheck: true });
+    return createAndSettleTransfer(input);
   }
 }

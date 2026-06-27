@@ -20,6 +20,9 @@ export async function issuerFetch(
   opts: { retries?: number } = {},
 ): Promise<Response> {
   const retries = opts.retries ?? 2;
+  if (!Number.isSafeInteger(retries) || retries < 0) {
+    throw new Error("issuerFetch retries must be a non-negative safe integer");
+  }
   let lastErr: unknown;
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
@@ -45,7 +48,10 @@ export class HttpIssuerAdapter implements IssuerAdapter {
   private readonly baseUrl: string;
 
   constructor(baseUrl: string) {
-    this.baseUrl = baseUrl.replace(/\/$/, "");
+    this.baseUrl = baseUrl.replace(/\/+$/, "");
+    if (!this.baseUrl) {
+      throw new Error("issuer base URL is required");
+    }
   }
 
   get baseURL(): string {

@@ -41,6 +41,15 @@ export interface DemoStrkeys {
   recipient_strkey?: string;
 }
 
+function optionalLedger(value: string | undefined, name: string): number | undefined {
+  if (value == null || value === "") return undefined;
+  const ledger = Number(value);
+  if (!Number.isSafeInteger(ledger) || ledger < 0) {
+    throw new Error(`${name} must be a non-negative safe integer`);
+  }
+  return ledger;
+}
+
 export function loadConfig(overrides: Record<string, string | undefined> = {}): WispConfig {
   const env = { ...loadWispEnv(REPO_ROOT), ...process.env, ...overrides };
   const profile = env.WISP_FIXTURE_PROFILE ?? "local";
@@ -75,9 +84,7 @@ export function loadConfig(overrides: Record<string, string | undefined> = {}): 
     zkeyUrl: env.WISP_ZKEY_URL ?? env.VITE_WISP_ZKEY_URL,
     demoFixtureUrl: env.WISP_DEMO_FIXTURE_URL ?? env.VITE_WISP_DEMO_FIXTURE_URL,
     validateStartLedger: env.VALIDATE_START_LEDGER
-      ? Number(env.VALIDATE_START_LEDGER)
-      : env.COMPLIANCE_DEPLOY_LEDGER
-        ? Number(env.COMPLIANCE_DEPLOY_LEDGER)
-        : undefined,
+      ? optionalLedger(env.VALIDATE_START_LEDGER, "VALIDATE_START_LEDGER")
+      : optionalLedger(env.COMPLIANCE_DEPLOY_LEDGER, "COMPLIANCE_DEPLOY_LEDGER"),
   };
 }

@@ -11,6 +11,9 @@ export const NULLIFIER_DOMAIN_TAG = 24568945153365553n;
 export const CORRIDOR_DOMAIN_TAG = 0x574953505f5631n;
 
 export function addressToLimbs(bytes32: Buffer): { lo: FieldElement; hi: FieldElement } {
+  if (bytes32.length !== 32) {
+    throw new Error(`address must be exactly 32 bytes, received ${bytes32.length}`);
+  }
   const hi = BigInt("0x" + bytes32.subarray(0, 16).toString("hex"));
   const lo = BigInt("0x" + bytes32.subarray(16, 32).toString("hex"));
   return { lo: mod(lo), hi: mod(hi) };

@@ -96,6 +96,9 @@ function matFull4(inp: FieldElement[]): FieldElement[] {
 }
 
 export function poseidon2Permutation(stateIn: FieldElement[]): FieldElement[] {
+  if (stateIn.length !== 4) {
+    throw new Error(`Poseidon2 permutation expects 4 field elements, got ${stateIn.length}`);
+  }
   const state: FieldElement[][] = Array.from({ length: 65 }, () => [
     mod(0),
     mod(0),
@@ -135,6 +138,9 @@ export function poseidon2Hash2(a: FieldElement, b: FieldElement): FieldElement {
 }
 
 export function poseidon2Hash10(inputs: FieldElement[]): FieldElement {
+  if (inputs.length !== 10) {
+    throw new Error(`Poseidon2 hash10 expects 10 field elements, got ${inputs.length}`);
+  }
   const iv = mod(10n * TWO_POW_64);
   const p0 = poseidon2Permutation([mod(0), mod(0), mod(0), iv]);
   const p1 = poseidon2Permutation([
@@ -165,6 +171,9 @@ export function poseidon2Hash10(inputs: FieldElement[]): FieldElement {
 }
 
 export function poseidon2Hash11(inputs: FieldElement[]): FieldElement {
+  if (inputs.length !== 11) {
+    throw new Error(`Poseidon2 hash11 expects 11 field elements, got ${inputs.length}`);
+  }
   const iv = mod(11n * TWO_POW_64);
   const p0 = poseidon2Permutation([mod(0), mod(0), mod(0), iv]);
   const p1 = poseidon2Permutation([
@@ -195,6 +204,9 @@ export function poseidon2Hash11(inputs: FieldElement[]): FieldElement {
 }
 
 export function poseidon2Hash12(inputs: FieldElement[]): FieldElement {
+  if (inputs.length !== 12) {
+    throw new Error(`Poseidon2 hash12 expects 12 field elements, got ${inputs.length}`);
+  }
   const iv = mod(12n * TWO_POW_64);
   const p0 = poseidon2Permutation([mod(0), mod(0), mod(0), iv]);
   const p1 = poseidon2Permutation([

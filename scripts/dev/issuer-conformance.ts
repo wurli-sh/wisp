@@ -99,6 +99,7 @@ async function main(): Promise<void> {
     const seed = spawnSync("bash", [`${ROOT}/scripts/dev/seed-testnet-issuer.sh`], {
       stdio: "inherit",
       env: {
+        ...env,
         ...process.env,
         ISSUER_LISTEN_ADDR: issuerListenAddr(issuerUrl),
       },
