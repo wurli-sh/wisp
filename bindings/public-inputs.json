@@ -1,5 +1,4 @@
 {
-  "version": 1,
   "fields": [
     { "index": 0, "name": "merkle_root", "type": "field" },
     { "index": 1, "name": "nullifier", "type": "field" },
@@ -17,6 +16,8 @@
     { "index": 13, "name": "corridor_id", "type": "u32" },
     { "index": 14, "name": "corridor_config_hash", "type": "field" },
     { "index": 15, "name": "source_jurisdiction_root", "type": "field" },
-    { "index": 16, "name": "dest_address_root", "type": "field" }
+    { "index": 16, "name": "dest_address_root", "type": "field" },
+    { "index": 17, "name": "issuer_lo", "type": "field" },
+    { "index": 18, "name": "issuer_hi", "type": "field" }
   ]
 }

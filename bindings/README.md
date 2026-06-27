@@ -25,7 +25,7 @@ import type { ProofPackage } from "@wisp_/bindings/proofPackage";
 import { PUBLIC_INPUTS } from "@wisp_/bindings/publicInputs";
 ```
 
-## Public inputs (17 fields)
+## Public inputs (19 fields)
 
 Field order is defined in [`public-inputs.json`](public-inputs.json) and generated into:
 

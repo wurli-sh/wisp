@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import {
   addressToLimbs,
   computeCorridorConfigHash,
+  computeCredentialCommitment,
   computeNullifier,
   mod,
   NULLIFIER_DOMAIN_TAG,
@@ -28,6 +29,7 @@ const demo = JSON.parse(
   epoch: string;
   amount: string;
   corridor_id: string;
+  credential_expiry: string;
 };
 
 const sender = Buffer.from(demo.sender_hex, "hex");
@@ -44,7 +46,15 @@ const senderLimbs = addressToLimbs(sender);
 const recipientLimbs = addressToLimbs(recipient);
 const assetLimbs = addressToLimbs(asset);
 
-const senderLeaf = poseidon2Hash2(senderLimbs.lo, senderLimbs.hi);
+const senderLeaf = computeCredentialCommitment({
+  issuerLo: senderLimbs.lo,
+  issuerHi: senderLimbs.hi,
+  senderLo: senderLimbs.lo,
+  senderHi: senderLimbs.hi,
+  credentialSecret,
+  jurisdiction,
+  credentialExpiry: BigInt(demo.credential_expiry),
+});
 const merkleRoot = merkleRootForLeafAtIndex(senderLeaf, 0);
 
 const jurisdictionLeaf = poseidon2Hash1(jurisdiction);
@@ -58,6 +68,8 @@ const sanctions = sparseSanctionsPath(senderLimbs.lo, senderLimbs.hi);
 
 const nullifier = computeNullifier({
   credentialSecret,
+  issuerLo: senderLimbs.lo,
+  issuerHi: senderLimbs.hi,
   senderLo: senderLimbs.lo,
   senderHi: senderLimbs.hi,
   assetLo: assetLimbs.lo,

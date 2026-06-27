@@ -1,27 +1,21 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://wisp.dev/schemas/issuer-well-known.v1.json",
+  "$id": "https://wisp.dev/schemas/issuer-well-known.json",
   "title": "IssuerWellKnown",
   "description": "Discovery metadata at /.well-known/wisp-issuer.json",
   "type": "object",
   "required": [
-    "api_version",
-    "protocol_version",
     "issuer_stellar_address",
     "metadata_uri",
-    "service_url",
-    "proof_package_schema"
+    "service_url"
   ],
   "properties": {
-    "api_version": { "type": "string", "const": "2" },
-    "protocol_version": { "type": "string", "const": "2" },
     "issuer_stellar_address": { "type": "string", "pattern": "^G[A-Z2-7]{55}$" },
     "metadata_uri": { "type": "string", "format": "uri" },
     "service_url": { "type": "string", "format": "uri" },
     "compliance_contract_id": { "type": "string" },
     "verifier_contract_id": { "type": "string" },
     "circuit_vk_hash": { "type": "string" },
-    "proof_package_schema": { "type": "integer", "const": 1 },
     "network_passphrase": { "type": "string" }
   }
 }

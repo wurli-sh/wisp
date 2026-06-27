@@ -3,10 +3,11 @@
 export interface Credential {
   wallet: string;
   jurisdiction: string;
+  jurisdiction_code: number;
   credential_expiry: number;
   sanctions_clear?: boolean;
   corridor_eligibility?: number[];
-  credential_commitment?: string;
+  credential_commitment: string;
 }
 
 export interface TransferParams {
@@ -43,7 +44,6 @@ export interface MerklePaths {
 
 export interface WitnessPrivate {
   demo_unsafe: boolean;
-  credential_secret: string;
   transfer_nonce?: string;
   jurisdiction: string;
   credential_expiry: string;
@@ -55,8 +55,8 @@ export interface ProofPackage {
   transfer: TransferParams;
   roots: Roots;
   paths: MerklePaths;
-  witness_private?: WitnessPrivate;
-  public_inputs?: Record<string, string>;
+  witness_private: WitnessPrivate;
+  public_inputs: Record<string, string>;
 }
 
 export interface DemoTransferFixture {

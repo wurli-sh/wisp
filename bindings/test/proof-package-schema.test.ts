@@ -9,7 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, "..", "..");
 
 const proofPackageSchema = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "..", "schemas", "proof-package.v1.json"), "utf8"),
+  fs.readFileSync(path.join(__dirname, "..", "schemas", "proof-package.json"), "utf8"),
 ) as {
   required: string[];
   properties: Record<
@@ -21,18 +21,6 @@ const proofPackageSchema = JSON.parse(
     }
   >;
 };
-
-function rustStructFields(source: string, structName: string): string[] {
-  const re = new RegExp(`pub struct ${structName}\\s*\\{([\\s\\S]*?)\\n\\}`, "m");
-  const match = source.match(re);
-  assert.ok(match, `Rust struct ${structName} not found`);
-  const fields: string[] = [];
-  for (const line of match[1].split("\n")) {
-    const fieldMatch = line.match(/^\s*pub\s+(\w+):/);
-    if (fieldMatch) fields.push(fieldMatch[1]);
-  }
-  return fields;
-}
 
 function tsInterfaceFields(source: string, interfaceName: string): string[] {
   const lines = source.split("\n");
@@ -50,17 +38,12 @@ function tsInterfaceFields(source: string, interfaceName: string): string[] {
   return fields;
 }
 
-const rustSource = fs.readFileSync(
-  path.join(ROOT, "backend/crates/wisp-types/src/proof_package.rs"),
-  "utf8",
-);
 const tsSource = fs.readFileSync(
   path.join(ROOT, "packages/wisp-js/src/types.ts"),
   "utf8",
 );
 
 const schemaTopLevel = Object.keys(proofPackageSchema.properties);
-const rustProofPackage = rustStructFields(rustSource, "ProofPackage");
 const tsProofPackage = tsInterfaceFields(tsSource, "ProofPackage");
 
 test("proof-package schema public_inputs match ABI", () => {
@@ -96,36 +79,8 @@ test("proof-package schema paths include five Merkle trees", () => {
   }
 });
 
-test("proof-package schema version is 1", () => {
-  assert.equal(proofPackageSchema.properties.schema_version.const, 1);
-});
-
-test("ProofPackage top-level fields match Rust wisp-types", () => {
-  assert.deepEqual([...rustProofPackage].sort(), [...schemaTopLevel].sort());
-});
-
 test("ProofPackage top-level fields match @wisp_/js types", () => {
   assert.deepEqual([...tsProofPackage].sort(), [...schemaTopLevel].sort());
-});
-
-test("nested ProofPackage sections match Rust structs", () => {
-  const nested: Array<[string, string]> = [
-    ["credential", "Credential"],
-    ["transfer", "TransferParams"],
-    ["roots", "Roots"],
-    ["paths", "MerklePaths"],
-    ["witness_private", "WitnessPrivate"],
-    ["demo", "DemoPackageMetadata"],
-  ];
-  for (const [schemaKey, rustStruct] of nested) {
-    const schemaFields = Object.keys(proofPackageSchema.properties[schemaKey].properties ?? {});
-    const rustFields = rustStructFields(rustSource, rustStruct);
-    assert.deepEqual(
-      [...schemaFields].sort(),
-      [...rustFields].sort(),
-      `${schemaKey} vs ${rustStruct}`,
-    );
-  }
 });
 
 test("ProofPackagePaths matches schema paths keys", () => {

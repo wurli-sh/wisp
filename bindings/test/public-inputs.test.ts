@@ -12,9 +12,9 @@ import protocol from "../protocol.json" with { type: "json" };
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-test("public input ABI has 17 fields", () => {
-  assert.equal(PUBLIC_INPUT_COUNT, 17);
-  assert.equal(PUBLIC_INPUT_FIELDS.length, 17);
+test("public input ABI has 19 fields", () => {
+  assert.equal(PUBLIC_INPUT_COUNT, 19);
+  assert.equal(PUBLIC_INPUT_FIELDS.length, 19);
 });
 
 test("protocol constants match protocol.json", () => {

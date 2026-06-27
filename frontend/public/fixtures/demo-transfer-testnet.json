@@ -1,6 +1,5 @@
 {
   "demo_only": true,
-  "credential_secret": "424242",
   "transfer_nonce": "0",
   "corridor_id": 1,
   "sender_hex": "1bb92559f99a7ae045bff1bbcc687e536f3cec8d17fa0c143b21f2a28f1a8250",

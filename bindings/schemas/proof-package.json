@@ -1,18 +1,18 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://wisp.dev/schemas/proof-package.v1.json",
+  "$id": "https://wisp.dev/schemas/proof-package.json",
   "title": "ProofPackage",
-  "description": "Issuer handoff for client-side Groth16 proving (Wisp Issuer API v1)",
+  "description": "Issuer handoff for client-side proving. Credential secrets remain client-side.",
   "type": "object",
   "required": ["credential", "transfer", "roots", "paths", "witness_private", "public_inputs"],
   "properties": {
-    "schema_version": { "type": "integer", "const": 1 },
     "credential": {
       "type": "object",
-      "required": ["wallet", "jurisdiction", "credential_expiry"],
+      "required": ["wallet", "jurisdiction", "jurisdiction_code", "credential_expiry", "credential_commitment"],
       "properties": {
         "wallet": { "type": "string" },
         "jurisdiction": { "type": "string" },
+        "jurisdiction_code": { "type": "integer", "minimum": 0 },
         "credential_expiry": { "type": "integer", "minimum": 0 },
         "sanctions_clear": { "type": "boolean" },
         "corridor_eligibility": { "type": "array", "items": { "type": "integer" } },
@@ -34,14 +34,7 @@
     },
     "roots": {
       "type": "object",
-      "required": [
-        "merkle_root",
-        "sanctions_root",
-        "jurisdiction_root",
-        "source_jurisdiction_root",
-        "dest_address_root",
-        "corridor_config_hash"
-      ],
+      "required": ["merkle_root", "sanctions_root", "jurisdiction_root", "source_jurisdiction_root", "dest_address_root", "corridor_config_hash"],
       "properties": {
         "merkle_root": { "type": "string" },
         "sanctions_root": { "type": "string" },
@@ -53,18 +46,7 @@
     },
     "paths": {
       "type": "object",
-      "required": [
-        "membership",
-        "membership_indices",
-        "sanctions",
-        "sanctions_indices",
-        "jurisdiction",
-        "jurisdiction_indices",
-        "source_jurisdiction",
-        "source_jurisdiction_indices",
-        "dest_address",
-        "dest_address_indices"
-      ],
+      "required": ["membership", "membership_indices", "sanctions", "sanctions_indices", "jurisdiction", "jurisdiction_indices", "source_jurisdiction", "source_jurisdiction_indices", "dest_address", "dest_address_indices"],
       "properties": {
         "membership": { "type": "array", "items": { "type": "string" } },
         "membership_indices": { "type": "array", "items": { "type": "integer", "enum": [0, 1] } },
@@ -80,37 +62,19 @@
     },
     "witness_private": {
       "type": "object",
-      "required": ["credential_secret", "jurisdiction", "credential_expiry"],
+      "required": ["transfer_nonce", "jurisdiction", "credential_expiry"],
       "properties": {
         "demo_unsafe": { "type": "boolean" },
-        "credential_secret": { "type": "string" },
         "transfer_nonce": { "type": "string" },
         "jurisdiction": { "type": "string" },
         "credential_expiry": { "type": "string" },
         "sanctions_leaf_value": { "type": "string" }
-      }
+      },
+      "not": { "required": ["credential_secret"] }
     },
     "public_inputs": {
       "type": "object",
-      "required": [
-        "merkle_root",
-        "nullifier",
-        "asset_lo",
-        "asset_hi",
-        "sender_lo",
-        "sender_hi",
-        "epoch",
-        "recipient_lo",
-        "recipient_hi",
-        "amount",
-        "sanctions_root",
-        "jurisdiction_root",
-        "timestamp",
-        "corridor_id",
-        "corridor_config_hash",
-        "source_jurisdiction_root",
-        "dest_address_root"
-      ],
+      "required": ["merkle_root", "nullifier", "asset_lo", "asset_hi", "sender_lo", "sender_hi", "epoch", "recipient_lo", "recipient_hi", "amount", "sanctions_root", "jurisdiction_root", "timestamp", "corridor_id", "corridor_config_hash", "source_jurisdiction_root", "dest_address_root", "issuer_lo", "issuer_hi"],
       "additionalProperties": { "type": ["string", "number"] }
     },
     "demo": {

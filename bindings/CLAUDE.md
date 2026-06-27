@@ -1,12 +1,12 @@
 # bindings
 
-Canonical source of truth for the Wisp 17-field public input ABI. Includes generated TypeScript/Rust contract clients, shared JSON fixtures, and drift-check scripts.
+Canonical source of truth for the Wisp 19-field public input ABI. Includes generated TypeScript/Rust contract clients, shared JSON fixtures, and drift-check scripts.
 
 ## Contents
 
 | Path | Description |
 |------|-------------|
-| `public-inputs.json` | Canonical 17-field ABI spec |
+| `public-inputs.json` | Canonical 19-field ABI spec |
 | `protocol.json` | Protocol constants (domain tags, corridor config) |
 | `contracts.json` | Deployed contract address registry |
 | `fixtures/` | Demo identities, transfer params, crypto test vectors |
