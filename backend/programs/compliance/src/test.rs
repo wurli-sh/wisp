@@ -14,7 +14,7 @@ use soroban_sdk::{
     },
     testutils::{Address as _, Ledger},
     token::TokenClient,
-    Address, Bytes, BytesN, Env, IntoVal, String, U256, Vec,
+    Address, Bytes, BytesN, Env, IntoVal, String, Vec, U256,
 };
 
 use crate::test_sac::{TestSac, TestSacClient};
@@ -169,6 +169,18 @@ fn contract_address(env: &Env, bytes: [u8; 32]) -> Address {
     AddressPayload::ContractIdHash(BytesN::from_array(env, &bytes)).to_address(env)
 }
 
+/// Rebuild an address from its (lo, hi) field limbs as emitted by the circuit:
+/// `hi` is the high 16 address bytes, `lo` is the low 16. Each limb is a field
+/// whose 32-byte big-endian form carries the 16 meaningful bytes in [16..32].
+fn issuer_address_from_limbs(env: &Env, lo_decimal: &str, hi_decimal: &str) -> Address {
+    let lo32 = field_decimal_to_bytes32(env, lo_decimal).to_array();
+    let hi32 = field_decimal_to_bytes32(env, hi_decimal).to_array();
+    let mut bytes = [0u8; 32];
+    bytes[0..16].copy_from_slice(&hi32[16..32]);
+    bytes[16..32].copy_from_slice(&lo32[16..32]);
+    contract_address(env, bytes)
+}
+
 fn split_address_bytes(bytes: &[u8; 32]) -> ([u8; 16], [u8; 16]) {
     let mut hi = [0u8; 16];
     let mut lo = [0u8; 16];
@@ -236,10 +248,16 @@ fn setup_compliance_fixture(fund_sender: bool) -> (Env, Address, ComplianceFixtu
     env.ledger()
         .set_timestamp(public[12].parse::<u64>().unwrap());
 
-    let issuer = Address::generate(&env);
+    // The issuer is now bound into the proof's public inputs (issuer_lo/_hi at
+    // indices 17/18), so it must be the exact address whose limbs the circuit
+    // committed to — not a random one.
+    let issuer = issuer_address_from_limbs(&env, &public[17], &public[18]);
     let fee = TestSacClient::new(&env, &initialized.fee_token);
     fee.mint(&issuer, &REGISTRATION_FEE);
-    compliance.register_issuer(&issuer, &metadata_uri(&env, "https://issuer.example/.well-known/wisp-issuer.json"));
+    compliance.register_issuer(
+        &issuer,
+        &metadata_uri(&env, "https://issuer.example/.well-known/wisp-issuer.json"),
+    );
     compliance.update_issuer_root(
         &issuer,
         &field_decimal_to_bytes32(&env, &public[0]),
@@ -317,7 +335,7 @@ fn demo_bytes_match_shared_fixture() {
 
 #[test]
 fn public_input_count_matches_generated_abi() {
-    assert_eq!(crate::storage::PUBLIC_INPUT_COUNT, 17);
+    assert_eq!(crate::storage::PUBLIC_INPUT_COUNT, 19);
 }
 
 #[test]
@@ -341,6 +359,7 @@ fn fixture_public_inputs_match_contract_binding() {
     let sender = contract_address(&env, DEMO_SENDER);
     let recipient = contract_address(&env, DEMO_RECIPIENT);
     let asset = contract_address(&env, DEMO_ASSET);
+    let issuer = issuer_address_from_limbs(&env, &public[17], &public[18]);
     let nullifier = fr_to_bytes32(&env, &signals.get(1).unwrap());
 
     let expected = rebuild_expected_public_inputs(
@@ -358,6 +377,7 @@ fn fixture_public_inputs_match_contract_binding() {
         &field_decimal_to_bytes32(&env, &public[14]),
         &field_decimal_to_bytes32(&env, &public[15]),
         &field_decimal_to_bytes32(&env, &public[16]),
+        &issuer,
     );
     assert!(public_inputs_match(&expected, &signals));
 }
@@ -385,10 +405,19 @@ fn issuer_self_registers_with_fee_and_paginates() {
     fee.mint(&issuer_a, &REGISTRATION_FEE);
     fee.mint(&issuer_b, &REGISTRATION_FEE);
 
-    compliance.register_issuer(&issuer_a, &metadata_uri(&env, "https://a.example/.well-known/wisp-issuer.json"));
-    compliance.register_issuer(&issuer_b, &metadata_uri(&env, "https://b.example/.well-known/wisp-issuer.json"));
+    compliance.register_issuer(
+        &issuer_a,
+        &metadata_uri(&env, "https://a.example/.well-known/wisp-issuer.json"),
+    );
+    compliance.register_issuer(
+        &issuer_b,
+        &metadata_uri(&env, "https://b.example/.well-known/wisp-issuer.json"),
+    );
 
-    assert_eq!(TokenClient::new(&env, &initialized.fee_token).balance(&initialized.treasury), 200);
+    assert_eq!(
+        TokenClient::new(&env, &initialized.fee_token).balance(&initialized.treasury),
+        200
+    );
     let issuer = compliance.get_issuer(&issuer_a).unwrap();
     assert_eq!(issuer.registration_seq, 0);
     assert_eq!(issuer.enabled, true);
@@ -412,7 +441,10 @@ fn registration_without_fee_fails() {
     let compliance = ComplianceClient::new(&env, &initialized.compliance_id);
     let issuer = Address::generate(&env);
     assert!(compliance
-        .try_register_issuer(&issuer, &metadata_uri(&env, "https://issuer.example/.well-known/wisp-issuer.json"))
+        .try_register_issuer(
+            &issuer,
+            &metadata_uri(&env, "https://issuer.example/.well-known/wisp-issuer.json")
+        )
         .is_err());
 }
 
@@ -426,7 +458,10 @@ fn metadata_update_requires_issuer_auth() {
     let issuer = Address::generate(&env);
     let stranger = Address::generate(&env);
     fee.mint(&issuer, &REGISTRATION_FEE);
-    compliance.register_issuer(&issuer, &metadata_uri(&env, "https://issuer.example/old.json"));
+    compliance.register_issuer(
+        &issuer,
+        &metadata_uri(&env, "https://issuer.example/old.json"),
+    );
 
     env.set_auths(&[]);
     env.mock_auths(&[soroban_sdk::testutils::MockAuth {
@@ -434,18 +469,31 @@ fn metadata_update_requires_issuer_auth() {
         invoke: &soroban_sdk::testutils::MockAuthInvoke {
             contract: &initialized.compliance_id,
             fn_name: "update_issuer_metadata",
-            args: (issuer.clone(), metadata_uri(&env, "https://issuer.example/new.json")).into_val(&env),
+            args: (
+                issuer.clone(),
+                metadata_uri(&env, "https://issuer.example/new.json"),
+            )
+                .into_val(&env),
             sub_invokes: &[],
         },
     }]);
     assert!(compliance
-        .try_update_issuer_metadata(&issuer, &metadata_uri(&env, "https://issuer.example/new.json"))
+        .try_update_issuer_metadata(
+            &issuer,
+            &metadata_uri(&env, "https://issuer.example/new.json")
+        )
         .is_err());
 
     env.mock_all_auths();
-    compliance.update_issuer_metadata(&issuer, &metadata_uri(&env, "https://issuer.example/new.json"));
+    compliance.update_issuer_metadata(
+        &issuer,
+        &metadata_uri(&env, "https://issuer.example/new.json"),
+    );
     let updated = compliance.get_issuer(&issuer).unwrap();
-    assert_eq!(updated.metadata_uri, metadata_uri(&env, "https://issuer.example/new.json"));
+    assert_eq!(
+        updated.metadata_uri,
+        metadata_uri(&env, "https://issuer.example/new.json")
+    );
 }
 
 #[test]
@@ -461,10 +509,28 @@ fn corridor_namespace_is_scoped_by_issuer() {
     let issuer_b = Address::generate(&env);
     fee.mint(&issuer_a, &REGISTRATION_FEE);
     fee.mint(&issuer_b, &REGISTRATION_FEE);
-    compliance.register_issuer(&issuer_a, &metadata_uri(&env, "https://a.example/issuer.json"));
-    compliance.register_issuer(&issuer_b, &metadata_uri(&env, "https://b.example/issuer.json"));
-    compliance.register_corridor(&issuer_a, &1, &zeros, &zeros, &BytesN::from_array(&env, &[1u8; 32]));
-    compliance.register_corridor(&issuer_b, &1, &zeros, &zeros, &BytesN::from_array(&env, &[2u8; 32]));
+    compliance.register_issuer(
+        &issuer_a,
+        &metadata_uri(&env, "https://a.example/issuer.json"),
+    );
+    compliance.register_issuer(
+        &issuer_b,
+        &metadata_uri(&env, "https://b.example/issuer.json"),
+    );
+    compliance.register_corridor(
+        &issuer_a,
+        &1,
+        &zeros,
+        &zeros,
+        &BytesN::from_array(&env, &[1u8; 32]),
+    );
+    compliance.register_corridor(
+        &issuer_b,
+        &1,
+        &zeros,
+        &zeros,
+        &BytesN::from_array(&env, &[2u8; 32]),
+    );
 
     let a = compliance.get_corridor(&issuer_a, &1).unwrap();
     let b = compliance.get_corridor(&issuer_b, &1).unwrap();
@@ -508,7 +574,10 @@ fn compliant_transfer_rejects_registered_issuer_without_roots() {
     let fee = TestSacClient::new(&env, &fixture.fee_token);
     let issuer = Address::generate(&env);
     fee.mint(&issuer, &REGISTRATION_FEE);
-    compliance.register_issuer(&issuer, &metadata_uri(&env, "https://fresh.example/issuer.json"));
+    compliance.register_issuer(
+        &issuer,
+        &metadata_uri(&env, "https://fresh.example/issuer.json"),
+    );
     compliance.register_corridor(
         &issuer,
         &fixture.input.corridor_id.parse().unwrap(),
@@ -531,7 +600,10 @@ fn compliant_transfer_rejects_wrong_issuer_namespace_even_with_same_corridor_id(
     let fee = TestSacClient::new(&env, &fixture.fee_token);
     let other_issuer = Address::generate(&env);
     fee.mint(&other_issuer, &REGISTRATION_FEE);
-    compliance.register_issuer(&other_issuer, &metadata_uri(&env, "https://other.example/issuer.json"));
+    compliance.register_issuer(
+        &other_issuer,
+        &metadata_uri(&env, "https://other.example/issuer.json"),
+    );
     compliance.update_issuer_root(
         &other_issuer,
         &BytesN::from_array(&env, &[0xAB; 32]),

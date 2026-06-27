@@ -56,10 +56,12 @@ pub fn rebuild_expected_public_inputs(
     corridor_config_hash: &BytesN<32>,
     source_jurisdiction_root: &BytesN<32>,
     dest_address_root: &BytesN<32>,
+    issuer: &Address,
 ) -> Vec<Fr> {
     let (asset_lo, asset_hi) = address_to_field_limbs(env, asset);
     let (sender_lo, sender_hi) = address_to_field_limbs(env, sender);
     let (recipient_lo, recipient_hi) = address_to_field_limbs(env, recipient);
+    let (issuer_lo, issuer_hi) = address_to_field_limbs(env, issuer);
     let timestamp = epoch
         .checked_mul(super::storage::EPOCH_LEN_SECS)
         .expect("epoch overflow");
@@ -83,6 +85,8 @@ pub fn rebuild_expected_public_inputs(
         bytes32_to_fr(env, corridor_config_hash),
         bytes32_to_fr(env, source_jurisdiction_root),
         bytes32_to_fr(env, dest_address_root),
+        issuer_lo,
+        issuer_hi,
     ]
 }
 

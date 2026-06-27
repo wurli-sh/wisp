@@ -8,8 +8,8 @@ mod storage;
 use error::ComplianceError;
 use events::{
     AdminAccepted, AdminProposed, IssuerCorridorRegistered, IssuerCorridorUpdated,
-    IssuerEnabledChanged, IssuerMetadataUpdated, IssuerRegistered, IssuerRootUpdated,
-    PauseChanged, ProofSettled, ProofSettledData, VerifierChanged,
+    IssuerEnabledChanged, IssuerMetadataUpdated, IssuerRegistered, IssuerRootUpdated, PauseChanged,
+    ProofSettled, ProofSettledData, VerifierChanged,
 };
 use public_inputs::{public_inputs_match, rebuild_expected_public_inputs};
 use soroban_sdk::{
@@ -369,7 +369,8 @@ impl Compliance {
         let mut issuers = Vec::new(&env);
         let mut index = start;
         while index < end {
-            if let Some(address) = Self::get_persistent::<Address>(&env, &DataKey::IssuerIndex(index))
+            if let Some(address) =
+                Self::get_persistent::<Address>(&env, &DataKey::IssuerIndex(index))
             {
                 if let Some(record) =
                     Self::get_persistent::<IssuerRecord>(&env, &DataKey::Issuer(address))
@@ -468,6 +469,7 @@ impl Compliance {
             &corridor.corridor_config_hash,
             &corridor.source_jurisdiction_root,
             &corridor.dest_address_root,
+            &args.issuer,
         );
 
         if !public_inputs_match(&expected, &public_inputs) {
@@ -539,7 +541,9 @@ impl Compliance {
             .ok_or(ComplianceError::UnknownCorridor)
     }
 
-    fn get_persistent<T: soroban_sdk::IntoVal<Env, soroban_sdk::Val> + TryFromVal<Env, soroban_sdk::Val>>(
+    fn get_persistent<
+        T: soroban_sdk::IntoVal<Env, soroban_sdk::Val> + TryFromVal<Env, soroban_sdk::Val>,
+    >(
         env: &Env,
         key: &DataKey,
     ) -> Option<T> {

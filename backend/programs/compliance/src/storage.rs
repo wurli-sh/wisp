@@ -3,7 +3,7 @@ use soroban_sdk::{contracttype, Address, BytesN, String};
 pub const EPOCH_LEN_SECS: u64 = 86_400;
 pub const MAX_EPOCH_LAG: u64 = 1;
 pub const MAX_ROOT_AGE_LEDGERS: u32 = 172_800;
-pub const PUBLIC_INPUT_COUNT: u32 = 17;
+pub const PUBLIC_INPUT_COUNT: u32 = 19;
 pub const DEFAULT_TTL: u32 = 500_000;
 pub const MAX_ISSUER_PAGE_SIZE: u32 = 50;
 
