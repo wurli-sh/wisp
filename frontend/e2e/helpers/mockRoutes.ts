@@ -6,7 +6,7 @@ export async function installIssuerMocks(page: Page): Promise<void> {
   await page.route("**/issuer/**", async (route) => {
     const url = route.request().url();
 
-    if (url.includes("/v1/corridors")) {
+    if (url.includes("/corridors")) {
       await route.fulfill({
         status: 200,
         contentType: "application/json",
@@ -15,7 +15,7 @@ export async function installIssuerMocks(page: Page): Promise<void> {
       return;
     }
 
-    if (url.includes("/v1/mock-kyc/")) {
+    if (url.includes("/mock-kyc/")) {
       await route.fulfill({
         status: 200,
         contentType: "application/json",

@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { CorridorOption, DemoTransferRequest, ProofPackage } from "@wisp_/js";
-import type { MockKycStatusResponse, ProvenTransfer } from "@wisp_/sdk/browser";
+import {
+  activateWalletCredential,
+  requestProofPackage,
+  type MockKycStatusResponse,
+  type ProvenTransfer,
+} from "@wisp_/sdk/browser";
 import { COPY } from "@/content/copy";
 import { PAGE_PT, PAGE_PX } from "@/config/layout";
+import { env } from "@/config/env";
 import { useWispClient } from "@/hooks/useWispClient";
 import { useDemoIssuerClient } from "@/hooks/useDemoIssuerClient";
 import { useWallet } from "@/hooks/useWallet";
@@ -26,6 +32,7 @@ import {
   configCheckpoint,
   demoLog,
   formatDemoError,
+  friendlyError,
   loadDemoFixtureStrkeys,
   packageCheckpoint,
   provenCheckpoint,
@@ -33,10 +40,8 @@ import {
 import { kycMissingLabel, kycRootsLabel } from "@/lib/kyc";
 import { validateTransferPackage } from "@/hooks/useCompliantTransfer";
 import {
-  bumpAmountMicro,
   defaultCountries,
   extractTxHash,
-  formatUsdcDisplay,
   parseUsdcAmount,
   relaxCorridorReconcile,
 } from "@/lib/transferUtils";
@@ -76,6 +81,7 @@ export function DemoPage() {
   const [recipientInput, setRecipientInput] = useState("");
   const [amountInput, setAmountInput] = useState("10.00");
   const [pkg, setPkg] = useState<ProofPackage | null>(null);
+  const [credentialSecret, setCredentialSecret] = useState<bigint | null>(null);
   const [proven, setProven] = useState<ProvenTransfer | null>(null);
   const [lastProven, setLastProven] = useState<ProvenTransfer | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -108,7 +114,7 @@ export function DemoPage() {
           .map((item) => (item === "roots_published" ? kycRootsLabel(kycStatus) : kycMissingLabel(item)) ?? item)
           .join(" ");
       }
-      return "Complete SEP-10 wallet verification from the banner above to fetch a proof package.";
+      return "Verify your wallet from the banner above to fetch a proof package.";
     }
     return null;
   }, [address, isConnected, kycApproved, kycRejected, kycSkipped, kycStatus, proofReady]);
@@ -311,11 +317,11 @@ export function DemoPage() {
     prevRootsStatusRef.current = next;
   }, [kycStatus?.roots_status, resetDerivedState]);
 
+  // Reset the per-transfer artifacts so the next run fetches a fresh proof
+  // package. The issuer mints a random transfer_nonce per request and the
+  // nullifier is derived from it, so re-sending the *same* amount still yields
+  // a unique nullifier — no need to mutate the amount to avoid a collision.
   const prepareFreshTransfer = useCallback(() => {
-    const current = parseUsdcAmount(amountInput);
-    if (current) {
-      setAmountInput(formatUsdcDisplay(bumpAmountMicro(current)));
-    }
     setPkg(null);
     setProven(null);
     setTxHash(null);
@@ -323,7 +329,7 @@ export function DemoPage() {
     setAuditLedger(null);
     setSimulated(false);
     setApprovedSac(false);
-  }, [amountInput]);
+  }, []);
 
   const buildRequest = useCallback((): DemoTransferRequest | null => {
     if (!address) {
@@ -364,6 +370,27 @@ export function DemoPage() {
     [client, selectedCorridor?.id],
   );
 
+  const fetchSecurePackage = useCallback(
+    async (request: DemoTransferRequest) => {
+      if (!walletSigner || !env.issuerPublicKey) {
+        throw new Error("Connect Freighter and configure VITE_ISSUER_PUBLIC_KEY");
+      }
+      const secret = await activateWalletCredential(demoIssuer, walletSigner, {
+        networkPassphrase: env.networkPassphrase,
+        issuerPublicKey: env.issuerPublicKey,
+      });
+      const next = await requestProofPackage(demoIssuer, walletSigner, secret, {
+        sender_wallet: request.sender_strkey,
+        recipient_wallet: request.recipient_strkey,
+        amount: request.amount,
+        corridor_id: request.corridor_id,
+      });
+      setCredentialSecret(secret);
+      return next;
+    },
+    [demoIssuer, walletSigner],
+  );
+
   const fetchPackage = useCallback(async () => {
     if (!proofReady) {
       setValidationError("Complete wallet verification before fetching a proof package.");
@@ -375,7 +402,7 @@ export function DemoPage() {
     setError(null);
     demoLog("fetch.start", { ...request });
     try {
-      const next = await demoIssuer.createDemoTransfer(request);
+      const next = await fetchSecurePackage(request);
       await validateFetchedPackage(next);
       demoLog("fetch.ok", packageCheckpoint(next));
       setPkg(next);
@@ -387,14 +414,14 @@ export function DemoPage() {
       setApprovedSac(false);
       toast.success("Proof package fetched");
     } catch (e) {
-      const msg = formatDemoError(e);
-      demoLog("fetch.fail", { error: msg });
-      setError(msg);
-      toast.error(msg.split("\n")[0] ?? msg);
+      demoLog("fetch.fail", { error: formatDemoError(e) });
+      const friendly = friendlyError(e);
+      setError(friendly);
+      toast.error(friendly);
     } finally {
       setBusy(null);
     }
-  }, [buildRequest, demoIssuer, proofReady, validateFetchedPackage]);
+  }, [buildRequest, fetchSecurePackage, proofReady, validateFetchedPackage]);
 
   const generateProof = useCallback(async () => {
     if (!isConnected) {
@@ -411,17 +438,22 @@ export function DemoPage() {
     setError(null);
     demoLog("prove.start");
     try {
-      const packageToProve = pkg ?? (await demoIssuer.createDemoTransfer(request));
+      const packageToProve = pkg ?? (await fetchSecurePackage(request));
       if (!pkg) setPkg(packageToProve);
       demoLog("prove.package", packageCheckpoint(packageToProve));
 
       await validateFetchedPackage(packageToProve);
 
+      const secret = credentialSecret;
+      if (secret == null) {
+        throw new Error("Credential secret is unavailable; fetch a fresh proof package");
+      }
       const result = await client.prove({
         package: packageToProve,
         browser: true,
         wasmUrl: client.cfg.wasmUrl,
         zkeyUrl: client.cfg.zkeyUrl,
+        credentialSecret: secret,
       });
 
       demoLog("prove.ok", provenCheckpoint(result, packageToProve));
@@ -430,14 +462,14 @@ export function DemoPage() {
       setNullifier(result.nullifier);
       toast.success("Proof generated in browser");
     } catch (e) {
-      const msg = formatDemoError(e);
-      demoLog("prove.fail", { error: msg });
-      setError(msg);
-      toast.error(msg.split("\n")[0] ?? msg);
+      demoLog("prove.fail", { error: formatDemoError(e) });
+      const friendly = friendlyError(e);
+      setError(friendly);
+      toast.error(friendly);
     } finally {
       setBusy(null);
     }
-  }, [buildRequest, client, demoIssuer, isConnected, pkg, proofReady, validateFetchedPackage]);
+  }, [buildRequest, client, credentialSecret, fetchSecurePackage, isConnected, pkg, proofReady, validateFetchedPackage]);
 
   const approveSac = useCallback(async () => {
     if (!walletSigner || !pkg) {
@@ -453,10 +485,10 @@ export function DemoPage() {
       demoLog("approve.ok", { tx_hash: result.hash });
       toast.success("USDC allowance approved for compliance contract");
     } catch (e) {
-      const msg = formatDemoError(e);
-      demoLog("approve.fail", { error: msg });
-      setError(msg);
-      toast.error(msg.split("\n")[0] ?? msg);
+      demoLog("approve.fail", { error: formatDemoError(e) });
+      const friendly = friendlyError(e);
+      setError(friendly);
+      toast.error(friendly);
     } finally {
       setBusy(null);
     }
@@ -474,7 +506,7 @@ export function DemoPage() {
       }
       const request = buildRequest();
       if (!request) return;
-      const activePkg = pkg ?? (await demoIssuer.createDemoTransfer(request));
+      const activePkg = pkg ?? (await fetchSecurePackage(request));
       if (!pkg) setPkg(activePkg);
 
       const toSettle = overrideProven ?? proven;
@@ -508,15 +540,16 @@ export function DemoPage() {
         setNullifier(toSettle.nullifier);
         toast.success("Transfer submitted");
       } catch (e) {
-        const msg = formatDemoError(e);
-        if (/Error\(Contract,\s*#9\)/.test(msg) && !overrideProven) {
+        const detail = formatDemoError(e);
+        if (/Error\(Contract,\s*#9\)/.test(detail) && !overrideProven) {
           prepareFreshTransfer();
           setValidationError(COPY.demo.transfer.duplicateNullifier);
           toast.error(COPY.demo.transfer.duplicateNullifier);
         } else {
-          demoLog("settle.fail", { error: msg });
-          setError(msg);
-          toast.error(msg.split("\n")[0] ?? msg);
+          demoLog("settle.fail", { error: detail });
+          const friendly = friendlyError(e);
+          setError(friendly);
+          toast.error(friendly);
         }
       } finally {
         setBusy(null);
@@ -527,7 +560,7 @@ export function DemoPage() {
       approvedSac,
       buildRequest,
       client,
-      demoIssuer,
+      fetchSecurePackage,
       pkg,
       prepareFreshTransfer,
       proven,
@@ -565,10 +598,10 @@ export function DemoPage() {
         toast.message("No on-chain proof event found yet — confirm the transaction succeeded, then retry");
       }
     } catch (e) {
-      const msg = formatDemoError(e);
-      demoLog("audit.fail", { error: msg });
-      setError(msg);
-      toast.error(msg.split("\n")[0] ?? msg);
+      demoLog("audit.fail", { error: formatDemoError(e) });
+      const friendly = friendlyError(e);
+      setError(friendly);
+      toast.error(friendly);
     } finally {
       setBusy(null);
     }
@@ -602,7 +635,9 @@ export function DemoPage() {
         skipped={kycSkipped && !kycApproved}
         onReopen={() => {
           setKycSkipped(false);
-          setKycActivating(false);
+          // Force the onboarding/activation modal open even when the wallet is
+          // already KYC-approved but still needs credential activation.
+          setKycActivating(true);
         }}
       />
 
@@ -636,7 +671,7 @@ export function DemoPage() {
       )}
 
       {error && (
-        <p className="whitespace-pre-wrap border-2 border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+        <p className="border-2 border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
           {error}
         </p>
       )}

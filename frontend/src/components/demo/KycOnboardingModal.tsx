@@ -11,8 +11,13 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { MockKycStatusResponse } from "@wisp_/sdk/browser";
+import {
+  activateWalletCredential,
+  type MockKycStatusResponse,
+} from "@wisp_/sdk/browser";
 import { COPY } from "@/content/copy";
+import { env } from "@/config/env";
+import { demoLog, formatDemoError, friendlyError } from "@/lib/demoLog";
 import { useDemoIssuerClient } from "@/hooks/useDemoIssuerClient";
 import { useWallet } from "@/hooks/useWallet";
 import { TextShimmer } from "@/components/ui/TextShimmer";
@@ -152,8 +157,32 @@ export function KycOnboardingModal({
         return;
       }
       if (immediate.kyc_status === "approved") {
-        completeFlow();
-        return;
+        if (!env.issuerPublicKey) {
+          throw new Error("VITE_ISSUER_PUBLIC_KEY is required for credential activation");
+        }
+        // Surface activation failures explicitly. Without this, the outer
+        // catch treats an approved wallet as "done" and silently swallows a
+        // failed activation, leaving the issuer unable to publish roots.
+        try {
+          await activateWalletCredential(demoIssuer, walletSigner, {
+            networkPassphrase: env.networkPassphrase,
+            issuerPublicKey: env.issuerPublicKey,
+          });
+        } catch (activationError) {
+          const msg =
+            activationError instanceof Error
+              ? activationError.message
+              : String(activationError);
+          demoLog("kyc.activate.fail", { error: formatDemoError(activationError) });
+          setError(
+            msg.includes("User declined") || msg.includes("denied")
+              ? "Signature rejected. Try again."
+              : friendlyError(activationError),
+          );
+          setStep("welcome");
+          signingStarted.current = false;
+          return;
+        }
       }
       const next = await refreshStatus();
       if (next?.kyc_status === "approved") {
@@ -173,10 +202,11 @@ export function KycOnboardingModal({
         completeFlow();
         return;
       }
+      demoLog("kyc.verify.fail", { error: formatDemoError(e) });
       const friendly =
         msg.includes("User declined") || msg.includes("denied")
           ? "Signature rejected. Try again."
-          : msg;
+          : friendlyError(e);
       setError(friendly);
       setStep("welcome");
       signingStarted.current = false;

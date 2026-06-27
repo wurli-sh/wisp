@@ -17,25 +17,27 @@ export function DemoKycPanel({ status, skipped, onReopen }: DemoKycPanelProps) {
   const revoked = status?.kyc_status === "revoked";
   const rejected = status?.kyc_status === "rejected";
 
+  // Keep the hint to a single, friendly line. When verified-but-incomplete we
+  // surface only the first outstanding item rather than a long concatenation.
+  const firstMissing = approved
+    ? status.missing
+        .map((item) => (item === "roots_published" ? kycRootsLabel(status) : kycMissingLabel(item)) ?? item)
+        .find(Boolean) ?? null
+    : null;
+
   const hint = revoked
     ? COPY.demo.kyc.revokedHint
     : rejected
-      ? [
-          COPY.demo.kyc.rejectedHint,
-          status.rejection_reason ? `Issue: ${status.rejection_reason}` : null,
-          COPY.demo.kyc.wizard.rejectedRequirements,
-        ]
-          .filter(Boolean)
-          .join(" ")
+      ? COPY.demo.kyc.rejectedHint
       : approved
-        ? status.missing.length > 0
-          ? status.missing
-              .map((item) => (item === "roots_published" ? kycRootsLabel(status) : kycMissingLabel(item)) ?? item)
-              .join(" · ")
-          : COPY.demo.kyc.approvedHint
+        ? firstMissing ?? COPY.demo.kyc.approvedHint
         : COPY.demo.kyc.subtitle;
 
-  const showRetry = (skipped || rejected) && !approved && !revoked && onReopen;
+  // Offer the re-verify affordance whenever the wallet still needs action:
+  // not yet verified (skipped/rejected) OR verified but not yet eligible
+  // (e.g. credential activation still pending so issuer roots can't publish).
+  const approvedIncomplete = approved && (status?.missing.length ?? 0) > 0;
+  const showRetry = (skipped || rejected || approvedIncomplete) && !revoked && Boolean(onReopen);
 
   return (
     <section

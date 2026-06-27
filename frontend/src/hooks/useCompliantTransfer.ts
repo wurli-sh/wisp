@@ -1,5 +1,11 @@
 import type { DemoTransferRequest, ProofPackage } from "@wisp_/js";
-import type { DemoIssuerClient, ProvenTransfer, WispClient } from "@wisp_/sdk/browser";
+import {
+  activateWalletCredential,
+  requestProofPackage,
+  type DemoIssuerClient,
+  type ProvenTransfer,
+  type WispClient,
+} from "@wisp_/sdk/browser";
 import type { WalletSigner } from "@wisp_/sdk/browser";
 import { env } from "@/config/env";
 import { demoLog, packageCheckpoint, provenCheckpoint } from "@/lib/demoLog";
@@ -36,23 +42,38 @@ export async function validateTransferPackage(
 export async function fetchTransferPackage(
   demoIssuer: DemoIssuerClient,
   client: WispClient,
+  walletSigner: WalletSigner,
   request: DemoTransferRequest,
   corridorId: number,
-): Promise<ProofPackage> {
-  const pkg = await demoIssuer.createDemoTransfer(request);
+): Promise<{ package: ProofPackage; credentialSecret: bigint }> {
+  if (!env.issuerPublicKey) {
+    throw new Error("VITE_ISSUER_PUBLIC_KEY is required for credential activation");
+  }
+  const credentialSecret = await activateWalletCredential(demoIssuer, walletSigner, {
+    networkPassphrase: env.networkPassphrase,
+    issuerPublicKey: env.issuerPublicKey,
+  });
+  const pkg = await requestProofPackage(demoIssuer, walletSigner, credentialSecret, {
+    sender_wallet: request.sender_strkey,
+    recipient_wallet: request.recipient_strkey,
+    amount: request.amount,
+    corridor_id: request.corridor_id,
+  });
   await validateTransferPackage(client, pkg, corridorId);
-  return pkg;
+  return { package: pkg, credentialSecret };
 }
 
 export async function proveTransferPackage(
   client: WispClient,
   pkg: ProofPackage,
+  credentialSecret: bigint,
 ): Promise<ProvenTransfer> {
   return client.prove({
     package: pkg,
     browser: true,
     wasmUrl: client.cfg.wasmUrl,
     zkeyUrl: client.cfg.zkeyUrl,
+    credentialSecret,
   });
 }
 
@@ -78,11 +99,17 @@ export async function proveAndPayTransfer(deps: {
   } = deps;
 
   onStage?.("fetch");
-  const pkg = await fetchTransferPackage(demoIssuer, client, request, corridorId);
+  const { package: pkg, credentialSecret } = await fetchTransferPackage(
+    demoIssuer,
+    client,
+    walletSigner,
+    request,
+    corridorId,
+  );
   demoLog("transfer.fetch.ok", packageCheckpoint(pkg));
 
   onStage?.("prove");
-  const proven = await proveTransferPackage(client, pkg);
+  const proven = await proveTransferPackage(client, pkg, credentialSecret);
   demoLog("transfer.prove.ok", provenCheckpoint(proven, pkg));
 
   if (!skipDuplicateCheck) {

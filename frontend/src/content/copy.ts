@@ -141,10 +141,20 @@ export const COPY = {
       { id: "bun", label: "bun", command: "bun add @wisp_/sdk" },
       { id: "quickstart", label: "quickstart", command: "" },
     ],
-    snippet: `import { WispClient } from "@wisp_/sdk";
+    snippet: `import {
+  WispClient,
+  HttpIssuerAdapter,
+  activateWalletCredential,
+  requestProofPackage,
+} from "@wisp_/sdk";
 
 const client = WispClient.fromEnv();
-const proven = await client.prove({ package, browser: true });
+const issuer = new HttpIssuerAdapter(client.cfg.issuerUrl);
+
+const credentialSecret = await activateWalletCredential(issuer, wallet, opts);
+const pkg = await requestProofPackage(issuer, wallet, credentialSecret, transfer);
+
+const proven = await client.prove({ package: pkg, credentialSecret, browser: true });
 await client.settleWithWallet(proven, pkg, wallet);`,
     stats: [
       { value: "<5s", label: "Browser proving" },
@@ -200,7 +210,7 @@ await client.settleWithWallet(proven, pkg, wallet);`,
     ],
     shared: {
       label: "SHARED PROTOCOL",
-      value: "Same verifier · 17 public inputs · 8 checks · no PII on-chain",
+      value: "Same verifier · 19 public inputs · 8 checks · no PII on-chain",
     },
     perks: [
       {
@@ -375,26 +385,25 @@ await client.settleWithWallet(proven, pkg, wallet);`,
     kycStatusError: "Couldn't reach the issuer to check verification status.",
     kycStatusRetry: "Retry",
     kyc: {
-      title: "SEP-10 wallet verification",
-      subtitle: "Sign a challenge in Freighter to bind your wallet. Demo policy assigns a US-approved sender profile — no identity form.",
-      required: "KYC required",
-      approved: "KYC approved",
-      revoked: "KYC revoked",
-      approvedHint: "Your wallet is approved for demo transfers.",
-      revokedHint: "This wallet was revoked by the issuer operator. Contact support to restore access.",
-      rejected: "KYC rejected",
-      rejectedHint:
-        "Wallet verification failed. Retry signing the challenge in Freighter.",
-      connectFirst: "Connect Freighter before signing the challenge.",
+      title: "Wallet verification",
+      subtitle: "Sign once in Freighter to verify this wallet — no forms, no fees.",
+      required: "Verify wallet",
+      approved: "Verified",
+      revoked: "Revoked",
+      approvedHint: "You're verified and ready to send.",
+      revokedHint: "This wallet's access was revoked. Contact the issuer to restore it.",
+      rejected: "Action needed",
+      rejectedHint: "Verification didn't go through. Try signing again in Freighter.",
+      connectFirst: "Connect Freighter to verify your wallet.",
       missing: {
-        kyc: "Complete SEP-10 wallet verification for this wallet.",
-        destination: "Operator must approve the recipient destination — use the banner below in demo mode.",
-        roots: "Operator must publish issuer roots.",
-        corridor: "No enabled corridor is configured.",
-        sender_corridor: "Sender jurisdiction is not eligible for the selected corridor.",
+        kyc: "Verify this wallet to continue.",
+        destination: "This recipient needs issuer approval — use the banner below.",
+        roots: "The issuer is finishing setup for this corridor.",
+        corridor: "No corridor is available right now.",
+        sender_corridor: "This wallet isn't eligible for the selected corridor.",
       },
       wizard: {
-        title: "SEP-10 wallet verification",
+        title: "Verify your wallet",
         subtitle: "Prove wallet control on testnet",
         steps: {
           setup: "Setup",
@@ -419,7 +428,6 @@ await client.settleWithWallet(proven, pkg, wallet);`,
         continueTransfer: "Continue to transfer",
         reopen: "Verify wallet",
         retry: "Retry verification",
-        rejectedRequirements: "Ensure you sign the challenge with the connected Freighter account.",
       },
     },
     transfer: {

@@ -7,7 +7,7 @@ import { useWispClient } from "@/hooks/useWispClient";
 import { useDemoIssuerClient } from "@/hooks/useDemoIssuerClient";
 import { useWallet } from "@/hooks/useWallet";
 import type { Invoice } from "@/lib/invoices";
-import { demoLog, formatDemoError } from "@/lib/demoLog";
+import { demoLog, formatDemoError, friendlyError } from "@/lib/demoLog";
 import { kycMissingLabel, kycRootsLabel } from "@/lib/kyc";
 import {
   proveAndPayTransfer,
@@ -56,7 +56,7 @@ export function useWispPay(invoice: Invoice | null) {
           )
           .join(" ");
       }
-      return "Complete SEP-10 wallet verification from the banner above to pay.";
+      return "Verify your wallet from the banner above to pay.";
     }
     return null;
   }, [address, isConnected, kycApproved, kycRejected, kycSkipped, kycStatus, proofReady]);
@@ -204,10 +204,10 @@ export function useWispPay(invoice: Invoice | null) {
       toast.success(COPY.wispPay.pay.successToast);
       return outcome;
     } catch (e) {
-      const msg = formatDemoError(e);
-      demoLog("wispPay.pay.fail", { error: msg });
-      setError(msg);
-      toast.error(msg.split("\n")[0] ?? msg);
+      demoLog("wispPay.pay.fail", { error: formatDemoError(e) });
+      const friendly = friendlyError(e);
+      setError(friendly);
+      toast.error(friendly);
       return null;
     } finally {
       setBusy(null);

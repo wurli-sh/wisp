@@ -5,6 +5,7 @@ import {
   isAllowed,
   isConnected,
   requestAccess,
+  signMessage,
   signTransaction,
 } from "@stellar/freighter-api";
 import type { WalletSigner } from "@wisp_/sdk/browser";
@@ -76,6 +77,22 @@ export function useWallet() {
           throw new Error(signed.error ?? "Freighter sign failed");
         }
         return { signedTxXdr: signed.signedTxXdr };
+      },
+      signMessage: async (message: string) => {
+        const signed = await signMessage(message, {
+          networkPassphrase: env.networkPassphrase,
+          address,
+        });
+        if (signed.error || !signed.signedMessage) {
+          throw new Error(signed.error ?? "Freighter message signing is required by Wisp");
+        }
+        const value = signed.signedMessage;
+        return {
+          signedMessage:
+            typeof value === "string"
+              ? Uint8Array.from(atob(value), (char) => char.charCodeAt(0))
+              : new Uint8Array(value),
+        };
       },
     };
   }, [address]);

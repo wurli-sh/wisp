@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { COPY } from "@/content/copy";
 import { env } from "@/config/env";
 import { useDemoIssuerClient } from "@/hooks/useDemoIssuerClient";
-import { formatDemoError } from "@/lib/demoLog";
+import { demoLog, formatDemoError, friendlyError } from "@/lib/demoLog";
 
 function truncate(str: string, head = 8, tail = 4): string {
   if (str.length <= head + tail + 3) return str;
@@ -51,7 +51,8 @@ export function useApproveRecipientDestination(opts: {
       await onApproved?.();
       return true;
     } catch (e) {
-      toast.error(formatDemoError(e).split("\n")[0] ?? String(e));
+      demoLog("approveRecipient.fail", { error: formatDemoError(e) });
+      toast.error(friendlyError(e));
       return false;
     } finally {
       setApproving(false);

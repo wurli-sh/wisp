@@ -39,9 +39,9 @@ export function kycRootsLabel(status: MockKycStatusResponse | null): string | nu
   if (status.roots_message) return status.roots_message;
   switch (status.roots_status) {
     case "publishing":
-      return "Issuer is publishing roots for the selected corridor.";
+      return "The issuer is finishing setup — this only takes a moment.";
     case "failed":
-      return "Issuer root publication failed. Retry after the operator fixes the corridor.";
+      return "Issuer setup didn't finish. Please retry shortly.";
     case "missing":
       return COPY.demo.kyc.missing.roots;
     default:

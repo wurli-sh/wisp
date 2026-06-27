@@ -76,7 +76,9 @@ export function WispPayPanel({
             skipped={flow.kycSkipped && !flow.kycApproved}
             onReopen={() => {
               flow.setKycSkipped(false);
-              flow.setKycActivating(false);
+              // Force the onboarding/activation modal open even when the wallet
+              // is already KYC-approved but still needs credential activation.
+              flow.setKycActivating(true);
             }}
           />
 
@@ -184,7 +186,7 @@ export function WispPayPanel({
       </div>
 
       {flow.error && (
-        <p className="whitespace-pre-wrap border-2 border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+        <p className="border-2 border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
           {flow.error}
         </p>
       )}

@@ -8,6 +8,7 @@ import {
 import { toast } from "sonner";
 import { env, getWispConfigOverrides, stellarExplorerTx } from "@/config/env";
 import { COPY } from "@/content/copy";
+import { demoLog, formatDemoError, friendlyError } from "@/lib/demoLog";
 
 export function useCircleUsdcTrustline(
   address: string | null,
@@ -51,8 +52,8 @@ export function useCircleUsdcTrustline(
       window.open(stellarExplorerTx(hash), "_blank", "noopener,noreferrer");
       return true;
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      toast.error(msg.split("\n")[0] ?? msg);
+      demoLog("circleUsdc.fail", { error: formatDemoError(e) });
+      toast.error(friendlyError(e));
       return false;
     } finally {
       setAdding(false);

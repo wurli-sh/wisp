@@ -1,6 +1,7 @@
+import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { COPY } from "@/content/copy";
-import { missingRequiredConfig } from "@/config/env";
+import { env, missingRequiredConfig } from "@/config/env";
 
 /**
  * Pre-flight warning shown on /demo and /wisp-pay when required VITE_* config is
@@ -9,17 +10,34 @@ import { missingRequiredConfig } from "@/config/env";
  */
 export function ConfigBanner() {
   const missing = missingRequiredConfig();
-  if (missing.length === 0) return null;
+  const [securityMaintenance, setSecurityMaintenance] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch(`${env.issuerUrl.replace(/\/+$/, "")}/.well-known/wisp-issuer.json`, {
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((metadata: { issuance_available?: boolean } | null) => {
+        setSecurityMaintenance(metadata?.issuance_available === false);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+
+  if (missing.length === 0 && !securityMaintenance) return null;
 
   return (
     <section className="flex items-start gap-3 border-2 border-destructive/40 bg-destructive/5 px-4 py-3">
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
       <div className="min-w-0">
         <p className="text-xs font-bold uppercase tracking-wide text-destructive">
-          {COPY.common.configErrorTitle}
+          {securityMaintenance ? "Issuer unavailable" : COPY.common.configErrorTitle}
         </p>
         <p className="mt-1 text-xs leading-snug text-muted-foreground">
-          {COPY.common.configErrorBody.replace("{keys}", missing.join(", "))}
+          {securityMaintenance
+            ? "Credential issuance and private transfers are temporarily unavailable."
+            : COPY.common.configErrorBody.replace("{keys}", missing.join(", "))}
         </p>
       </div>
     </section>

@@ -97,7 +97,7 @@ const CONTRACT_HINTS: [RegExp, string][] = [
   ],
   [
     /Error\(Contract,\s*#8\)/,
-    "StaleIssuerRoot — publish roots: curl -X POST -H 'Authorization: Bearer demo-token' -H 'Content-Type: application/json' http://localhost:3000/v1/admin/roots/publish -d '{}'",
+    "StaleIssuerRoot — publish roots: curl -X POST -H 'Authorization: Bearer demo-token' -H 'Content-Type: application/json' http://localhost:3000/admin/roots/publish -d '{}'",
   ],
   [
     /insufficient allowance/i,
@@ -121,7 +121,7 @@ const CONTRACT_HINTS: [RegExp, string][] = [
   ],
   [
     /Error\(Contract,\s*#13\)/,
-    "PublicInputMismatch — proof public inputs do not match on-chain state. Roots may be stale after a compliance redeploy: republish via issuer (POST /v1/admin/roots/publish), then refetch the proof package, reprove, and ensure Freighter is the KYC-approved sender.",
+    "PublicInputMismatch — proof public inputs do not match on-chain state. Roots may be stale after a compliance redeploy: republish via issuer (POST /admin/roots/publish), then refetch the proof package, reprove, and ensure Freighter is the KYC-approved sender.",
   ],
 ];
 
@@ -132,7 +132,7 @@ const ISSUER_HINTS: [RegExp, string][] = [
   ],
   [
     /Package issuer roots stale vs chain/i,
-    "Issuer roots on-chain are behind the proof package — republish (curl -X POST -H 'Authorization: Bearer demo-token' http://localhost:3000/v1/admin/roots/publish -d '{\"corridor_id\":1}'), then refetch the proof package and reprove.",
+    "Issuer roots on-chain are behind the proof package — republish (curl -X POST -H 'Authorization: Bearer demo-token' http://localhost:3000/admin/roots/publish -d '{\"corridor_id\":1}'), then refetch the proof package and reprove.",
   ],
   [
     /Package corridor roots stale vs chain/i,
@@ -148,7 +148,7 @@ const ISSUER_HINTS: [RegExp, string][] = [
   ],
   [
     /recipient not approved for corridor/i,
-    "Recipient not in corridor destination registry — click “Approve recipient destination” in the demo banner, or POST /v1/admin/corridors/1/destinations then republish roots.",
+    "Recipient not in corridor destination registry — click “Approve recipient destination” in the demo banner, or POST /admin/corridors/1/destinations then republish roots.",
   ],
   [
     /active credential not found/i,
@@ -160,8 +160,39 @@ const ISSUER_HINTS: [RegExp, string][] = [
   ],
 ];
 
+function extractErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  if (err && typeof err === "object") {
+    const obj = err as Record<string, unknown>;
+    // Common non-Error shapes (RPC/transport rejections, issuer JSON bodies).
+    for (const key of ["message", "error", "detail", "reason"] as const) {
+      const value = obj[key];
+      if (typeof value === "string" && value) return value;
+    }
+    // Axios/fetch-like nested response payloads.
+    const response = obj.response as { data?: unknown; statusText?: string } | undefined;
+    if (response) {
+      const data = response.data;
+      if (typeof data === "string" && data) return data;
+      if (data && typeof data === "object") {
+        const nested = (data as Record<string, unknown>).message ?? (data as Record<string, unknown>).error;
+        if (typeof nested === "string" && nested) return nested;
+      }
+      if (typeof response.statusText === "string" && response.statusText) return response.statusText;
+    }
+    try {
+      const json = JSON.stringify(err);
+      if (json && json !== "{}") return json;
+    } catch {
+      // fall through to String() below
+    }
+  }
+  return String(err);
+}
+
 export function formatDemoError(err: unknown): string {
-  const msg = err instanceof Error ? err.message : String(err);
+  const msg = extractErrorMessage(err);
   for (const [pattern, hint] of ISSUER_HINTS) {
     if (pattern.test(msg)) return `${msg}\n\n→ ${hint}`;
   }
@@ -169,6 +200,36 @@ export function formatDemoError(err: unknown): string {
     if (pattern.test(msg)) return `${msg}\n\n→ ${hint}`;
   }
   return msg;
+}
+
+const GENERIC_FRIENDLY = "Something went wrong. Please try again.";
+
+/**
+ * Short, user-facing messages for toasts. These intentionally hide raw
+ * contract/RPC text and operator runbooks (kept in {@link formatDemoError} for
+ * the console) so the UI stays calm and understandable.
+ */
+const FRIENDLY_HINTS: [RegExp, string][] = [
+  [/Error\(Contract,\s*#9\)/, "This transfer was already settled. Adjust the amount and try again."],
+  [/Error\(Contract,\s*#1[67]\)|StaleEpoch|FutureEpoch/, "Your proof is out of date. Fetch a fresh proof package and retry."],
+  [/Error\(Contract,\s*#1[34]\)/, "We couldn't verify the proof on-chain. Fetch a fresh proof package and retry."],
+  [/Error\(Contract,\s*#8\)|roots stale vs chain|roots not found|is not registered on-chain/i, "The issuer is still syncing. Please retry in a moment."],
+  [/insufficient allowance/i, "Approve USDC for the compliance contract, then try again."],
+  [/resulting balance is not within the allowed range|op_underfunded|insufficient balance/i, "Not enough testnet USDC in this wallet."],
+  [/trustline entry is missing/i, "Add the USDC trustline in Freighter, then try again."],
+  [/Failed to fetch|fetch failed|network ?error|Load failed/i, "Can't reach the issuer right now. Please retry in a moment."],
+  [/recipient not approved for corridor/i, "This recipient isn't approved for the corridor yet."],
+  [/active credential not found|sender missing from membership set/i, "Finish verifying this wallet, then try again."],
+  [/challenge expired|already consumed/i, "Verification timed out. Please verify your wallet again."],
+];
+
+/** Concise, friendly one-liner for toasts; full detail goes to the console. */
+export function friendlyError(err: unknown): string {
+  const msg = extractErrorMessage(err);
+  for (const [pattern, friendly] of FRIENDLY_HINTS) {
+    if (pattern.test(msg)) return friendly;
+  }
+  return GENERIC_FRIENDLY;
 }
 
 export function checkWalletSender(

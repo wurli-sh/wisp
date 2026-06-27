@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useWispClient } from "@/hooks/useWispClient";
 import { useWallet } from "@/hooks/useWallet";
 import type { Invoice } from "@/lib/invoices";
-import { formatDemoError } from "@/lib/demoLog";
+import { demoLog, formatDemoError, friendlyError } from "@/lib/demoLog";
 
 export interface ReceiptAuditData {
   attested: boolean;
@@ -68,14 +68,15 @@ export function useReceiptAudit(opts: {
         notFound: Boolean(txHash) && !attested && !event,
       });
     } catch (e) {
-      const msg = formatDemoError(e);
+      demoLog("receiptAudit.fail", { error: formatDemoError(e) });
+      const friendly = friendlyError(e);
       setData((prev) => ({
         ...prev,
         loading: false,
-        error: msg,
+        error: friendly,
         notFound: false,
       }));
-      toast.error(msg.split("\n")[0] ?? msg);
+      toast.error(friendly);
     }
   }, [address, client, opts.invoice, opts.txHash]);
 
