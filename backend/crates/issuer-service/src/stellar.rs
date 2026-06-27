@@ -1,4 +1,8 @@
-use std::process::Command;
+use std::{
+    process::{Command, Output},
+    thread,
+    time::Duration,
+};
 
 use ark_ff::{BigInteger, PrimeField};
 
@@ -68,6 +72,34 @@ fn contract_error_code(output: &str, code: u32) -> bool {
     output.contains(&format!("Error(Contract, #{code})"))
 }
 
+fn is_bad_sequence(output: &str) -> bool {
+    output.contains("TxBadSeq") || output.contains("tx_bad_seq")
+}
+
+fn invoke_with_sequence_retry(cfg: &Config, args: &[String]) -> Result<Output, String> {
+    const MAX_ATTEMPTS: u32 = 3;
+    for attempt in 1..=MAX_ATTEMPTS {
+        let output = stellar_command(cfg)
+            .args(args)
+            .output()
+            .map_err(|e| format!("stellar invoke failed: {e}"))?;
+        if output.status.success() || !is_bad_sequence(&invoke_output(&output)) {
+            return Ok(output);
+        }
+        if attempt < MAX_ATTEMPTS {
+            tracing::warn!(
+                attempt,
+                max_attempts = MAX_ATTEMPTS,
+                "stellar invoke returned TxBadSeq; retrying with a fresh account sequence"
+            );
+            thread::sleep(Duration::from_secs(u64::from(attempt)));
+        } else {
+            return Ok(output);
+        }
+    }
+    unreachable!("sequence retry loop always returns")
+}
+
 fn is_already_registered(output: &str) -> bool {
     output.contains("AlreadyRegistered") || contract_error_code(output, 20)
 }
@@ -123,10 +155,7 @@ pub fn publish_roots(cfg: &Config, roots: &Roots, corridor_id: u32) -> Result<St
         "--metadata_uri".into(),
         metadata_uri,
     ]);
-    let register_issuer = stellar_command(cfg)
-        .args(&register_issuer_args)
-        .output()
-        .map_err(|e| format!("stellar invoke failed: {e}"))?;
+    let register_issuer = invoke_with_sequence_retry(cfg, &register_issuer_args)?;
     if !register_issuer.status.success() {
         let output = invoke_output(&register_issuer);
         if looks_like_v1_issuer_registry(&output) {
@@ -158,10 +187,7 @@ Redeploy the compliance contract with the v2 initialize signature, update COMPLI
         "--jurisdiction_root".into(),
         jurisdiction.clone(),
     ]);
-    let update = stellar_command(cfg)
-        .args(&update_args)
-        .output()
-        .map_err(|e| format!("stellar invoke failed: {e}"))?;
+    let update = invoke_with_sequence_retry(cfg, &update_args)?;
     if !update.status.success() {
         return Err(format!(
             "update_issuer_root failed: {}",
@@ -189,10 +215,7 @@ Redeploy the compliance contract with the v2 initialize signature, update COMPLI
         "--corridor_config_hash".into(),
         corridor_hash.clone(),
     ]);
-    let register_corridor = stellar_command(cfg)
-        .args(&register_corridor_args)
-        .output()
-        .map_err(|e| format!("stellar invoke failed: {e}"))?;
+    let register_corridor = invoke_with_sequence_retry(cfg, &register_corridor_args)?;
 
     if !register_corridor.status.success() {
         let output = invoke_output(&register_corridor);
@@ -217,10 +240,7 @@ Redeploy the compliance contract with the v2 initialize signature, update COMPLI
             "--enabled".into(),
             "true".into(),
         ]);
-        let update = stellar_command(cfg)
-            .args(&update_corridor_args)
-            .output()
-            .map_err(|e| format!("stellar invoke failed: {e}"))?;
+        let update = invoke_with_sequence_retry(cfg, &update_corridor_args)?;
         if !update.status.success() {
             return Err(format!(
                 "update_corridor failed: {}",
@@ -252,6 +272,13 @@ mod tests {
     fn detects_corridor_exists_from_cli_code() {
         let output = "transaction simulation failed: Error(Contract, #21)";
         assert!(is_corridor_already_exists(output));
+    }
+
+    #[test]
+    fn detects_stellar_sequence_races() {
+        assert!(is_bad_sequence("transaction submission failed: TxBadSeq"));
+        assert!(is_bad_sequence("result code tx_bad_seq"));
+        assert!(!is_bad_sequence("HostError: Error(Contract, #21)"));
     }
 }
 
