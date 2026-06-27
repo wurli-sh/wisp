@@ -1,4 +1,3 @@
-import type { DemoTransferRequest, ProofPackage } from "@wisp_/js";
 import { HttpIssuerAdapter } from "@wisp_/client";
 export interface MockKycChallengeResponse {
     challenge_id: string;
@@ -61,8 +60,6 @@ export declare class DemoIssuerClient extends HttpIssuerAdapter {
         corridors: boolean;
         wellKnown: boolean;
     };
-    getDemoTransfer(): Promise<ProofPackage>;
-    createDemoTransfer(input: DemoTransferRequest): Promise<ProofPackage>;
     requestMockKycChallenge(wallet: string): Promise<MockKycChallengeResponse>;
     submitMockKyc(input: MockKycSubmitRequest): Promise<MockKycSubmitResponse>;
     addCorridorDestination(corridorId: number, address: string, adminToken: string): Promise<CorridorDestinationRecord>;

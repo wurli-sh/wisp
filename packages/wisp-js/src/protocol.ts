@@ -7,8 +7,9 @@ import {
   poseidon2Hash12,
 } from "./poseidon2.js";
 
-export const NULLIFIER_DOMAIN_TAG = 24568945153365553n;
+export const NULLIFIER_DOMAIN_TAG = 24568945153365555n;
 export const CORRIDOR_DOMAIN_TAG = 0x574953505f5631n;
+export const CREDENTIAL_DOMAIN_TAG = 24568945153365555n;
 
 export function addressToLimbs(bytes32: Buffer): { lo: FieldElement; hi: FieldElement } {
   if (bytes32.length !== 32) {
@@ -47,20 +48,42 @@ export function computeCorridorConfigHash({
   ]);
 }
 
-export function computeNullifier({
-  credentialSecret,
+export function computeCredentialCommitment({
+  issuerLo,
+  issuerHi,
   senderLo,
   senderHi,
-  assetLo,
-  assetHi,
-  epoch,
-  recipientLo,
-  recipientHi,
-  amount,
-  corridorId,
-  transferNonce,
+  credentialSecret,
+  jurisdiction,
+  credentialExpiry,
 }: {
+  issuerLo: FieldElement;
+  issuerHi: FieldElement;
+  senderLo: FieldElement;
+  senderHi: FieldElement;
   credentialSecret: bigint | FieldElement;
+  jurisdiction: bigint | FieldElement;
+  credentialExpiry: bigint | FieldElement;
+}): FieldElement {
+  const domain = poseidon2Hash1(mod(CREDENTIAL_DOMAIN_TAG));
+  return poseidon2Hash10([
+    domain,
+    mod(issuerLo),
+    mod(issuerHi),
+    mod(senderLo),
+    mod(senderHi),
+    mod(credentialSecret),
+    mod(jurisdiction),
+    mod(credentialExpiry),
+    mod(0),
+    mod(0),
+  ]);
+}
+
+export function computeNullifier(input: {
+  credentialSecret: bigint | FieldElement;
+  issuerLo: FieldElement;
+  issuerHi: FieldElement;
   senderLo: FieldElement;
   senderHi: FieldElement;
   assetLo: FieldElement;
@@ -70,34 +93,23 @@ export function computeNullifier({
   recipientHi: FieldElement;
   amount: bigint | FieldElement;
   corridorId: bigint | FieldElement;
-  transferNonce: bigint | FieldElement;
+  transferNonce?: bigint | FieldElement;
 }): FieldElement {
-  const nullifierDomain = poseidon2Hash1(mod(NULLIFIER_DOMAIN_TAG));
+  const domain = poseidon2Hash1(mod(NULLIFIER_DOMAIN_TAG));
+  const issuer = poseidon2Hash2(mod(input.issuerLo), mod(input.issuerHi));
+  const sender = poseidon2Hash2(mod(input.senderLo), mod(input.senderHi));
   return poseidon2Hash12([
-    nullifierDomain,
-    mod(credentialSecret),
-    mod(senderLo),
-    mod(senderHi),
-    mod(assetLo),
-    mod(assetHi),
-    mod(epoch),
-    mod(recipientLo),
-    mod(recipientHi),
-    mod(amount),
-    mod(corridorId),
-    mod(transferNonce),
+    domain,
+    mod(input.credentialSecret),
+    issuer,
+    sender,
+    mod(input.assetLo),
+    mod(input.assetHi),
+    mod(input.epoch),
+    mod(input.recipientLo),
+    mod(input.recipientHi),
+    mod(input.amount),
+    mod(input.corridorId),
+    mod(input.transferNonce ?? 0n),
   ]);
-}
-
-export function computeCredentialCommitment({
-  credentialSecret,
-  jurisdiction,
-  credentialExpiry,
-}: {
-  credentialSecret: bigint | FieldElement;
-  jurisdiction: bigint | FieldElement;
-  credentialExpiry: bigint | FieldElement;
-}): FieldElement {
-  const inner = poseidon2Hash2(mod(credentialSecret), mod(jurisdiction));
-  return poseidon2Hash2(inner, mod(credentialExpiry));
 }

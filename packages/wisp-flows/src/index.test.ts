@@ -7,6 +7,73 @@ import {
   type TransferClientLike,
 } from "./index.js";
 
+const SENDER = "11".repeat(32);
+const RECIPIENT = "22".repeat(32);
+const ISSUER = "33".repeat(32);
+const ASSET = "44".repeat(32);
+
+function makeIssuer(onCreate?: () => void) {
+  return {
+    async getCredential() {
+      return {
+        wallet: SENDER,
+        jurisdiction: "US",
+        jurisdiction_code: 840,
+        credential_expiry: 2_000_000_000,
+      };
+    },
+    async createActivationChallenge() {
+      return { challenge_id: "activation", message: "activate", expires_at: 1 };
+    },
+    async activateCredential() {
+      return { wallet: SENDER, credential_commitment: "1", activated_at: 1 };
+    },
+    async createProofPackageChallenge() {
+      return { challenge_id: "proof", message: "prove", expires_at: 1 };
+    },
+    async createProofPackage() {
+      onCreate?.();
+      return {
+        credential: {
+          wallet: SENDER,
+          jurisdiction: "US",
+          jurisdiction_code: 840,
+          credential_expiry: 2_000_000_000,
+        },
+        transfer: {
+          asset: ASSET,
+          sender: SENDER,
+          recipient: RECIPIENT,
+          amount: "1",
+          corridor_id: 1,
+          epoch: 1,
+          timestamp: 86400,
+        },
+        roots: {},
+        paths: {},
+        witness_private: {
+          transfer_nonce: "0",
+          jurisdiction: "840",
+          credential_expiry: "2000000000",
+        },
+        public_inputs: { issuer_lo: "1", issuer_hi: "2" },
+      } as never;
+    },
+  };
+}
+
+function makeWallet() {
+  return {
+    publicKey: SENDER,
+    async signTransaction(xdr: string) {
+      return { signedTxXdr: xdr };
+    },
+    async signMessage() {
+      return { signedMessage: new Uint8Array(64).fill(7) };
+    },
+  };
+}
+
 function makeClient(opts: { duplicate?: boolean } = {}): TransferClientLike {
   return {
     async validatePackage() {
@@ -34,11 +101,7 @@ test("createAndSettleTransfer returns staged results", async () => {
   const stages: string[] = [];
   const result = await createAndSettleTransfer({
     client: makeClient(),
-    issuer: {
-      async createDemoTransfer() {
-        return { transfer: { corridor_id: 1 }, public_inputs: {}, paths: {}, roots: {}, witness_private: {} } as never;
-      },
-    },
+    issuer: makeIssuer(),
     request: {
       sender_wallet: "sender",
       recipient_wallet: "recipient",
@@ -46,16 +109,12 @@ test("createAndSettleTransfer returns staged results", async () => {
       corridor_id: 1,
     },
     validation: {
-      issuerPublicKey: "GISSUER",
+      issuerPublicKey: ISSUER,
       corridorId: 1,
+      networkPassphrase: "test",
     },
-    walletSigner: {
-      publicKey: "GSENDER",
-      async signTransaction(xdr) {
-        return { signedTxXdr: xdr };
-      },
-    },
-    senderAddress: "GSENDER",
+    walletSigner: makeWallet(),
+    senderAddress: SENDER,
     onStage(stage) {
       stages.push(stage);
     },
@@ -78,11 +137,7 @@ test("createAndSettleTransfer throws DuplicateNullifierError when attested", asy
     () =>
       createAndSettleTransfer({
         client: makeClient({ duplicate: true }),
-        issuer: {
-          async createDemoTransfer() {
-            return { transfer: { corridor_id: 1 }, public_inputs: {}, paths: {}, roots: {}, witness_private: {} } as never;
-          },
-        },
+        issuer: makeIssuer(),
         request: {
           sender_wallet: "sender",
           recipient_wallet: "recipient",
@@ -90,16 +145,12 @@ test("createAndSettleTransfer throws DuplicateNullifierError when attested", asy
           corridor_id: 1,
         },
         validation: {
-          issuerPublicKey: "GISSUER",
+          issuerPublicKey: ISSUER,
           corridorId: 1,
+          networkPassphrase: "test",
         },
-        walletSigner: {
-          publicKey: "GSENDER",
-          async signTransaction(xdr) {
-            return { signedTxXdr: xdr };
-          },
-        },
-        senderAddress: "GSENDER",
+        walletSigner: makeWallet(),
+        senderAddress: SENDER,
       }),
     DuplicateNullifierError,
   );
@@ -116,11 +167,7 @@ test("createAndSettleTransferWithRetry retries duplicate nullifier once", async 
         return { attested: current };
       },
     },
-    issuer: {
-      async createDemoTransfer() {
-        return { transfer: { corridor_id: 1 }, public_inputs: {}, paths: {}, roots: {}, witness_private: {} } as never;
-      },
-    },
+    issuer: makeIssuer(),
     request: {
       sender_wallet: "sender",
       recipient_wallet: "recipient",
@@ -128,16 +175,12 @@ test("createAndSettleTransferWithRetry retries duplicate nullifier once", async 
       corridor_id: 1,
     },
     validation: {
-      issuerPublicKey: "GISSUER",
+      issuerPublicKey: ISSUER,
       corridorId: 1,
+      networkPassphrase: "test",
     },
-    walletSigner: {
-      publicKey: "GSENDER",
-      async signTransaction(xdr) {
-        return { signedTxXdr: xdr };
-      },
-    },
-    senderAddress: "GSENDER",
+    walletSigner: makeWallet(),
+    senderAddress: SENDER,
   });
 
   assert.equal(result.nullifier, "123");
@@ -156,25 +199,20 @@ test("retry never bypasses duplicate detection when issuer returns the same pack
     () =>
       createAndSettleTransferWithRetry({
         client,
-        issuer: {
-          async createDemoTransfer() {
-            return { transfer: { corridor_id: 1 }, public_inputs: {}, paths: {}, roots: {}, witness_private: {} } as never;
-          },
-        },
+        issuer: makeIssuer(),
         request: {
           sender_wallet: "sender",
           recipient_wallet: "recipient",
           amount: "1",
           corridor_id: 1,
         },
-        validation: { issuerPublicKey: "GISSUER", corridorId: 1 },
-        walletSigner: {
-          publicKey: "GSENDER",
-          async signTransaction(xdr) {
-            return { signedTxXdr: xdr };
-          },
+        validation: {
+          issuerPublicKey: ISSUER,
+          corridorId: 1,
+          networkPassphrase: "test",
         },
-        senderAddress: "GSENDER",
+        walletSigner: makeWallet(),
+        senderAddress: SENDER,
       }),
     DuplicateNullifierError,
   );
@@ -192,21 +230,15 @@ test("stage callbacks fire before the corresponding operation starts", async () 
         return client.validatePackage(...args);
       },
     },
-    issuer: {
-      async createDemoTransfer() {
-        assert.equal(stages.at(-1), "fetch");
-        return { transfer: { corridor_id: 1 }, public_inputs: {}, paths: {}, roots: {}, witness_private: {} } as never;
-      },
-    },
+    issuer: makeIssuer(() => assert.equal(stages.at(-1), "fetch")),
     request: { sender_wallet: "sender", recipient_wallet: "recipient", amount: "1", corridor_id: 1 },
-    validation: { issuerPublicKey: "GISSUER", corridorId: 1 },
-    walletSigner: {
-      publicKey: "GSENDER",
-      async signTransaction(xdr) {
-        return { signedTxXdr: xdr };
-      },
+    validation: {
+      issuerPublicKey: ISSUER,
+      corridorId: 1,
+      networkPassphrase: "test",
     },
-    senderAddress: "GSENDER",
+    walletSigner: makeWallet(),
+    senderAddress: SENDER,
     onStage(stage) {
       stages.push(stage);
     },

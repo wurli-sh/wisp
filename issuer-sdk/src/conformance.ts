@@ -6,6 +6,9 @@ import {
   type IssuerWellKnown,
   type ProvenTransfer,
   type ValidatePackageResult,
+  type WalletSigner,
+  activateWalletCredential,
+  requestProofPackage,
 } from "@wisp_/sdk";
 
 interface ConformanceClientLike {
@@ -19,7 +22,7 @@ interface ConformanceClientLike {
       wellKnownVkHash?: string;
     },
   ): Promise<ValidatePackageResult>;
-  prove(input: { package: ProofPackage }): Promise<ProvenTransfer>;
+  prove(input: { package: ProofPackage; credentialSecret: bigint }): Promise<ProvenTransfer>;
   simulateSettle(
     proven: ProvenTransfer,
     pkg: ProofPackage,
@@ -50,6 +53,11 @@ export interface IssuerConformanceResult {
 
 export interface RunIssuerConformanceDeps {
   client?: ConformanceClientLike;
+  walletSigner?: WalletSigner;
+  prepareProofPackage?: () => Promise<{
+    package: ProofPackage;
+    credentialSecret: bigint;
+  }>;
 }
 
 export async function runIssuerConformance(
@@ -71,12 +79,33 @@ export async function runIssuerConformance(
   }
 
   const wellKnown = await client.issuer.getWellKnown();
-  const proofPackage = await client.issuer.createProofPackage({
-    sender_wallet: options.sender,
-    recipient_wallet: options.recipient,
-    amount: options.amount ?? "10000000",
-    corridor_id: options.corridorId ?? 1,
-  });
+  const prepared = deps.prepareProofPackage
+    ? await deps.prepareProofPackage()
+    : await (async () => {
+        const wallet = deps.walletSigner;
+        if (!wallet) {
+          throw new Error("issuer conformance requires walletSigner for credential activation");
+        }
+        const credentialSecret = await activateWalletCredential(client.issuer, wallet, {
+          networkPassphrase:
+            wellKnown.network_passphrase ??
+            "Test SDF Network ; September 2015",
+          issuerPublicKey: options.issuerPublicKey,
+        });
+        const proofPackage = await requestProofPackage(
+          client.issuer,
+          wallet,
+          credentialSecret,
+          {
+            sender_wallet: options.sender,
+            recipient_wallet: options.recipient,
+            amount: options.amount ?? "10000000",
+            corridor_id: options.corridorId ?? 1,
+          },
+        );
+        return { package: proofPackage, credentialSecret };
+      })();
+  const proofPackage = prepared.package;
 
   const validation = await client.validatePackage(proofPackage, {
     issuerPublicKey: options.issuerPublicKey,
@@ -87,7 +116,10 @@ export async function runIssuerConformance(
 
   let proven: ProvenTransfer | undefined;
   if (!options.skipProve) {
-    proven = await client.prove({ package: proofPackage });
+    proven = await client.prove({
+      package: proofPackage,
+      credentialSecret: prepared.credentialSecret,
+    });
   }
 
   let simulated: unknown;

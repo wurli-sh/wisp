@@ -43,6 +43,7 @@ export interface ProveInput {
   browser?: boolean;
   wasmUrl?: string;
   zkeyUrl?: string;
+  credentialSecret?: bigint;
 }
 
 /**
@@ -67,6 +68,9 @@ export class WispClient {
     if (!input.package) {
       throw new Error("prove requires an explicit ProofPackage (fetch via IssuerAdapter first)");
     }
+    if (input.credentialSecret == null) {
+      throw new Error("prove requires the locally derived credentialSecret");
+    }
     if (!input.browser) {
       throw new Error(
         'Node prove is unavailable in this build. Call prove({ browser: true }) with wasmUrl/zkeyUrl, or import WispClient from "@wisp_/sdk" in a Node runtime.',
@@ -77,7 +81,11 @@ export class WispClient {
     if (!wasmUrl || !zkeyUrl) {
       throw new Error("browser prove requires wasmUrl and zkeyUrl");
     }
-    return proveFromPackageBrowser(input.package, { wasmUrl, zkeyUrl });
+    return proveFromPackageBrowser(
+      input.package,
+      { wasmUrl, zkeyUrl },
+      input.credentialSecret,
+    );
   }
 
   validatePackage(

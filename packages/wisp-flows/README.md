@@ -33,7 +33,7 @@ const result = await createAndSettleTransferWithRetry({
 console.log("settled nullifier:", result.nullifier);
 ```
 
-`DemoIssuerClient` drives the fixture route for local demos. `HttpIssuerAdapter` uses the canonical issuer API (`/.well-known/wisp-issuer.json`, `POST /v1/proof-packages`) for real integrations.
+`HttpIssuerAdapter` uses the canonical issuer API for wallet-bound credential activation and challenged proof-package requests. The credential activation flow requires the wallet to sign a SEP-10/SEP-53 challenge before the issuer releases a proof package draft.
 
 ## API surface
 

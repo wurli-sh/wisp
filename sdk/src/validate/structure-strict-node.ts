@@ -11,7 +11,7 @@ export async function runStrictSchemaValidation(pkg: ProofPackage): Promise<void
   const fs = await import("node:fs");
   const path = await import("node:path");
   const { REPO_ROOT } = await import("../config.js");
-  const schemaPath = path.join(REPO_ROOT, "bindings/schemas/proof-package.v1.json");
+  const schemaPath = path.join(REPO_ROOT, "bindings/schemas/proof-package.json");
   const schema = JSON.parse(fs.readFileSync(schemaPath, "utf8")) as object;
   const ajv = new Ajv({ allErrors: true, strict: false });
   const validate = ajv.compile(schema);

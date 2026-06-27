@@ -74,11 +74,26 @@ async function pageContractEvents(cfg, topicFilter, opts = {}) {
             resp = await fetchPage(startLedger, cursor);
         }
         catch (err) {
-            if (page !== 0 || cursor != null || !isLedgerRangeError(err))
+            if (!isLedgerRangeError(err))
                 throw err;
+            // A range error on a cursor page means pagination has walked to the edge
+            // of the RPC's event-retention window — the cursor now references a
+            // ledger at/after the tip. Every matching event up to here has already
+            // been collected, so stop instead of failing the entire scan.
+            if (page !== 0 || cursor != null)
+                break;
+            // First page: the configured start ledger predates the retention window.
+            // Re-clamp to the oldest retained ledger and retry once.
             const parsed = parseOldestLedgerFromError(err);
             startLedger = clampStartLedger(parsed ?? Math.max(1, latest.sequence - DEFAULT_EVENT_SCAN_LEDGERS), latest.sequence);
-            resp = await fetchPage(startLedger, null);
+            try {
+                resp = await fetchPage(startLedger, null);
+            }
+            catch (retryErr) {
+                if (isLedgerRangeError(retryErr))
+                    break;
+                throw retryErr;
+            }
         }
         for (const event of resp.events) {
             if (!event.inSuccessfulContractCall)

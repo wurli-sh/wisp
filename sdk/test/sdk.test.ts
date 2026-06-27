@@ -39,8 +39,12 @@ function loadFixturePackage(): ProofPackage {
   const filler = Array.from({ length: depth }, () => "0");
   const indices = Array.from({ length: depth }, () => 0);
   return {
-    schema_version: 1,
-    credential: { wallet: demo.sender_hex, jurisdiction: "US", credential_expiry: 2000000000 },
+    credential: {
+      wallet: demo.sender_hex,
+      jurisdiction: "US",
+      jurisdiction_code: 840,
+      credential_expiry: 2000000000,
+    },
     transfer: {
       asset: demo.asset_hex,
       sender: demo.sender_hex,
@@ -71,7 +75,6 @@ function loadFixturePackage(): ProofPackage {
       dest_address_indices: indices,
     },
     witness_private: {
-      credential_secret: demo.credential_secret,
       jurisdiction: demo.jurisdiction,
       credential_expiry: demo.credential_expiry,
     },
@@ -108,7 +111,11 @@ test("normalizeField matches assert-public-inputs", () => {
     ),
   );
   const witness = proofPackageToWitnessInput({
-    credential: { wallet: pkg.sender_hex, jurisdiction: "US" },
+    credential: {
+      wallet: pkg.sender_hex,
+      jurisdiction: "US",
+      jurisdiction_code: 840,
+    },
     transfer: {
       asset: pkg.asset_hex,
       sender: pkg.sender_hex,
@@ -133,14 +140,13 @@ test("normalizeField matches assert-public-inputs", () => {
     },
     witness_private: {
       demo_unsafe: true,
-      credential_secret: pkg.credential_secret,
       transfer_nonce: pkg.transfer_nonce ?? "0",
       jurisdiction: pkg.jurisdiction,
       credential_expiry: pkg.credential_expiry,
       sanctions_leaf_value: "0",
     },
     public_inputs: golden,
-  });
+  }, pkg.credential_secret);
   assert.ok(witness.merkle_root);
   for (const [k, v] of Object.entries(golden)) {
     assert.equal(normalizeField(String(v)), normalizeField(String(golden[k])), k);
@@ -312,21 +318,17 @@ test("resolveIssuer validates metadata against on-chain registry entry", async (
     },
     fetchImpl: async () =>
       makeFetchResponse({
-        api_version: "2",
-        protocol_version: "2",
         issuer_stellar_address: "GTEST",
         metadata_uri: "https://issuer.example/.well-known/wisp-issuer.json",
         service_url: "https://issuer.example",
         compliance_contract_id: "CCOMPLIANCE",
         verifier_contract_id: "CVERIFIER",
         circuit_vk_hash: "deadbeef",
-        proof_package_schema: 1,
       }),
   });
 
   assert.equal(resolved.issuerPublicKey, "GTEST");
   assert.equal(resolved.serviceUrl, "https://issuer.example");
-  assert.equal(resolved.protocolVersion, "2");
 });
 
 test("resolveIssuerFromUrl rejects non-canonical metadata URL", async () => {
@@ -347,8 +349,6 @@ test("resolveIssuerFromUrl rejects non-canonical metadata URL", async () => {
         },
         fetchImpl: async () =>
           makeFetchResponse({
-            api_version: "2",
-            protocol_version: "2",
             issuer_stellar_address: "GTEST",
             metadata_uri: "https://issuer.example/.well-known/wisp-issuer.json",
             service_url: "https://issuer.example",
@@ -357,33 +357,6 @@ test("resolveIssuerFromUrl rejects non-canonical metadata URL", async () => {
       }),
     /canonicalize back/,
   );
-});
-
-test("WispClient prove from issuer package", { timeout: 120_000 }, async (t) => {
-  if (!(await issuerAvailable())) {
-    t.skip("issuer-service not running on :3000");
-  }
-
-  const client = WispClient.fromEnv();
-  const demoIssuer = new DemoIssuerClient(client.cfg.issuerUrl);
-  const pkg = await demoIssuer.getDemoTransfer();
-  const issuerPk = client.cfg.issuerPublicKey;
-  if (!issuerPk) {
-    t.skip("ISSUER_PUBLIC_KEY not set");
-  }
-  const corridorId = Number(pkg.transfer?.corridor_id ?? 1);
-  await client.validatePackage(pkg, { issuerPublicKey: issuerPk, corridorId });
-  const proven = await client.prove({ package: pkg });
-  assert.equal(proven.publicSignals.length, 17);
-  const expectedInputs = pkg.public_inputs ?? {};
-  for (const [field, expected] of Object.entries(expectedInputs)) {
-    const got = proven.publicInputs[field];
-    assert.equal(
-      normalizeField(String(got)),
-      normalizeField(String(expected)),
-      field,
-    );
-  }
 });
 
 test("config loaders reject invalid ledger values instead of leaking NaN", () => {

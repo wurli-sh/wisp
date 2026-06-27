@@ -1,5 +1,5 @@
 export type { ChainClientConfig } from "./types.js";
-export type { CorridorDetail, IssuerAdapter, IssuerCapabilities, IssuerWellKnown, ProofPackageRequest, } from "./adapter.js";
+export type { CorridorDetail, IssuerAdapter, IssuerCapabilities, IssuerWellKnown, ProofPackageRequest, ActivateCredentialRequest, ActivateCredentialResponse, ActivationChallengeRequest, ChallengeResponse, CredentialInfo, ProofPackageDraft, SignedProofPackageRequest, } from "./adapter.js";
 export { HttpIssuerAdapter, IssuerClient, issuerFetch } from "./http-adapter.js";
 export { getLatestChainRoots, getLatestCorridorRoots, getLatestIssuerEnabled, getLatestIssuerRecord, getLatestIssuerRoots, listIssuerRegistryEntries, } from "./roots.js";
 export type { ChainCorridorRoots, ChainIssuerPage, ChainIssuerRecord, ChainIssuerRoots, ChainRootsBundle, } from "./roots.js";

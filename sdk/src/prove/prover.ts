@@ -20,8 +20,9 @@ export interface ProvenTransfer {
 export async function proveFromPackage(
   pkg: ProofPackage,
   cfg: WispConfig,
+  credentialSecret: bigint,
 ): Promise<ProvenTransfer> {
-  const witnessInput = proofPackageToWitnessInput(pkg);
+  const witnessInput = proofPackageToWitnessInput(pkg, credentialSecret);
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "wisp-prove-"));
   const inputPath = path.join(tmpDir, "input.json");
   const witnessPath = path.join(tmpDir, "witness.wtns");

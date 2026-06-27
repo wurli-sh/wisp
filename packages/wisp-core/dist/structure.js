@@ -32,6 +32,8 @@ const PUBLIC_INPUT_KEYS = [
     "corridor_config_hash",
     "source_jurisdiction_root",
     "dest_address_root",
+    "issuer_lo",
+    "issuer_hi",
 ];
 export function validatePackageStructure(pkg) {
     if (!pkg.paths) {
@@ -54,6 +56,9 @@ export function validatePackageStructure(pkg) {
         if (value == null || String(value).length === 0) {
             throw new Error(`ProofPackage roots missing ${key}`);
         }
+        if (!/^-?\d+$/.test(String(value))) {
+            throw new Error(`ProofPackage roots.${key} must be a decimal field element`);
+        }
     }
     for (const key of PATH_KEYS) {
         const path = pkg.paths[key];
@@ -64,14 +69,23 @@ export function validatePackageStructure(pkg) {
         if (!Array.isArray(indices) || indices.length !== MERKLE_DEPTH) {
             throw new Error(`ProofPackage paths.${key}_indices must have length ${MERKLE_DEPTH}`);
         }
+        if (path.some((value) => !/^-?\d+$/.test(String(value)))) {
+            throw new Error(`ProofPackage paths.${key} must contain decimal field elements`);
+        }
+        if (indices.some((value) => value !== 0 && value !== 1)) {
+            throw new Error(`ProofPackage paths.${key}_indices must contain only 0 or 1`);
+        }
     }
     for (const key of PUBLIC_INPUT_KEYS) {
         if (pkg.public_inputs[key] == null) {
             throw new Error(`ProofPackage public_inputs missing ${key}`);
         }
+        if (!/^-?\d+$/.test(String(pkg.public_inputs[key]))) {
+            throw new Error(`ProofPackage public_inputs.${key} must be a decimal field element`);
+        }
     }
-    if (pkg.schema_version != null && pkg.schema_version !== 1) {
-        throw new Error(`unsupported ProofPackage schema_version: ${pkg.schema_version}`);
+    if (pkg.witness_private.credential_secret != null) {
+        throw new Error("ProofPackage must not contain credential_secret");
     }
 }
 //# sourceMappingURL=structure.js.map

@@ -1,5 +1,5 @@
 import { rpc, scValToNative, xdr } from "@stellar/stellar-sdk";
-import { resolveEventStartLedger } from "./ledger-window.js";
+import { clampStartLedger, DEFAULT_EVENT_SCAN_LEDGERS, isLedgerRangeError, parseOldestLedgerFromError, resolveEventStartLedger, } from "./ledger-window.js";
 function settledTopicFilter() {
     return [xdr.ScVal.scvSymbol("settled").toXDR("base64")];
 }
@@ -34,36 +34,67 @@ async function pagedProofSettledEvents(cfg, opts = {}) {
     if (!cfg.complianceId)
         throw new Error("COMPLIANCE_CONTRACT_ID not set");
     const server = new rpc.Server(cfg.rpcUrl);
-    const startLedger = await resolveEventStartLedger(server, cfg, opts.startLedger);
+    const latest = await server.getLatestLedger();
+    const requested = await resolveEventStartLedger(server, cfg, opts.startLedger);
+    // The configured validateStartLedger is often the contract deploy ledger,
+    // which can fall outside the RPC's event retention window. Clamp it so the
+    // first query stays in range (mirrors pageContractEvents in roots.ts).
+    let startLedger = clampStartLedger(requested, latest.sequence);
     const pageSize = Math.min(opts.limit ?? 100, 200);
     const maxPages = opts.maxPages ?? 10;
     let cursor = null;
     const events = [];
+    const fetchPage = (start, pageCursor) => pageCursor
+        ? server.getEvents({
+            cursor: pageCursor,
+            filters: [
+                {
+                    type: "contract",
+                    contractIds: [cfg.complianceId],
+                    topics: [settledTopicFilter()],
+                },
+            ],
+            limit: pageSize,
+        })
+        : server.getEvents({
+            startLedger: start,
+            endLedger: opts.endLedger,
+            filters: [
+                {
+                    type: "contract",
+                    contractIds: [cfg.complianceId],
+                    topics: [settledTopicFilter()],
+                },
+            ],
+            limit: pageSize,
+        });
     for (let page = 0; page < maxPages; page += 1) {
-        const resp = cursor
-            ? await server.getEvents({
-                cursor,
-                filters: [
-                    {
-                        type: "contract",
-                        contractIds: [cfg.complianceId],
-                        topics: [settledTopicFilter()],
-                    },
-                ],
-                limit: pageSize,
-            })
-            : await server.getEvents({
-                startLedger,
-                endLedger: opts.endLedger,
-                filters: [
-                    {
-                        type: "contract",
-                        contractIds: [cfg.complianceId],
-                        topics: [settledTopicFilter()],
-                    },
-                ],
-                limit: pageSize,
-            });
+        let resp;
+        try {
+            resp = await fetchPage(startLedger, cursor);
+        }
+        catch (err) {
+            if (!isLedgerRangeError(err))
+                throw err;
+            // A range error on a cursor page means pagination has walked to the edge
+            // of the RPC's event-retention window — the cursor now references a
+            // ledger at/after the tip. Every matching event up to here has already
+            // been collected, so stop instead of failing the entire scan.
+            if (page !== 0 || cursor != null)
+                break;
+            // First page: the configured start ledger predates the retention window.
+            // Re-clamp to the oldest retained ledger and retry once.
+            const parsed = parseOldestLedgerFromError(err);
+            startLedger = clampStartLedger(parsed ?? Math.max(1, latest.sequence - DEFAULT_EVENT_SCAN_LEDGERS), latest.sequence);
+            try {
+                resp = await fetchPage(startLedger, null);
+            }
+            catch (retryErr) {
+                if (isLedgerRangeError(retryErr))
+                    break;
+                throw retryErr;
+            }
+        }
         events.push(...resp.events
             .filter((e) => e.inSuccessfulContractCall)
             .map((e) => ({

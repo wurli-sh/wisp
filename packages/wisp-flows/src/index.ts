@@ -1,4 +1,21 @@
-import type { DemoTransferRequest, ProofPackage, ProofPackageRequest } from "@wisp_/js";
+import {
+  addressToLimbs,
+  computeCredentialCommitment,
+  credentialDerivationMessage,
+  credentialSecretFromSignature,
+  finalizeProofPackageDraft,
+  strKeyToPayload,
+  type ActivateCredentialRequest,
+  type ActivateCredentialResponse,
+  type ActivationChallengeRequest,
+  type ChallengeResponse,
+  type CredentialInfo,
+  type DemoTransferRequest,
+  type ProofPackage,
+  type ProofPackageDraft,
+  type ProofPackageRequest,
+  type SignedProofPackageRequest,
+} from "@wisp_/js";
 
 export type TransferStage =
   | "fetch"
@@ -12,6 +29,7 @@ export type TransferStage =
 export interface WalletSigner {
   publicKey: string;
   signTransaction: (xdr: string) => Promise<{ signedTxXdr: string }>;
+  signMessage?: (message: string) => Promise<{ signedMessage: Uint8Array }>;
 }
 
 export interface ProvenTransfer {
@@ -28,6 +46,7 @@ export interface TransferClientLike {
     browser?: boolean;
     wasmUrl?: string;
     zkeyUrl?: string;
+    credentialSecret: bigint;
   }): Promise<ProvenTransfer>;
   audit(
     nullifierDecimal: string,
@@ -47,8 +66,11 @@ export interface TransferClientLike {
 }
 
 export interface ProofPackageSource {
-  createProofPackage?(req: ProofPackageRequest): Promise<ProofPackage>;
-  createDemoTransfer?(req: DemoTransferRequest): Promise<ProofPackage>;
+  getCredential(wallet: string): Promise<CredentialInfo>;
+  createActivationChallenge(req: ActivationChallengeRequest): Promise<ChallengeResponse>;
+  activateCredential(req: ActivateCredentialRequest): Promise<ActivateCredentialResponse>;
+  createProofPackageChallenge(req: ProofPackageRequest): Promise<ChallengeResponse>;
+  createProofPackage(req: SignedProofPackageRequest): Promise<ProofPackageDraft>;
 }
 
 export interface BrowserProofOptions {
@@ -60,6 +82,7 @@ export interface BrowserProofOptions {
 export interface TransferValidationOptions {
   issuerPublicKey: string;
   corridorId: number;
+  networkPassphrase: string;
 }
 
 export interface CreateAndSettleTransferInput {
@@ -113,19 +136,72 @@ export async function validateTransferPackage(
 async function createProofPackageFromIssuer(
   issuer: ProofPackageSource,
   request: DemoTransferRequest,
-): Promise<ProofPackage> {
-  if (issuer.createDemoTransfer) {
-    return issuer.createDemoTransfer(request);
+  wallet: WalletSigner,
+  validation: TransferValidationOptions,
+): Promise<{ package: ProofPackage; credentialSecret: bigint }> {
+  if (!wallet.signMessage) throw new Error("signMessage is required by Wisp");
+  const credential = await issuer.getCredential(wallet.publicKey);
+  const derivation = credentialDerivationMessage({
+    networkPassphrase: validation.networkPassphrase,
+    issuer: validation.issuerPublicKey,
+    wallet: wallet.publicKey,
+  });
+  const secretSignature = await wallet.signMessage(derivation);
+  const credentialSecret = BigInt(
+    String(await credentialSecretFromSignature(secretSignature.signedMessage)),
+  );
+  const issuerLimbs = addressToLimbs(addressPayload(validation.issuerPublicKey));
+  const walletLimbs = addressToLimbs(addressPayload(wallet.publicKey));
+  const commitment = computeCredentialCommitment({
+    issuerLo: issuerLimbs.lo,
+    issuerHi: issuerLimbs.hi,
+    senderLo: walletLimbs.lo,
+    senderHi: walletLimbs.hi,
+    credentialSecret,
+    jurisdiction: BigInt(credential.jurisdiction_code),
+    credentialExpiry: BigInt(credential.credential_expiry),
+  });
+  const activation = await issuer.createActivationChallenge({
+    wallet: wallet.publicKey,
+    credential_commitment: String(commitment),
+  });
+  const activationSignature = await wallet.signMessage(activation.message);
+  await issuer.activateCredential({
+    challenge_id: activation.challenge_id,
+    signed_message: encodeBase64(activationSignature.signedMessage),
+  });
+  const proofRequest = {
+    sender_wallet: request.sender_strkey,
+    recipient_wallet: request.recipient_strkey,
+    amount: request.amount,
+    corridor_id: request.corridor_id,
+  };
+  const challenge = await issuer.createProofPackageChallenge(proofRequest);
+  const proofSignature = await wallet.signMessage(challenge.message);
+  const draft = await issuer.createProofPackage({
+    challenge_id: challenge.challenge_id,
+    signed_message: encodeBase64(proofSignature.signedMessage),
+  });
+  return {
+    package: finalizeProofPackageDraft(draft, credentialSecret),
+    credentialSecret,
+  };
+}
+
+function encodeBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+function addressPayload(address: string): Buffer {
+  const trimmed = address.trim();
+  if (/^[GC][A-Z2-7]{55}$/i.test(trimmed)) return strKeyToPayload(trimmed);
+  const hex = trimmed.replace(/^0x/i, "");
+  if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
+    throw new Error("address must be a valid Stellar G/C StrKey or exactly 32-byte hex");
   }
-  if (issuer.createProofPackage) {
-    return issuer.createProofPackage({
-      sender_wallet: request.sender_strkey,
-      recipient_wallet: request.recipient_strkey,
-      amount: request.amount,
-      corridor_id: request.corridor_id,
-    });
-  }
-  throw new Error("issuer source does not support proof package creation");
+  return Buffer.from(hex, "hex");
 }
 
 export async function fetchTransferPackage(input: {
@@ -133,8 +209,14 @@ export async function fetchTransferPackage(input: {
   issuer: ProofPackageSource;
   request: DemoTransferRequest;
   validation: TransferValidationOptions;
+  walletSigner: WalletSigner;
 }): Promise<{ package: ProofPackage; validation: unknown }> {
-  const pkg = await createProofPackageFromIssuer(input.issuer, input.request);
+  const { package: pkg } = await createProofPackageFromIssuer(
+    input.issuer,
+    input.request,
+    input.walletSigner,
+    input.validation,
+  );
   const validation = await validateTransferPackage(input.client, pkg, input.validation);
   return { package: pkg, validation };
 }
@@ -142,6 +224,7 @@ export async function fetchTransferPackage(input: {
 export async function proveTransferPackage(
   client: TransferClientLike,
   pkg: ProofPackage,
+  credentialSecret: bigint,
   opts?: Partial<BrowserProofOptions>,
 ): Promise<ProvenTransfer> {
   return client.prove({
@@ -149,6 +232,7 @@ export async function proveTransferPackage(
     browser: opts?.browser,
     wasmUrl: opts?.wasmUrl,
     zkeyUrl: opts?.zkeyUrl,
+    credentialSecret,
   });
 }
 
@@ -156,13 +240,23 @@ export async function createAndSettleTransfer(
   input: CreateAndSettleTransferInput,
 ): Promise<CreateAndSettleTransferResult> {
   emitStage(input.onStage, "fetch", { request: input.request });
-  const pkg = await createProofPackageFromIssuer(input.issuer, input.request);
+  const { package: pkg, credentialSecret } = await createProofPackageFromIssuer(
+    input.issuer,
+    input.request,
+    input.walletSigner,
+    input.validation,
+  );
 
   emitStage(input.onStage, "validate", { corridorId: input.validation.corridorId });
   const validation = await validateTransferPackage(input.client, pkg, input.validation);
 
   emitStage(input.onStage, "prove", {});
-  const proven = await proveTransferPackage(input.client, pkg, input.proof);
+  const proven = await proveTransferPackage(
+    input.client,
+    pkg,
+    credentialSecret,
+    input.proof,
+  );
 
   emitStage(input.onStage, "duplicate-check", {});
   if (!input.skipDuplicateCheck) {

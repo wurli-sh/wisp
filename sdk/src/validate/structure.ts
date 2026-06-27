@@ -16,6 +16,8 @@ const ROOT_KEYS = [
   "jurisdiction_root",
   "source_jurisdiction_root",
   "dest_address_root",
+  "issuer_lo",
+  "issuer_hi",
   "corridor_config_hash",
 ] as const;
 
@@ -80,8 +82,8 @@ export function validatePackageStructure(pkg: ProofPackage): void {
     }
   }
 
-  if (pkg.schema_version != null && pkg.schema_version !== 1) {
-    throw new Error(`unsupported ProofPackage schema_version: ${pkg.schema_version}`);
+  if (pkg.witness_private.credential_secret != null) {
+    throw new Error("ProofPackage must not contain credential_secret");
   }
 }
 

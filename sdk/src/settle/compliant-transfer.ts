@@ -108,6 +108,7 @@ function publicInputsVector(proven: ProvenTransfer): bigint[] {
 export interface WalletSigner {
   publicKey: string;
   signTransaction: (xdr: string) => Promise<{ signedTxXdr: string }>;
+  signMessage?: (message: string) => Promise<{ signedMessage: Uint8Array }>;
 }
 
 export async function approveSacForCompliance(

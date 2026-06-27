@@ -48,7 +48,11 @@ if (fs.existsSync(goldenPath)) {
 }
 
 const pkg = {
-  credential: { wallet: demoTransfer.sender_hex, jurisdiction: "US" },
+  credential: {
+    wallet: demoTransfer.sender_hex,
+    jurisdiction: "US",
+    jurisdiction_code: 840,
+  },
   transfer: {
     asset: demoTransfer.asset_hex,
     sender: demoTransfer.sender_hex,
@@ -80,7 +84,6 @@ const pkg = {
   },
   witness_private: {
     demo_unsafe: true,
-    credential_secret: demoTransfer.credential_secret,
     transfer_nonce: demoTransfer.transfer_nonce ?? "0",
     jurisdiction: demoTransfer.jurisdiction,
     credential_expiry: demoTransfer.credential_expiry,
@@ -105,11 +108,13 @@ const pkg = {
       "corridor_config_hash",
       "source_jurisdiction_root",
       "dest_address_root",
+      "issuer_lo",
+      "issuer_hi",
     ].map((k) => [k, String(witness[k])]),
   ),
 };
 
-const roundTrip = proofPackageToWitnessInput(pkg);
+const roundTrip = proofPackageToWitnessInput(pkg, demoTransfer.credential_secret);
 for (const key of Object.keys(witness)) {
   if (key.endsWith("_indices")) {
     assert.deepEqual(roundTrip[key], witness[key], `round-trip ${key}`);

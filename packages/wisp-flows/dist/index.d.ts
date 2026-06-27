@@ -1,9 +1,12 @@
-import type { DemoTransferRequest, ProofPackage, ProofPackageRequest } from "@wisp_/js";
+import { type ActivateCredentialRequest, type ActivateCredentialResponse, type ActivationChallengeRequest, type ChallengeResponse, type CredentialInfo, type DemoTransferRequest, type ProofPackage, type ProofPackageDraft, type ProofPackageRequest, type SignedProofPackageRequest } from "@wisp_/js";
 export type TransferStage = "fetch" | "validate" | "prove" | "duplicate-check" | "approve" | "simulate" | "settle";
 export interface WalletSigner {
     publicKey: string;
     signTransaction: (xdr: string) => Promise<{
         signedTxXdr: string;
+    }>;
+    signMessage?: (message: string) => Promise<{
+        signedMessage: Uint8Array;
     }>;
 }
 export interface ProvenTransfer {
@@ -19,6 +22,7 @@ export interface TransferClientLike {
         browser?: boolean;
         wasmUrl?: string;
         zkeyUrl?: string;
+        credentialSecret: bigint;
     }): Promise<ProvenTransfer>;
     audit(nullifierDecimal: string, publicKey: string): Promise<{
         attested: boolean;
@@ -28,8 +32,11 @@ export interface TransferClientLike {
     settleWithWallet(proven: ProvenTransfer, pkg: ProofPackage, wallet: WalletSigner): Promise<unknown>;
 }
 export interface ProofPackageSource {
-    createProofPackage?(req: ProofPackageRequest): Promise<ProofPackage>;
-    createDemoTransfer?(req: DemoTransferRequest): Promise<ProofPackage>;
+    getCredential(wallet: string): Promise<CredentialInfo>;
+    createActivationChallenge(req: ActivationChallengeRequest): Promise<ChallengeResponse>;
+    activateCredential(req: ActivateCredentialRequest): Promise<ActivateCredentialResponse>;
+    createProofPackageChallenge(req: ProofPackageRequest): Promise<ChallengeResponse>;
+    createProofPackage(req: SignedProofPackageRequest): Promise<ProofPackageDraft>;
 }
 export interface BrowserProofOptions {
     browser: true;
@@ -39,6 +46,7 @@ export interface BrowserProofOptions {
 export interface TransferValidationOptions {
     issuerPublicKey: string;
     corridorId: number;
+    networkPassphrase: string;
 }
 export interface CreateAndSettleTransferInput {
     client: TransferClientLike;
@@ -69,11 +77,12 @@ export declare function fetchTransferPackage(input: {
     issuer: ProofPackageSource;
     request: DemoTransferRequest;
     validation: TransferValidationOptions;
+    walletSigner: WalletSigner;
 }): Promise<{
     package: ProofPackage;
     validation: unknown;
 }>;
-export declare function proveTransferPackage(client: TransferClientLike, pkg: ProofPackage, opts?: Partial<BrowserProofOptions>): Promise<ProvenTransfer>;
+export declare function proveTransferPackage(client: TransferClientLike, pkg: ProofPackage, credentialSecret: bigint, opts?: Partial<BrowserProofOptions>): Promise<ProvenTransfer>;
 export declare function createAndSettleTransfer(input: CreateAndSettleTransferInput): Promise<CreateAndSettleTransferResult>;
 export declare function createAndSettleTransferWithRetry(input: CreateAndSettleTransferInput): Promise<CreateAndSettleTransferResult>;
 //# sourceMappingURL=index.d.ts.map

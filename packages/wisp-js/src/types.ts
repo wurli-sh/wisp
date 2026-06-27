@@ -23,6 +23,7 @@ export interface DemoParams {
   epoch: bigint;
   jurisdiction: bigint;
   credential_expiry: bigint;
+  issuer?: Buffer;
   corridor_id?: bigint;
 }
 
@@ -51,8 +52,83 @@ export interface ProofPackageRequest {
   corridor_id: number;
 }
 
+export interface CredentialInfo {
+  wallet: string;
+  jurisdiction: string;
+  jurisdiction_code: number;
+  credential_expiry: number;
+  sanctions_clear?: boolean;
+  corridor_eligibility?: number[];
+  credential_commitment?: string;
+}
+
+export interface ActivationChallengeRequest {
+  wallet: string;
+  credential_commitment: string;
+}
+
+export interface ChallengeResponse {
+  challenge_id: string;
+  message: string;
+  expires_at: number;
+}
+
+export interface ActivateCredentialRequest {
+  challenge_id: string;
+  signed_message: string;
+}
+
+export interface ActivateCredentialResponse {
+  wallet: string;
+  credential_commitment: string;
+  activated_at: number;
+}
+
+export interface SignedProofPackageRequest {
+  challenge_id: string;
+  signed_message: string;
+}
+
+export interface DraftWitnessPrivate {
+  demo_unsafe?: boolean;
+  transfer_nonce?: string | number;
+  jurisdiction: string | number;
+  credential_expiry: string | number;
+  sanctions_leaf_value?: string;
+}
+
+export interface ProofPackageDraft {
+  credential?: {
+    wallet?: string;
+    jurisdiction?: string;
+    jurisdiction_code?: number;
+    credential_expiry?: string | number;
+    credential_commitment?: string;
+  };
+  transfer?: {
+    asset?: string;
+    sender?: string;
+    recipient?: string;
+    amount?: string | number;
+    corridor_id?: string | number;
+    epoch?: string | number;
+    timestamp?: string | number;
+  };
+  demo?: {
+    sender_strkey?: string;
+    recipient_strkey?: string;
+    asset_strkey?: string;
+    issuer_strkey?: string;
+    source_country?: string;
+    dest_country?: string;
+  };
+  roots: Record<string, string>;
+  paths: ProofPackagePaths;
+  witness_private: DraftWitnessPrivate;
+  public_inputs: Record<string, string | number>;
+}
+
 export interface ProofPackage {
-  schema_version?: number;
   credential?: {
     wallet?: string;
     jurisdiction?: string;
@@ -79,7 +155,7 @@ export interface ProofPackage {
   paths: ProofPackagePaths;
   witness_private?: {
     demo_unsafe?: boolean;
-    credential_secret: string | number;
+    credential_secret?: string | number;
     transfer_nonce?: string | number;
     jurisdiction: string | number;
     credential_expiry: string | number;

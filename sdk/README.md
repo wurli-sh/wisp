@@ -28,24 +28,33 @@ Peer deps are bundled; you also need circuit artifacts (WASM + zkey) for proving
 ## Quick start
 
 ```ts
-import { WispClient, DemoIssuerClient } from "@wisp_/sdk";
+import {
+  WispClient,
+  HttpIssuerAdapter,
+  activateWalletCredential,
+  requestProofPackage,
+} from "@wisp_/sdk";
 
 const client = WispClient.fromEnv();
-const issuer = new DemoIssuerClient(client.cfg.issuerUrl);
-const pkg = await issuer.getDemoTransfer();
+const issuer = new HttpIssuerAdapter(client.cfg.issuerUrl);
+const credentialSecret = await activateWalletCredential(issuer, walletSigner, {
+  networkPassphrase: client.cfg.networkPassphrase,
+  issuerPublicKey: process.env.ISSUER_PUBLIC_KEY!,
+});
+const pkg = await requestProofPackage(issuer, walletSigner, credentialSecret, transfer);
 
 await client.validatePackage(pkg, {
   issuerPublicKey: process.env.ISSUER_PUBLIC_KEY!,
   corridorId: Number(pkg.transfer?.corridor_id ?? 1),
 });
 
-const proven = await client.prove({ package: pkg });
+const proven = await client.prove({ package: pkg, credentialSecret });
 await client.approveSacForComplianceWithKeypair(pkg, senderSecret);
 const tx = await client.settleWithKeypair(proven, pkg, senderSecret);
 const audit = await client.audit(proven.nullifier, senderPublicKey);
 ```
 
-For a real issuer API, swap `DemoIssuerClient` for `HttpIssuerAdapter` and fetch a package from `POST /v1/proof-packages`.
+For a real issuer API, use `HttpIssuerAdapter`: the wallet signs a SEP-10/SEP-53 challenge to derive a credential secret, activates the credential with the issuer, then requests a challenged proof-package. The issuer returns a `ProofPackageDraft` (without nullifier). The wallet finalizes the draft client-side via `finalizeProofPackageDraft`, which computes the nullifier locally — the issuer never sees it.
 
 Runnable, typechecked starting points (browser + Node) live in [`examples/quickstart`](../examples/quickstart/README.md).
 
@@ -61,7 +70,7 @@ Loaded from `.wisp/*.env`, repo `.env`, or `process.env` via `loadWispEnv()`.
 | `SAC_CONTRACT_ID` | yes* | Asset SAC for settlement |
 | `ISSUER_PUBLIC_KEY` | yes* | Issuer G-address |
 | `ISSUER_URL` | — | Issuer HTTP base (default: `http://127.0.0.1:3000`) |
-| `WISP_FIXTURE_PROFILE` | — | `local` or `testnet` |
+| `WISP_FIXTURE_PROFILE` | — | `local`, `testnet`, or `disabled` |
 | `WISP_ARTIFACT_DIR` | — | Circuit artifacts dir |
 | `VALIDATE_START_LEDGER` | — | Event scan start for root validation |
 
@@ -91,6 +100,7 @@ const client = new WispClient({
 
 const proven = await client.prove({
   package: pkg,
+  credentialSecret,  // derived from wallet-signed challenge
   browser: true,
   wasmUrl: "/circuits/compliance_corridor.wasm",
   zkeyUrl: "/circuits/compliance_corridor_final.zkey",
@@ -117,11 +127,16 @@ await client.settleWithWallet(proven, pkg, wallet);
 | Export | Purpose |
 | ------ | ------- |
 | `WispClient` | Facade: prove · validate · settle · audit |
-| `DemoIssuerClient` | Fetch demo proof packages |
+| `DemoIssuerClient` | Fetch demo proof packages (mock-KYC, non-production only) |
 | `HttpIssuerAdapter` | Custom issuer HTTP client |
+| `activateWalletCredential` | Wallet-bound credential activation (sign challenge → activate with issuer) |
+| `requestProofPackage` | Challenge-based proof package request (sign → draft → finalize client-side) |
+| `finalizeProofPackageDraft` | Compute nullifier locally from draft + credential secret |
 | `validatePackage` | Pre-flight package + on-chain root checks |
 | `loadConfig` / `loadWispEnv` | Config from env |
 | `getLatestChainRoots` | Read issuer/corridor roots from chain events |
+
+`prove()` now requires `credentialSecret` — the locally-derived secret from the wallet signature. The issuer never sees this value; the proof package draft contains a blank nullifier that `finalizeProofPackageDraft` fills client-side.
 
 ## Testnet fixtures
 

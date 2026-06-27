@@ -37,6 +37,8 @@ const PUBLIC_INPUT_KEYS = [
   "corridor_config_hash",
   "source_jurisdiction_root",
   "dest_address_root",
+  "issuer_lo",
+  "issuer_hi",
 ] as const;
 
 export function validatePackageStructure(pkg: ProofPackage): void {
@@ -92,7 +94,7 @@ export function validatePackageStructure(pkg: ProofPackage): void {
     }
   }
 
-  if (pkg.schema_version != null && pkg.schema_version !== 1) {
-    throw new Error(`unsupported ProofPackage schema_version: ${pkg.schema_version}`);
+  if (pkg.witness_private.credential_secret != null) {
+    throw new Error("ProofPackage must not contain credential_secret");
   }
 }

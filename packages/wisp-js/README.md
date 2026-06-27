@@ -49,12 +49,12 @@ import { decodeStrKey } from "@wisp_/js/strkey";
 | `merkle` | Merkle root, paths, SMT sanctions |
 | `protocol` | Nullifier, corridor config hash, address limbs |
 | `witness` | `buildWitnessInput`, `proofPackageToWitnessInput` |
-| `publicInputs` | 17-field public input helpers |
+| `publicInputs` | 19-field public input helpers |
 | `strkey` | Stellar address decode |
 
 ## Public inputs
 
-17 fields in canonical order — see [`bindings/public-inputs.json`](../../bindings/public-inputs.json).
+19 fields in canonical order — see [`bindings/public-inputs.json`](../../bindings/public-inputs.json).
 
 Address limbs: `hi = bytes[0..16]`, `lo = bytes[16..32]` as big-endian field elements.
 

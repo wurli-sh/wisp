@@ -14,7 +14,6 @@ export interface ResolvedIssuer {
   complianceId?: string;
   verifierId?: string;
   vkHash?: string;
-  protocolVersion: string;
   updatedAtLedger: number;
   enabled: boolean;
   wellKnown: IssuerWellKnown;
@@ -28,10 +27,6 @@ export interface ResolveIssuerOptions {
 
 function normalizeUrl(url: string): string {
   return new URL(url).toString().replace(/\/$/, "");
-}
-
-function protocolVersionOf(metadata: IssuerWellKnown): string {
-  return metadata.protocol_version ?? metadata.api_version;
 }
 
 function assertMetadataMatchesChain(
@@ -49,9 +44,6 @@ function assertMetadataMatchesChain(
   if (cfg.verifierId && metadata.verifier_contract_id && metadata.verifier_contract_id !== cfg.verifierId) {
     throw new IssuerMetadataMismatchError("Issuer well-known verifier contract does not match configured verifier contract");
   }
-  if (protocolVersionOf(metadata) !== "2") {
-    throw new IssuerMetadataMismatchError("Issuer well-known protocol version is not Wisp v2");
-  }
   const canonicalMetadataUri = normalizeUrl(record.metadata_uri);
   const declaredMetadataUri = normalizeUrl(metadata.metadata_uri ?? canonicalMetadataUri);
   if (declaredMetadataUri !== canonicalMetadataUri) {
@@ -68,7 +60,6 @@ function assertMetadataMatchesChain(
     complianceId: metadata.compliance_contract_id,
     verifierId: metadata.verifier_contract_id,
     vkHash: metadata.circuit_vk_hash,
-    protocolVersion: protocolVersionOf(metadata),
     updatedAtLedger: record.updated_at_ledger,
     enabled: record.enabled,
     wellKnown: metadata,

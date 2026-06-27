@@ -24,18 +24,14 @@ test("HttpIssuerAdapter normalizes trailing slashes and sends canonical requests
   try {
     const client = new HttpIssuerAdapter("https://issuer.test///");
     await client.createProofPackage({
-      sender_wallet: "sender",
-      recipient_wallet: "recipient",
-      amount: "1",
-      corridor_id: 3,
+      challenge_id: "challenge",
+      signed_message: "signature",
     });
-    assert.equal(calls[0]?.url, "https://issuer.test/v1/proof-packages");
+    assert.equal(calls[0]?.url, "https://issuer.test/proof-packages");
     assert.equal(calls[0]?.init?.method, "POST");
     assert.deepEqual(JSON.parse(String(calls[0]?.init?.body)), {
-      sender_wallet: "sender",
-      recipient_wallet: "recipient",
-      amount: "1",
-      corridor_id: 3,
+      challenge_id: "challenge",
+      signed_message: "signature",
     });
   } finally {
     globalThis.fetch = original;

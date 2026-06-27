@@ -8,6 +8,9 @@ function isNetworkError(err) {
 }
 export async function issuerFetch(url, init, opts = {}) {
     const retries = opts.retries ?? 2;
+    if (!Number.isSafeInteger(retries) || retries < 0) {
+        throw new Error("issuerFetch retries must be a non-negative safe integer");
+    }
     let lastErr;
     for (let attempt = 0; attempt <= retries; attempt += 1) {
         try {
@@ -30,7 +33,10 @@ export async function issuerFetch(url, init, opts = {}) {
 export class HttpIssuerAdapter {
     baseUrl;
     constructor(baseUrl) {
-        this.baseUrl = baseUrl.replace(/\/$/, "");
+        this.baseUrl = baseUrl.replace(/\/+$/, "");
+        if (!this.baseUrl) {
+            throw new Error("issuer base URL is required");
+        }
     }
     get baseURL() {
         return this.baseUrl;
@@ -44,8 +50,44 @@ export class HttpIssuerAdapter {
             admin: false,
         };
     }
+    async createActivationChallenge(input) {
+        const res = await issuerFetch(`${this.baseUrl}/credentials/activation-challenges`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(input),
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`issuer activation-challenge: HTTP ${res.status}${text ? ` — ${text}` : ""}`);
+        }
+        return res.json();
+    }
+    async activateCredential(input) {
+        const res = await issuerFetch(`${this.baseUrl}/credentials/activate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(input),
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`issuer activate: HTTP ${res.status}${text ? ` — ${text}` : ""}`);
+        }
+        return res.json();
+    }
+    async createProofPackageChallenge(input) {
+        const res = await issuerFetch(`${this.baseUrl}/proof-packages/challenges`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(input),
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`issuer proof challenge: HTTP ${res.status}${text ? ` — ${text}` : ""}`);
+        }
+        return res.json();
+    }
     async createProofPackage(input) {
-        const res = await issuerFetch(`${this.baseUrl}/v1/proof-packages`, {
+        const res = await issuerFetch(`${this.baseUrl}/proof-packages`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(input),
@@ -56,14 +98,22 @@ export class HttpIssuerAdapter {
         }
         return res.json();
     }
+    async getCredential(wallet) {
+        const res = await issuerFetch(`${this.baseUrl}/credentials/${encodeURIComponent(wallet)}`);
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`issuer credential: HTTP ${res.status}${text ? ` — ${text}` : ""}`);
+        }
+        return res.json();
+    }
     async listCorridors() {
-        const res = await issuerFetch(`${this.baseUrl}/v1/corridors`);
+        const res = await issuerFetch(`${this.baseUrl}/corridors`);
         if (!res.ok)
             throw new Error(`issuer corridors: HTTP ${res.status}`);
         return res.json();
     }
     async getCorridor(id) {
-        const res = await issuerFetch(`${this.baseUrl}/v1/corridor/${id}`);
+        const res = await issuerFetch(`${this.baseUrl}/corridors/${id}`);
         if (!res.ok)
             throw new Error(`issuer corridor: HTTP ${res.status}`);
         return res.json();
@@ -72,12 +122,6 @@ export class HttpIssuerAdapter {
         const res = await issuerFetch(`${this.baseUrl}/.well-known/wisp-issuer.json`);
         if (!res.ok)
             throw new Error(`issuer well-known: HTTP ${res.status}`);
-        return res.json();
-    }
-    async getMerklePath(wallet) {
-        const res = await issuerFetch(`${this.baseUrl}/v1/merkle-path/${wallet}`);
-        if (!res.ok)
-            throw new Error(`issuer merkle-path: HTTP ${res.status}`);
         return res.json();
     }
 }

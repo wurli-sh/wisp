@@ -15,9 +15,25 @@ export function clampStartLedger(start: number, latestSeq: number): number {
   return Math.max(start, oldestRetained);
 }
 
+/**
+ * Soroban RPC rejections are often plain objects (`{ code, message }`) rather
+ * than `Error` instances, so `String(err)` would yield "[object Object]" and
+ * lose the message. Dig the human-readable text out of whatever shape arrives.
+ */
+function errorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (err && typeof err === "object") {
+    const message = (err as { message?: unknown }).message;
+    if (typeof message === "string" && message) return message;
+    const nested = (err as { error?: { message?: unknown } }).error?.message;
+    if (typeof nested === "string" && nested) return nested;
+  }
+  return String(err);
+}
+
 /** Extract the oldest valid ledger from Soroban RPC range error messages. */
 export function parseOldestLedgerFromError(err: unknown): number | null {
-  const msg = err instanceof Error ? err.message : String(err);
+  const msg = errorMessage(err);
   const rangeMatch = msg.match(/(\d+)\s*[-–]\s*(\d+)/);
   if (rangeMatch) {
     const low = Number(rangeMatch[1]);
@@ -37,7 +53,7 @@ export function parseOldestLedgerFromError(err: unknown): number | null {
 }
 
 export function isLedgerRangeError(err: unknown): boolean {
-  const msg = err instanceof Error ? err.message : String(err);
+  const msg = errorMessage(err);
   return /ledger|startLedger|oldest|retention|range|invalid.*start/i.test(msg);
 }
 

@@ -40,7 +40,7 @@ if (!issuerRootsMatch(expectedRoots, chainRoots)) {
 | ------ | ------- |
 | `validateProofPackage` | Structural + public-input validation against a policy |
 | `validatePackageStructure` | Shape-only checks on a proof package |
-| `rebuildProofPackagePublicInputs` | Recompute the 17 public inputs from a package |
+| `rebuildProofPackagePublicInputs` | Recompute the 19 public inputs from a package |
 | `assertProofPackagePublicInputsMatch` | Assert package fields rebind to expected inputs |
 | `validationPolicies` | Preset strict / lenient policies |
 | `rootsMatch` · `issuerRootsMatch` · `corridorRootsMatch` | Root drift comparison helpers |

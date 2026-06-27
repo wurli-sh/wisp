@@ -21,7 +21,10 @@ export class WispClient extends WispClientBase {
       ...(input.artifactDir ? { artifactDir: input.artifactDir } : {}),
       ...(input.zkeyPath ? { zkeyPath: input.zkeyPath } : {}),
     };
-    return proveFromPackage(input.package, cfg);
+    if (input.credentialSecret == null) {
+      throw new Error("prove requires the locally derived credentialSecret");
+    }
+    return proveFromPackage(input.package, cfg, input.credentialSecret);
   }
 }
 
@@ -30,6 +33,14 @@ export { loadConfig } from "./config.js";
 export { loadWispEnv, loadAmoebaEnv } from "./env.js";
 export { serializeSnarkjsProof } from "./prove/serialize.js";
 export { fieldDecimalToBytes32, normalizeField } from "./settle/encoding.js";
+export {
+  deriveCredentialSecret,
+  activateWalletCredential,
+  encodeSignedMessageBase64,
+  finalizeProofPackageDraft,
+  requestProofPackage,
+  UnsupportedWalletCapabilityError,
+} from "./credential.js";
 export type { ProofSettledEvent } from "@wisp_/client";
 export type {
   ChainCorridorRoots,
@@ -51,7 +62,12 @@ export { approveSacForCompliance, approveSacForComplianceWithKeypair } from "./s
 export type { ProvenTransfer } from "./prove/prover.js";
 export type { ResolvedIssuer } from "@wisp_/client";
 export { resolveIssuer, resolveIssuerFromUrl, listIssuers } from "@wisp_/client";
-export type { IssuerAdapter, IssuerWellKnown, CorridorDetail, ProofPackageRequest } from "@wisp_/client";
+export type {
+  IssuerAdapter,
+  IssuerWellKnown,
+  CorridorDetail,
+  ProofPackageRequest,
+} from "@wisp_/client";
 export { HttpIssuerAdapter, IssuerClient } from "@wisp_/client";
 export {
   validatePackage,

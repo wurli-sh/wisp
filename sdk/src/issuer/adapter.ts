@@ -1,15 +1,22 @@
-import type { CorridorOption, ProofPackage, ProofPackageRequest } from "@wisp_/js";
+import type {
+  CorridorOption,
+  ProofPackageRequest,
+  ActivateCredentialRequest,
+  ActivateCredentialResponse,
+  ActivationChallengeRequest,
+  ChallengeResponse,
+  CredentialInfo,
+  ProofPackageDraft,
+  SignedProofPackageRequest,
+} from "@wisp_/js";
 
 export interface IssuerWellKnown {
-  api_version: string;
-  protocol_version?: string;
   issuer_stellar_address: string;
   metadata_uri?: string;
   service_url?: string;
   compliance_contract_id?: string;
   verifier_contract_id?: string;
   circuit_vk_hash?: string;
-  proof_package_schema: number;
   network_passphrase?: string;
 }
 
@@ -25,10 +32,23 @@ export interface CorridorDetail {
 
 /** Minimal issuer surface for plug-and-play SDK integration. */
 export interface IssuerAdapter {
-  createProofPackage(req: ProofPackageRequest): Promise<ProofPackage>;
+  createActivationChallenge(req: ActivationChallengeRequest): Promise<ChallengeResponse>;
+  activateCredential(req: ActivateCredentialRequest): Promise<ActivateCredentialResponse>;
+  createProofPackageChallenge(req: ProofPackageRequest): Promise<ChallengeResponse>;
+  createProofPackage(req: SignedProofPackageRequest): Promise<ProofPackageDraft>;
+  getCredential(wallet: string): Promise<CredentialInfo>;
   listCorridors?(): Promise<CorridorOption[]>;
   getCorridor?(id: number): Promise<CorridorDetail>;
   getWellKnown?(): Promise<IssuerWellKnown>;
 }
 
-export type { ProofPackageRequest };
+export type {
+  ProofPackageRequest,
+  ActivateCredentialRequest,
+  ActivateCredentialResponse,
+  ActivationChallengeRequest,
+  ChallengeResponse,
+  CredentialInfo,
+  ProofPackageDraft,
+  SignedProofPackageRequest,
+};

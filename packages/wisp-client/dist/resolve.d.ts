@@ -8,7 +8,6 @@ export interface ResolvedIssuer {
     complianceId?: string;
     verifierId?: string;
     vkHash?: string;
-    protocolVersion: string;
     updatedAtLedger: number;
     enabled: boolean;
     wellKnown: IssuerWellKnown;

@@ -20,7 +20,7 @@ test("DemoIssuerClient encodes path/query values and admin authorization", { con
 
     assert.equal(
       calls[0]?.url,
-      "https://issuer.test/v1/mock-kyc/status/G%2Funsafe%20wallet?corridor_id=0&recipient=G+recipient%2F%2B",
+      "https://issuer.test/mock-kyc/status/G%2Funsafe%20wallet?corridor_id=0&recipient=G+recipient%2F%2B",
     );
     assert.equal((calls[1]?.init?.headers as Record<string, string>).Authorization, "Bearer secret token");
     assert.deepEqual(JSON.parse(String(calls[2]?.init?.body)), { corridor_id: 0 });

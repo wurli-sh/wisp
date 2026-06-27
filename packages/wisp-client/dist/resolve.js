@@ -3,9 +3,6 @@ import { getLatestIssuerRecord, listIssuerRegistryEntries } from "./roots.js";
 function normalizeUrl(url) {
     return new URL(url).toString().replace(/\/$/, "");
 }
-function protocolVersionOf(metadata) {
-    return metadata.protocol_version ?? metadata.api_version;
-}
 function assertMetadataMatchesChain(cfg, record, metadata, requestedUrl) {
     if (metadata.issuer_stellar_address !== record.issuer) {
         throw new IssuerMetadataMismatchError("Issuer well-known address does not match on-chain issuer");
@@ -15,9 +12,6 @@ function assertMetadataMatchesChain(cfg, record, metadata, requestedUrl) {
     }
     if (cfg.verifierId && metadata.verifier_contract_id && metadata.verifier_contract_id !== cfg.verifierId) {
         throw new IssuerMetadataMismatchError("Issuer well-known verifier contract does not match configured verifier contract");
-    }
-    if (protocolVersionOf(metadata) !== "2") {
-        throw new IssuerMetadataMismatchError("Issuer well-known protocol version is not Wisp v2");
     }
     const canonicalMetadataUri = normalizeUrl(record.metadata_uri);
     const declaredMetadataUri = normalizeUrl(metadata.metadata_uri ?? canonicalMetadataUri);
@@ -35,7 +29,6 @@ function assertMetadataMatchesChain(cfg, record, metadata, requestedUrl) {
         complianceId: metadata.compliance_contract_id,
         verifierId: metadata.verifier_contract_id,
         vkHash: metadata.circuit_vk_hash,
-        protocolVersion: protocolVersionOf(metadata),
         updatedAtLedger: record.updated_at_ledger,
         enabled: record.enabled,
         wellKnown: metadata,

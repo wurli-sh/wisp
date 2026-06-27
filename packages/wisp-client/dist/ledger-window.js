@@ -4,8 +4,16 @@ export function clampStartLedger(start, latestSeq) {
     const oldestRetained = Math.max(1, latestSeq - MAX_EVENT_SCAN_LEDGERS);
     return Math.max(start, oldestRetained);
 }
+function errorMessage(err) {
+    if (err instanceof Error)
+        return err.message;
+    if (err && typeof err === "object" && "message" in err) {
+        return String(err.message ?? "");
+    }
+    return String(err);
+}
 export function parseOldestLedgerFromError(err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = errorMessage(err);
     const rangeMatch = msg.match(/(\d+)\s*[-–]\s*(\d+)/);
     if (rangeMatch) {
         const low = Number(rangeMatch[1]);
@@ -27,7 +35,7 @@ export function parseOldestLedgerFromError(err) {
     return null;
 }
 export function isLedgerRangeError(err) {
-    const msg = err instanceof Error ? err.message : String(err);
+    const msg = errorMessage(err);
     return /ledger|startLedger|oldest|retention|range|invalid.*start/i.test(msg);
 }
 export async function resolveEventStartLedger(server, cfg, explicit) {

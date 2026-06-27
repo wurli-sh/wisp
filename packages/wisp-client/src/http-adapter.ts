@@ -1,4 +1,14 @@
-import type { CorridorOption, ProofPackage, ProofPackageRequest } from "@wisp_/js";
+import type {
+  CorridorOption,
+  ProofPackageRequest,
+  ActivateCredentialRequest,
+  ActivateCredentialResponse,
+  ActivationChallengeRequest,
+  ChallengeResponse,
+  CredentialInfo,
+  ProofPackageDraft,
+  SignedProofPackageRequest,
+} from "@wisp_/js";
 import type { CorridorDetail, IssuerAdapter, IssuerCapabilities, IssuerWellKnown } from "./adapter.js";
 
 const RETRY_STATUSES = new Set([408, 429, 502, 503, 504]);
@@ -68,8 +78,53 @@ export class HttpIssuerAdapter implements IssuerAdapter {
     };
   }
 
-  async createProofPackage(input: ProofPackageRequest): Promise<ProofPackage> {
-    const res = await issuerFetch(`${this.baseUrl}/v1/proof-packages`, {
+  async createActivationChallenge(
+    input: ActivationChallengeRequest,
+  ): Promise<ChallengeResponse> {
+    const res = await issuerFetch(`${this.baseUrl}/credentials/activation-challenges`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`issuer activation-challenge: HTTP ${res.status}${text ? ` — ${text}` : ""}`);
+    }
+    return res.json() as Promise<ChallengeResponse>;
+  }
+
+  async activateCredential(
+    input: ActivateCredentialRequest,
+  ): Promise<ActivateCredentialResponse> {
+    const res = await issuerFetch(`${this.baseUrl}/credentials/activate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`issuer activate: HTTP ${res.status}${text ? ` — ${text}` : ""}`);
+    }
+    return res.json() as Promise<ActivateCredentialResponse>;
+  }
+
+  async createProofPackageChallenge(
+    input: ProofPackageRequest,
+  ): Promise<ChallengeResponse> {
+    const res = await issuerFetch(`${this.baseUrl}/proof-packages/challenges`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`issuer proof challenge: HTTP ${res.status}${text ? ` — ${text}` : ""}`);
+    }
+    return res.json() as Promise<ChallengeResponse>;
+  }
+
+  async createProofPackage(input: SignedProofPackageRequest): Promise<ProofPackageDraft> {
+    const res = await issuerFetch(`${this.baseUrl}/proof-packages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
@@ -78,17 +133,28 @@ export class HttpIssuerAdapter implements IssuerAdapter {
       const text = await res.text();
       throw new Error(`issuer proof-packages: HTTP ${res.status}${text ? ` — ${text}` : ""}`);
     }
-    return res.json() as Promise<ProofPackage>;
+    return res.json() as Promise<ProofPackageDraft>;
+  }
+
+  async getCredential(wallet: string): Promise<CredentialInfo> {
+    const res = await issuerFetch(
+      `${this.baseUrl}/credentials/${encodeURIComponent(wallet)}`,
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`issuer credential: HTTP ${res.status}${text ? ` — ${text}` : ""}`);
+    }
+    return res.json() as Promise<CredentialInfo>;
   }
 
   async listCorridors(): Promise<CorridorOption[]> {
-    const res = await issuerFetch(`${this.baseUrl}/v1/corridors`);
+    const res = await issuerFetch(`${this.baseUrl}/corridors`);
     if (!res.ok) throw new Error(`issuer corridors: HTTP ${res.status}`);
     return res.json() as Promise<CorridorOption[]>;
   }
 
   async getCorridor(id: number): Promise<CorridorDetail> {
-    const res = await issuerFetch(`${this.baseUrl}/v1/corridor/${id}`);
+    const res = await issuerFetch(`${this.baseUrl}/corridors/${id}`);
     if (!res.ok) throw new Error(`issuer corridor: HTTP ${res.status}`);
     return res.json() as Promise<CorridorDetail>;
   }
@@ -99,11 +165,6 @@ export class HttpIssuerAdapter implements IssuerAdapter {
     return res.json() as Promise<IssuerWellKnown>;
   }
 
-  async getMerklePath(wallet: string): Promise<unknown> {
-    const res = await issuerFetch(`${this.baseUrl}/v1/merkle-path/${wallet}`);
-    if (!res.ok) throw new Error(`issuer merkle-path: HTTP ${res.status}`);
-    return res.json();
-  }
 }
 
 /** @deprecated Use HttpIssuerAdapter */

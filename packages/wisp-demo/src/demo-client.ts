@@ -1,4 +1,3 @@
-import type { DemoTransferRequest, ProofPackage } from "@wisp_/js";
 import { HttpIssuerAdapter, issuerFetch } from "@wisp_/client";
 
 export interface MockKycChallengeResponse {
@@ -78,29 +77,8 @@ export class DemoIssuerClient extends HttpIssuerAdapter {
     };
   }
 
-  async getDemoTransfer(): Promise<ProofPackage> {
-    const res = await issuerFetch(`${this.baseURL}/v1/fixtures/demo-transfer`);
-    if (!res.ok) throw new Error(`issuer demo-transfer: HTTP ${res.status}`);
-    return res.json() as Promise<ProofPackage>;
-  }
-
-  async createDemoTransfer(input: DemoTransferRequest): Promise<ProofPackage> {
-    const res = await issuerFetch(`${this.baseURL}/v1/fixtures/demo-transfer`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(
-        `issuer create demo-transfer: HTTP ${res.status}${text ? ` — ${text}` : ""}`,
-      );
-    }
-    return res.json() as Promise<ProofPackage>;
-  }
-
   async requestMockKycChallenge(wallet: string): Promise<MockKycChallengeResponse> {
-    const res = await issuerFetch(`${this.baseURL}/v1/mock-kyc/challenge`, {
+    const res = await issuerFetch(`${this.baseURL}/mock-kyc/challenge`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ wallet }),
@@ -114,7 +92,7 @@ export class DemoIssuerClient extends HttpIssuerAdapter {
 
   async submitMockKyc(input: MockKycSubmitRequest): Promise<MockKycSubmitResponse> {
     const res = await issuerFetch(
-      `${this.baseURL}/v1/mock-kyc/submit`,
+      `${this.baseURL}/mock-kyc/submit`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -135,7 +113,7 @@ export class DemoIssuerClient extends HttpIssuerAdapter {
     adminToken: string,
   ): Promise<CorridorDestinationRecord> {
     const res = await issuerFetch(
-      `${this.baseURL}/v1/admin/corridors/${corridorId}/destinations`,
+      `${this.baseURL}/admin/corridors/${corridorId}/destinations`,
       {
         method: "POST",
         headers: {
@@ -158,7 +136,7 @@ export class DemoIssuerClient extends HttpIssuerAdapter {
     corridorId?: number,
   ): Promise<PublishRootsResponse> {
     const res = await issuerFetch(
-      `${this.baseURL}/v1/admin/roots/publish`,
+      `${this.baseURL}/admin/roots/publish`,
       {
         method: "POST",
         headers: {
@@ -189,7 +167,7 @@ export class DemoIssuerClient extends HttpIssuerAdapter {
     }
     const query = params.toString();
     const res = await issuerFetch(
-      `${this.baseURL}/v1/mock-kyc/status/${encodeURIComponent(wallet)}${query ? `?${query}` : ""}`,
+      `${this.baseURL}/mock-kyc/status/${encodeURIComponent(wallet)}${query ? `?${query}` : ""}`,
     );
     if (!res.ok) {
       const text = await res.text();

@@ -1,6 +1,6 @@
 # @wisp_/demo
 
-Demo issuer helpers and mock KYC clients for Wisp. Use these to fetch demo proof packages and exercise a mock KYC lifecycle against the reference issuer-service — useful for local development, walkthroughs, and tests.
+Mock KYC and demo administration helpers for the reference Wisp issuer service.
 
 > Demo / development helper only. Production integrations use [`@wisp_/client`](../wisp-client/README.md)'s `HttpIssuerAdapter` against a real issuer API.
 >
@@ -19,9 +19,6 @@ import { DemoIssuerClient } from "@wisp_/demo";
 
 const issuer = new DemoIssuerClient("http://127.0.0.1:3000");
 
-// Fetch a ready-to-prove demo transfer package
-const pkg = await issuer.getDemoTransfer();
-
 // Drive the mock KYC lifecycle
 const challenge = await issuer.requestMockKycChallenge(wallet);
 const submitted = await issuer.submitMockKyc({ /* … */ });
@@ -32,9 +29,9 @@ const status = await issuer.getMockKycStatus(wallet);
 
 | Export | Purpose |
 | ------ | ------- |
-| `DemoIssuerClient` | Demo proof packages + mock KYC lifecycle client |
+| `DemoIssuerClient` | Mock KYC + demo administration client |
 
-Methods: `getDemoTransfer`, `createDemoTransfer`, `requestMockKycChallenge`, `submitMockKyc`, `getMockKycStatus`, `addCorridorDestination`, `publishIssuerRoots`.
+Methods: `requestMockKycChallenge`, `submitMockKyc`, `getMockKycStatus`, `addCorridorDestination`, `publishIssuerRoots`.
 
 Types: `MockKycChallengeResponse`, `MockKycStatusResponse`, `MockKycSubmitRequest`, `MockKycSubmitResponse`, `MockKycLifecycleStatus`, `PublishRootsResponse`, `CorridorDestinationRecord`, …
 
@@ -50,7 +47,9 @@ export ISSUER_PUBLIC_KEY=…
 cargo run -p issuer-service
 ```
 
-This package expects the demo fixture and mock-KYC endpoints from the reference issuer-service. It is not a production issuer client.
+This package expects the mock-KYC endpoints from the reference issuer-service. Mock-KYC is **only available in non-production mode** (`ISSUER_MODE` ≠ `production`). In production mode the issuer returns `503 SERVICE_UNAVAILABLE` for mock-KYC and provider webhook routes.
+
+Proof issuance uses the inherited canonical `HttpIssuerAdapter` methods (credential activation + challenged proof packages).
 
 ## Build from source
 

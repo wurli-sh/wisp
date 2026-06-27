@@ -5,6 +5,13 @@ export type {
   IssuerCapabilities,
   IssuerWellKnown,
   ProofPackageRequest,
+  ActivateCredentialRequest,
+  ActivateCredentialResponse,
+  ActivationChallengeRequest,
+  ChallengeResponse,
+  CredentialInfo,
+  ProofPackageDraft,
+  SignedProofPackageRequest,
 } from "./adapter.js";
 export { HttpIssuerAdapter, IssuerClient, issuerFetch } from "./http-adapter.js";
 export {

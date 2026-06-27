@@ -328,10 +328,8 @@ test("runIssuerConformance happy path", async () => {
         issuer: {
           async getWellKnown() {
             return {
-              api_version: "1.0",
               issuer_stellar_address: "GISSUER",
               circuit_vk_hash: "vk",
-              proof_package_schema: 1,
             };
           },
           async createProofPackage() {
@@ -356,6 +354,17 @@ test("runIssuerConformance happy path", async () => {
         async simulateSettle() {
           return { ok: true };
         },
+      },
+      async prepareProofPackage() {
+        return {
+          package: {
+            transfer: { corridor_id: 1, amount: "10000000" },
+            roots: {},
+            paths: {},
+            public_inputs: { nullifier: "9" },
+          } as never,
+          credentialSecret: 1n,
+        };
       },
     },
   );
@@ -413,9 +422,7 @@ test("runIssuerConformance surfaces invalid proof package validation failures", 
             issuer: {
               async getWellKnown() {
                 return {
-                  api_version: "1.0",
                   issuer_stellar_address: "GISSUER",
-                  proof_package_schema: 1,
                 };
               },
               async createProofPackage() {
@@ -431,6 +438,9 @@ test("runIssuerConformance surfaces invalid proof package validation failures", 
             async simulateSettle() {
               return {};
             },
+          },
+          async prepareProofPackage() {
+            return { package: {} as never, credentialSecret: 1n };
           },
         },
       ),
@@ -453,9 +463,7 @@ test("runIssuerConformance surfaces chain validation failures", async () => {
             issuer: {
               async getWellKnown() {
                 return {
-                  api_version: "1.0",
                   issuer_stellar_address: "GISSUER",
-                  proof_package_schema: 1,
                 };
               },
               async createProofPackage() {
@@ -471,6 +479,9 @@ test("runIssuerConformance surfaces chain validation failures", async () => {
             async simulateSettle() {
               return {};
             },
+          },
+          async prepareProofPackage() {
+            return { package: {} as never, credentialSecret: 1n };
           },
         },
       ),

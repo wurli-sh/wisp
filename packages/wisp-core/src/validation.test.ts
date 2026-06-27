@@ -23,8 +23,12 @@ function loadFixturePackage(): ProofPackage {
   const filler = Array.from({ length: depth }, () => "0");
   const indices = Array.from({ length: depth }, () => 0);
   return {
-    schema_version: 1,
-    credential: { wallet: demo.sender_hex, jurisdiction: "US", credential_expiry: 2000000000 },
+    credential: {
+      wallet: demo.sender_hex,
+      jurisdiction: "US",
+      jurisdiction_code: 840,
+      credential_expiry: 2000000000,
+    },
     transfer: {
       asset: demo.asset_hex,
       sender: demo.sender_hex,
@@ -55,7 +59,6 @@ function loadFixturePackage(): ProofPackage {
       dest_address_indices: indices,
     },
     witness_private: {
-      credential_secret: demo.credential_secret,
       jurisdiction: demo.jurisdiction,
       credential_expiry: demo.credential_expiry,
     },
@@ -95,7 +98,7 @@ test("validatePackageStructure rejects every malformed path shape", () => {
   }
 });
 
-test("validatePackageStructure rejects malformed roots, public inputs, and schema versions", () => {
+test("validatePackageStructure rejects malformed roots, public inputs, and leaked secrets", () => {
   const root = loadFixturePackage();
   root.roots!.merkle_root = "0x12";
   assert.throws(() => validatePackageStructure(root), /roots\.merkle_root must be a decimal/);
@@ -104,7 +107,7 @@ test("validatePackageStructure rejects malformed roots, public inputs, and schem
   input.public_inputs!.amount = "1.5";
   assert.throws(() => validatePackageStructure(input), /public_inputs\.amount must be a decimal/);
 
-  const schema = loadFixturePackage();
-  schema.schema_version = 2;
-  assert.throws(() => validatePackageStructure(schema), /unsupported ProofPackage schema_version/);
+  const leaked = loadFixturePackage();
+  leaked.witness_private!.credential_secret = "secret";
+  assert.throws(() => validatePackageStructure(leaked), /must not contain credential_secret/);
 });

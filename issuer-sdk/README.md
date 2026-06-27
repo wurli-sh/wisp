@@ -80,6 +80,7 @@ Validate your issuer HTTP API against the Wisp spec:
 ```ts
 import { runIssuerConformance } from "@wisp_/issuer-sdk";
 
+const walletSigner = { publicKey: "G...", signMessage: async (msg) => ... };
 const result = await runIssuerConformance({
   issuerUrl: "http://127.0.0.1:3000",
   issuerPublicKey: process.env.ISSUER_PUBLIC_KEY!,
@@ -87,8 +88,10 @@ const result = await runIssuerConformance({
   recipient: "G...",
   corridorId: 1,
   simulateSettle: false,
-});
+}, { walletSigner });
 ```
+
+Conformance now requires a `walletSigner` (or `prepareProofPackage`) for credential activation and proof package request. The conformance test activates the wallet credential, requests a challenged proof package, and finalizes the nullifier client-side.
 
 CLI: `pnpm test:issuer-conformance` (from repo root).
 
@@ -110,8 +113,35 @@ Then use `HttpIssuerAdapter` for real issuer APIs and `DemoIssuerClient` only fo
 | ------ | ------- |
 | `WispIssuerClient` | On-chain issuer/corridor/roots mutations |
 | `loadIssuerConfig` | Env-backed config |
+| `computeIssuerRoots` | Derive the six roots from your KYC dataset in pure TS (no Rust service) |
+| `defaultJurisdictionCode` | Country → numeric jurisdiction code (reference mapping) |
 | `normalizeRootHashToBytes` | Root hash encoding for contract calls |
 | `runIssuerConformance` | HTTP API conformance suite |
+
+### Bring-your-own-KYC roots
+
+If you don't run the reference Rust `issuer-service`, `computeIssuerRoots`
+turns a KYC dataset into the canonical roots `publishRoots` expects — Poseidon2
+(t=4), depth-20 trees, byte-for-byte compatible with the circuit and contract:
+
+```ts
+import { computeIssuerRoots } from "@wisp_/issuer-sdk";
+
+const roots = computeIssuerRoots({
+  members: [{ wallet: "G…", credentialCommitment: "123…", jurisdictionCode: 840 }],
+  destinations: ["G…"], // corridor's approved recipient registry
+  corridor: { id: 1, sourceCountry: "US", enabled: true, travelRuleThreshold: 0 },
+});
+await issuer.publishRoots({ corridorId: 1, metadataUri, ...roots }, signer);
+```
+
+`members` are your activated credentials (each wallet + the commitment it
+registered + its jurisdiction code). The sanctions root is the canonical
+empty-tree root; populating a real sanctions SMT with known-bad entries is
+intentionally out of scope — wire your screening provider into that tree before
+production.
+
+`prove()` now requires `credentialSecret: bigint` — the locally-derived secret from the wallet signature. The issuer returns a `ProofPackageDraft` with a blank nullifier; `finalizeProofPackageDraft` fills it client-side.
 
 Root inputs may be a 32-byte `Buffer`/`Uint8Array`, 64-character hex, or a canonical
 non-negative BN254 field decimal. Decimal values greater than or equal to the field

@@ -12,8 +12,9 @@ export interface BrowserProveUrls {
 export async function proveFromPackageBrowser(
   pkg: ProofPackage,
   urls: BrowserProveUrls,
+  credentialSecret: bigint,
 ): Promise<ProvenTransfer> {
-  const witnessInput = proofPackageToWitnessInput(pkg);
+  const witnessInput = proofPackageToWitnessInput(pkg, credentialSecret);
   const snarkjs = await import("snarkjs");
   const { proof, publicSignals } = await snarkjs.groth16.fullProve(
     witnessInput,

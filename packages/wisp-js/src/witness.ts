@@ -1,6 +1,7 @@
 import {
   addressToLimbs,
   computeCorridorConfigHash,
+  computeCredentialCommitment,
   computeNullifier,
 } from "./protocol.js";
 import {
@@ -52,9 +53,18 @@ export function buildWitnessInput(
   const senderLimbs = addressToLimbs(d.sender);
   const recipientLimbs = addressToLimbs(d.recipient);
   const assetLimbs = addressToLimbs(d.asset);
+  const issuerLimbs = addressToLimbs(d.issuer ?? d.sender);
   const timestamp = d.epoch * BigInt(protocol.EPOCH_LEN_SECS ?? EPOCH_LEN_SECS);
 
-  const senderLeaf = poseidon2Hash2(senderLimbs.lo, senderLimbs.hi);
+  const senderLeaf = computeCredentialCommitment({
+    issuerLo: issuerLimbs.lo,
+    issuerHi: issuerLimbs.hi,
+    senderLo: senderLimbs.lo,
+    senderHi: senderLimbs.hi,
+    credentialSecret: d.credential_secret,
+    jurisdiction: d.jurisdiction,
+    credentialExpiry: d.credential_expiry,
+  });
   const membershipPath = getMerklePathForIndex(0);
   const merkleRoot = merkleRootForLeafAtIndex(senderLeaf, 0);
 
@@ -75,6 +85,8 @@ export function buildWitnessInput(
 
   const nullifier = computeNullifier({
       credentialSecret: d.credential_secret,
+    issuerLo: issuerLimbs.lo,
+    issuerHi: issuerLimbs.hi,
     senderLo: senderLimbs.lo,
     senderHi: senderLimbs.hi,
     assetLo: assetLimbs.lo,
@@ -111,6 +123,8 @@ export function buildWitnessInput(
     corridor_config_hash: fieldToJson(corridorConfigHash),
     source_jurisdiction_root: fieldToJson(sourceJurisdictionRoot),
     dest_address_root: fieldToJson(destAddressRoot),
+    issuer_lo: fieldToJson(issuerLimbs.lo),
+    issuer_hi: fieldToJson(issuerLimbs.hi),
     credential_secret: fieldToJson(d.credential_secret),
     transfer_nonce: fieldToJson(d.transfer_nonce),
     path: fieldsToJson(membershipPath.path),
@@ -132,12 +146,19 @@ export function buildWitnessInput(
 /**
  * Map issuer ProofPackage JSON → Circom witness input (no Merkle re-derivation).
  */
-export function proofPackageToWitnessInput(pkg: ProofPackage): WitnessInput {
+export function proofPackageToWitnessInput(
+  pkg: ProofPackage,
+  credentialSecret?: string | number | bigint,
+): WitnessInput {
   const wp = pkg.witness_private;
   if (!wp) {
     throw new Error("ProofPackage missing witness_private");
   }
   const pi = pkg.public_inputs ?? {};
+  const resolvedCredentialSecret = credentialSecret ?? wp.credential_secret;
+  if (resolvedCredentialSecret == null) {
+    throw new Error("credential_secret must be supplied locally");
+  }
   const pick = (name: string, fallback?: string | number | null): string => {
     const v = pi[name];
     if (v != null) return String(v);
@@ -169,7 +190,9 @@ export function proofPackageToWitnessInput(pkg: ProofPackage): WitnessInput {
       pkg.roots?.source_jurisdiction_root,
     ),
     dest_address_root: pick("dest_address_root", pkg.roots?.dest_address_root),
-    credential_secret: String(wp.credential_secret),
+    issuer_lo: pick("issuer_lo"),
+    issuer_hi: pick("issuer_hi"),
+    credential_secret: String(resolvedCredentialSecret),
     transfer_nonce: String(wp.transfer_nonce ?? 0),
     path: pkg.paths.membership,
     path_indices: pkg.paths.membership_indices,
