@@ -14,8 +14,10 @@ services:
         value: "1"
       - key: WISP_ENV
         value: production
+      - key: ISSUER_MODE
+        value: production
       - key: WISP_FIXTURE_PROFILE
-        value: testnet
+        value: disabled
       - key: WISP_FIXTURES_DIR
         value: /app/bindings/fixtures
       - key: KYC_MODE
@@ -27,13 +29,13 @@ services:
       - key: HORIZON_URL
         value: https://horizon-testnet.stellar.org
       - key: PROVIDER_WEBHOOK_SECRETS
-        value: fixture=demo-fixture-secret
+        sync: false
       - key: VERIFIER_CONTRACT_ID
-        value: CBOQVGV7SIFNBDM26GFFAHWQ6DKUBAX4K2OR44KEWJJCYQH4SJL3G2AG
+        value: CAEJ63XT46UUNCJNZS5IWVLQQSOV3FHCEHJMFJZHAYA4BTBIWQAJKZZ2
       - key: COMPLIANCE_CONTRACT_ID
-        value: CBN7EJWN6BDGBAKT3MMSHLMTXCKDLXRSPD2XMQYSR3KWCUBRU5PT5CH4
+        value: CDISQDZ6MUT5KCSP4WRPWJAETN7XA7XOXEL5W2DZ6LZ35USNY3RC6OJN
       - key: EXPECTED_VK_HASH
-        value: 3325bfff94f2c530d199c35575dc45cd3e27f752d9402d17e6d64341d3f3f6ae
+        value: 3ea87034b94f427de47c7884cee93c3dea107d579a6b90e04b7343ebac222319
       - key: ISSUER_PUBLIC_KEY
         value: GA2R4CVM7W2R62S7ZXTPPMSPAUPSSHAS2VRI4BHUPALAQGQDQLVDY7BX
       - key: ISSUER_PUBLIC_URL
@@ -43,6 +45,6 @@ services:
       # Set in Render dashboard (secrets):
       # SUPABASE_DB_URL — Session pooler URI (not db.*.supabase.co — IPv6 fails on Render)
       # Supabase → Connect → Session pooler → URI + ?sslmode=require
-      # ISSUER_API_TOKEN — Bearer token for /v1/admin/*
+      # ISSUER_API_TOKEN — Bearer token for /admin/*
       # ISSUER_SECRET_KEY — wisp-issuer Stellar secret (root publish); or PUBLISH_SOURCE_ACCOUNT
       # ADMIN_PUBLIC_KEY — amoeba-admin G-address (optional, for admin-signed publish)

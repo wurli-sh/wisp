@@ -26,7 +26,7 @@ PY
 SENDER_HEX="$(read_fixture sender_hex)"
 CORRIDOR_ID="$(read_fixture corridor_id)"
 
-curl -sf -X POST "http://${ADDR}/v1/provider/webhooks/fixture" \
+curl -sf -X POST "http://${ADDR}/provider/webhooks/fixture" \
   -H "Content-Type: application/json" \
   -H "x-webhook-secret: ${FIXTURE_WEBHOOK_SECRET:-demo-fixture-secret}" \
   -d "$(python3 - <<PY
@@ -55,7 +55,7 @@ corridor_id = data["corridor_id"]
 for address in data.get("addresses", []):
     body = json.dumps({"address": address, "enabled": True}).encode()
     req = urllib.request.Request(
-        f"http://{addr}/v1/admin/corridors/{corridor_id}/destinations",
+        f"http://{addr}/admin/corridors/{corridor_id}/destinations",
         data=body,
         headers={
             "Content-Type": "application/json",
@@ -79,7 +79,7 @@ fi
 echo "[seed] ok sender + destinations corridor=${CORRIDOR_ID}"
 
 if [[ -n "${COMPLIANCE_CONTRACT_ID:-${COMPLIANCE_ID:-}}" ]]; then
-  RESP="$(curl -sf -X POST "http://${ADDR}/v1/admin/roots/publish" \
+  RESP="$(curl -sf -X POST "http://${ADDR}/admin/roots/publish" \
     -H "Authorization: Bearer ${TOKEN}" \
     -H "Content-Type: application/json" \
     -d "{\"corridor_id\": ${CORRIDOR_ID}}")"

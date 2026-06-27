@@ -18,15 +18,22 @@ if ! command -v psql >/dev/null 2>&1; then
 fi
 
 echo "migrate-issuer-db: applying migrations from ${MIGRATIONS_DIR}"
+
+# Auto-discover migrations in lexicographic order so new files (e.g. 004_*, 005_*)
+# are applied without editing this script. Migrations are idempotent
+# (`create table if not exists`), so re-running is safe.
+shopt -s nullglob
+MIGRATIONS=("${MIGRATIONS_DIR}"/[0-9]*.sql)
+shopt -u nullglob
+if [[ "${#MIGRATIONS[@]}" -eq 0 ]]; then
+  echo "migrate-issuer-db: no migrations found in ${MIGRATIONS_DIR}" >&2
+  exit 1
+fi
+IFS=$'\n' MIGRATIONS=($(sort <<<"${MIGRATIONS[*]}")); unset IFS
+
 MIGRATE_FAILED=0
-for migration in \
-  "${MIGRATIONS_DIR}/001_supabase_issuer.sql" \
-  "${MIGRATIONS_DIR}/002_mock_kyc_challenges.sql" \
-  "${MIGRATIONS_DIR}/003_root_snapshots_compliance_contract.sql"; do
-  if [[ ! -f "${migration}" ]]; then
-    echo "migrate-issuer-db: missing migration: ${migration}" >&2
-    exit 1
-  fi
+for migration in "${MIGRATIONS[@]}"; do
+  echo "migrate-issuer-db: applying $(basename "${migration}")"
   if ! PGOPTIONS='-c client_min_messages=warning' psql "${DB_URL}" -v ON_ERROR_STOP=1 -q -f "${migration}"; then
     MIGRATE_FAILED=1
     break

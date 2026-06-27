@@ -66,7 +66,7 @@ fi
 "${ROOT}/scripts/dev/seed-testnet-issuer.sh"
 
 BODY="${PUBLISH_ROOTS_BODY:-{\"corridor_id\":1}}"
-RESP="$(curl -sf -X POST "http://${ADDR}/v1/admin/roots/publish" \
+RESP="$(curl -sf -X POST "http://${ADDR}/admin/roots/publish" \
   -H "Authorization: Bearer ${ISSUER_API_TOKEN}" \
   -H "Content-Type: application/json" \
   -d "${BODY}")"

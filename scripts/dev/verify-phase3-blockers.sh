@@ -101,12 +101,12 @@ curl -sf "http://${ADDR}/health" | grep -q '"status":"ok"'
 
 code1=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
   -H "Authorization: Bearer ${ISSUER_API_TOKEN}" \
-  "http://${ADDR}/v1/admin/roots/publish")
+  "http://${ADDR}/admin/roots/publish")
 [[ "$code1" == "200" ]] || { echo "first publish failed: HTTP $code1"; exit 1; }
 
 code2=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
   -H "Authorization: Bearer ${ISSUER_API_TOKEN}" \
-  "http://${ADDR}/v1/admin/roots/publish")
+  "http://${ADDR}/admin/roots/publish")
 [[ "$code2" == "200" ]] || { echo "second publish failed (G1 auth?): HTTP $code2"; exit 1; }
 
 echo ""

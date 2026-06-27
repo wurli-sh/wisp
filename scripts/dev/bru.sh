@@ -43,7 +43,14 @@ export WEB_AUTH_DOMAIN="${WEB_AUTH_DOMAIN:-localhost}"
 export HORIZON_URL="${HORIZON_URL:-https://horizon-testnet.stellar.org}"
 export KYC_MODE="${KYC_MODE:-sep10}"
 export RUST_LOG="${RUST_LOG:-issuer_service=info,tower_http=warn}"
-export PROVIDER_WEBHOOK_SECRETS="${PROVIDER_WEBHOOK_SECRETS:-fixture=demo-fixture-secret}"
+# The local seed step (seed-testnet-issuer.sh) posts to the `fixture` provider
+# webhook, so ensure that secret is always present without clobbering any
+# operator-provided provider secrets (e.g. persona/sumsub from .env).
+export FIXTURE_WEBHOOK_SECRET="${FIXTURE_WEBHOOK_SECRET:-demo-fixture-secret}"
+if [[ "${PROVIDER_WEBHOOK_SECRETS:-}" != *"fixture="* ]]; then
+  PROVIDER_WEBHOOK_SECRETS="${PROVIDER_WEBHOOK_SECRETS:+${PROVIDER_WEBHOOK_SECRETS},}fixture=${FIXTURE_WEBHOOK_SECRET}"
+fi
+export PROVIDER_WEBHOOK_SECRETS
 
 REQUIRE_DB=0
 if [[ "${ISSUER_REQUIRE_DB:-}" == "1" || "${WISP_ENV:-}" == "production" || -n "${RENDER:-}" ]]; then
@@ -75,6 +82,30 @@ VITE_WISP_DEMO_FIXTURE_URL=/fixtures/demo-transfer-testnet.json
 EOF
 }
 sync_frontend_env
+
+# Keep the browser-served circuit artifacts in lock-step with the compiled
+# circuit. Without this the frontend can load a stale wasm/zkey from a previous
+# circuit revision, producing witness errors like "Signal issuer_lo not found".
+sync_circuit_artifacts() {
+  local artifacts="${ROOT}/circuits/circom/artifacts"
+  local public_circuits="${ROOT}/frontend/public/circuits"
+  mkdir -p "${public_circuits}"
+  local pairs=(
+    "${artifacts}/compliance_corridor_js/compliance_corridor.wasm|${public_circuits}/compliance_corridor.wasm"
+    "${artifacts}/compliance_corridor_final.zkey|${public_circuits}/compliance_corridor_final.zkey"
+  )
+  local entry src dst
+  for entry in "${pairs[@]}"; do
+    src="${entry%%|*}"
+    dst="${entry##*|}"
+    [[ -f "${src}" ]] || continue
+    if [[ ! -f "${dst}" ]] || [[ "${src}" -nt "${dst}" ]]; then
+      cp "${src}" "${dst}"
+      log_bru "synced circuit artifact $(basename "${dst}")"
+    fi
+  done
+}
+sync_circuit_artifacts
 
 if [[ -z "${COMPLIANCE_CONTRACT_ID}" ]]; then
   echo "[bru] COMPLIANCE_CONTRACT_ID missing — run bootstrap-testnet-demo.sh" >&2

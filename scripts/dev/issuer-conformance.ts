@@ -132,7 +132,7 @@ async function main(): Promise<void> {
     simulationPublicKey: env.SENDER_PUBLIC_KEY,
   });
   const wellKnown = result.wellKnown;
-  console.log("   api_version:", wellKnown.api_version);
+  console.log("   issuer:", wellKnown.issuer_stellar_address);
   console.log("   issuer:", wellKnown.issuer_stellar_address);
   console.log("   validatePackage: PASS");
   if (result.proven) {

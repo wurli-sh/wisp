@@ -28,7 +28,7 @@ if [[ -z "${VERIFIER_ID:-}" ]]; then
 fi
 
 if [[ -z "${REGISTRATION_TOKEN}" ]]; then
-  echo "ERROR: REGISTRATION_TOKEN not set. Export REGISTRATION_TOKEN or SAC_CONTRACT_ID for v2 issuer registration fees."
+  echo "ERROR: REGISTRATION_TOKEN not set. Export REGISTRATION_TOKEN or SAC_CONTRACT_ID for issuer registration fees."
   exit 1
 fi
 
@@ -37,11 +37,24 @@ echo "Deploy compliance (${NETWORK}) verifier=${VERIFIER_ID}"
 cd "$ROOT"
 stellar contract build --package compliance
 
-VK_HASH_RAW=$(stellar contract invoke \
-  --id "$VERIFIER_ID" \
-  --source-account "$SOURCE" \
-  --network "$NETWORK" \
-  -- vk_hash | tail -1)
+VK_HASH_RAW=""
+for attempt in 1 2 3 4 5; do
+  if vk_out=$(stellar contract invoke \
+    --id "$VERIFIER_ID" \
+    --source-account "$SOURCE" \
+    --network "$NETWORK" \
+    -- vk_hash 2>&1); then
+    VK_HASH_RAW=$(echo "$vk_out" | tail -1)
+    break
+  fi
+  if [[ "$attempt" -eq 5 ]]; then
+    echo "ERROR: verifier vk_hash read failed after ${attempt} attempts:" >&2
+    echo "$vk_out" >&2
+    exit 1
+  fi
+  echo "vk_hash read attempt ${attempt} failed, retrying in ${attempt}s…" >&2
+  sleep "$attempt"
+done
 
 VK_HASH=$(python3 "$SCRIPT_DIR/ceremony_lib.py" normalize-vk-hash "$VK_HASH_RAW")
 
@@ -55,17 +68,37 @@ COMPLIANCE_ID=$(stellar contract deploy \
   --source-account "$SOURCE" \
   --network "$NETWORK" | tail -1)
 
-stellar contract invoke \
-  --id "$COMPLIANCE_ID" \
-  --source-account "$ADMIN" \
-  --network "$NETWORK" \
-  -- initialize \
-  --admin "$ADMIN" \
-  --treasury "$TREASURY" \
-  --registration_token "$REGISTRATION_TOKEN" \
-  --registration_fee "$REGISTRATION_FEE" \
-  --verifier "$VERIFIER_ID" \
-  --expected_vk_hash "$VK_HASH_RAW"
+# The deploy tx above may not have settled when `initialize` simulates, which
+# surfaces as `Error(Storage, MissingValue)`. Retry with backoff, and treat an
+# already-initialized contract (#1 / AlreadyInitialized) as success so the step
+# is idempotent.
+for attempt in 1 2 3 4 5; do
+  if init_out=$(stellar contract invoke \
+    --id "$COMPLIANCE_ID" \
+    --source-account "$ADMIN" \
+    --network "$NETWORK" \
+    -- initialize \
+    --admin "$ADMIN" \
+    --treasury "$TREASURY" \
+    --registration_token "$REGISTRATION_TOKEN" \
+    --registration_fee "$REGISTRATION_FEE" \
+    --verifier "$VERIFIER_ID" \
+    --expected_vk_hash "$VK_HASH_RAW" 2>&1); then
+    echo "$init_out"
+    break
+  fi
+  if grep -q 'Error(Contract, #1)\|AlreadyInitialized' <<<"$init_out"; then
+    echo "compliance already initialized"
+    break
+  fi
+  if [[ "$attempt" -eq 5 ]]; then
+    echo "ERROR: compliance initialize failed after ${attempt} attempts:" >&2
+    echo "$init_out" >&2
+    exit 1
+  fi
+  echo "initialize attempt ${attempt} failed (deploy settling?), retrying in ${attempt}s…" >&2
+  sleep "$attempt"
+done
 
 COMPLIANCE_DEPLOY_LEDGER=""
 if command -v jq >/dev/null 2>&1 && command -v curl >/dev/null 2>&1; then

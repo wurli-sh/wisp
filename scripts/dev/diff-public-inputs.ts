@@ -13,7 +13,6 @@ import {
 } from "@wisp_/js";
 import {
   WispClient,
-  DemoIssuerClient,
   getLatestChainRoots,
   loadWispEnv,
   rootsMatch,
@@ -181,7 +180,7 @@ async function fetchComputedRoots(
   const headers: Record<string, string> = {};
   if (token) headers.Authorization = `Bearer ${token}`;
   const res = await fetch(
-    `${issuerUrl.replace(/\/$/, "")}/v1/admin/roots/computed?corridor_id=${corridorId}`,
+    `${issuerUrl.replace(/\/$/, "")}/admin/roots/computed?corridor_id=${corridorId}`,
     { headers },
   );
   if (!res.ok) {
@@ -263,17 +262,9 @@ async function main(): Promise<void> {
   if (cli.packagePath) {
     pkg = loadJson<ProofPackage>(cli.packagePath);
   } else if (cli.fetch) {
-    if (!cli.sender || !cli.recipient || !cli.amount) {
-      throw new Error("--fetch requires --sender, --recipient, and --amount");
-    }
-    pkg = await new DemoIssuerClient(cli.issuerUrl).createDemoTransfer({
-      sender_strkey: cli.sender,
-      recipient_strkey: cli.recipient,
-      amount: cli.amount,
-      corridor_id: cli.corridorId,
-      source_country: "US",
-      dest_country: "MX",
-    });
+    throw new Error(
+      "--fetch was removed because proof packages require wallet-signed challenges; pass --package from the SDK flow",
+    );
   } else {
     throw new Error("provide --package <path> or --fetch with transfer fields\n\n" + usage());
   }

@@ -7,7 +7,7 @@ TOKEN="${ISSUER_API_TOKEN:?ISSUER_API_TOKEN required}"
 
 BODY="${1:-{\"corridor_id\":1}}"
 
-curl -sf -X POST "http://${ADDR}/v1/admin/roots/publish" \
+curl -sf -X POST "http://${ADDR}/admin/roots/publish" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d "${BODY}" >/dev/null

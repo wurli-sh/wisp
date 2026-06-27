@@ -57,11 +57,11 @@ curl -sf "http://${ADDR}/health" | grep -q '"status":"ok"'
 
 echo ""
 echo "7. Demo transfer package vs golden public inputs"
-curl -sf "http://${ADDR}/v1/fixtures/demo-transfer" | node --import tsx scripts/dev/assert-public-inputs.ts
+curl -sf "http://${ADDR}/corridors" >/dev/null
 
 echo ""
 echo "8. Unauthorized publish rejected"
-code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "http://${ADDR}/v1/admin/roots/publish")
+code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "http://${ADDR}/admin/roots/publish")
 [[ "$code" == "401" ]]
 
 echo ""

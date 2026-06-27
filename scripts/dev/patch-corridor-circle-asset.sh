@@ -24,7 +24,7 @@ if ! curl -sf "http://${ADDR}/health" >/dev/null 2>&1; then
   exit 1
 fi
 
-curl -sf -X PATCH "http://${ADDR}/v1/admin/corridors/${CORRIDOR_ID}" \
+curl -sf -X PATCH "http://${ADDR}/admin/corridors/${CORRIDOR_ID}" \
   -H "Authorization: Bearer ${TOKEN}" \
   -H "Content-Type: application/json" \
   -d "{\"asset_hex\":\"${ASSET_HEX}\"}" >/dev/null

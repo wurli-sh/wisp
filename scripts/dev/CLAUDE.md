@@ -41,7 +41,7 @@ Diagnose `Error(Contract, #13)` (`PublicInputMismatch`) by comparing the 17 Grot
 
 - **proven** — browser/snarkjs `publicSignals` (optional `--proven`)
 - **package** — roots embedded in the proof package (`--package` or `--fetch`)
-- **issuer** — freshly computed Merkle roots from issuer DB (`GET /v1/admin/roots/computed`)
+- **issuer** — freshly computed Merkle roots from issuer DB (`GET /admin/roots/computed`)
 - **chain** — latest `IssuerRootUpdated` / `CorridorUpdated` events on the compliance contract
 
 ```bash
