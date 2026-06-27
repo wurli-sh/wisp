@@ -24,6 +24,7 @@
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test src/*.test.ts",
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
@@ -32,6 +33,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }
 }

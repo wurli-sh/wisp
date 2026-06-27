@@ -10,7 +10,7 @@
     "gen:fixtures": "node --import tsx circuits/circom/scripts/gen-fixture.ts",
     "gen:testnet-fixture": "node --import tsx scripts/dev/gen-testnet-fixture.ts",
     "build:bindings-clients": "pnpm --filter @wisp_/compliance exec tsc && pnpm --filter @wisp_/verifier exec tsc",
-    "test:js": "pnpm --filter @wisp_/js run test && pnpm --filter @wisp_/core run test && pnpm --filter @wisp_/flows run test && pnpm --filter @wisp_/sdk run test && pnpm --filter @wisp_/issuer-sdk run test && pnpm test:bindings",
+    "test:js": "pnpm --filter @wisp_/js run test && pnpm --filter @wisp_/core run test && pnpm --filter @wisp_/client run test && pnpm --filter @wisp_/demo run test && pnpm --filter @wisp_/flows run test && pnpm --filter @wisp_/sdk run test && pnpm --filter @wisp_/issuer-sdk run test && pnpm test:bindings",
     "test:witness": "pnpm --filter @wisp_/js run test",
     "test:sdk": "pnpm --filter @wisp_/sdk run test",
     "test:issuer-sdk": "pnpm --filter @wisp_/issuer-sdk run test",
@@ -34,6 +34,7 @@
   "devDependencies": {
     "@wisp_/bindings": "workspace:*",
     "@wisp_/issuer-sdk": "workspace:*",
+    "@wisp_/js": "workspace:*",
     "@wisp_/sdk": "workspace:*",
     "snarkjs": "^0.7.0",
     "tsx": "^4.19.0",

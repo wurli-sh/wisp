@@ -496,3 +496,102 @@ test("loadIssuerConfig rejects SOURCE aliases and accepts real public keys", () 
   });
   assert.equal(cfg.operatorPublicKey, "GOPERATOR");
 });
+
+test("root encoding copies byte inputs and rejects non-canonical boundaries", () => {
+  const source = Buffer.alloc(32, 0xab);
+  const encoded = normalizeRootHashToBytes(source);
+  source[0] = 0;
+  assert.equal(encoded[0], 0xab);
+  assert.throws(() => normalizeRootHashToBytes(Buffer.alloc(31)), /received 31 bytes/);
+  assert.throws(() => normalizeRootHashToBytes(new Uint8Array(33)), /received 33 bytes/);
+  assert.throws(() => normalizeRootHashToBytes(""), /must not be empty/);
+  assert.throws(() => normalizeRootHashToBytes("-1"), /32-byte hex|canonical field/);
+  assert.throws(
+    () =>
+      normalizeRootHashToBytes(
+        "21888242871839275222246405745257275088548364400416034343698204186575808495617",
+      ),
+    /canonical BN254/,
+  );
+});
+
+test("issuer mutations use signer public key and preserve explicit issuer override", async () => {
+  const log: Array<{ method: string; args: unknown }> = [];
+  const publicKeys: string[] = [];
+  const direct = new WispIssuerClient({
+    rpcUrl: "https://rpc.test",
+    networkPassphrase: "test",
+    complianceId: "C123",
+    operatorPublicKey: "GOPERATOR",
+    issuerPublicKey: "GISSUER",
+  }, {
+    contractFactory(options) {
+      publicKeys.push(String(options.publicKey));
+      return {
+        async get_issuer() { return { result: null }; },
+        async get_corridor() { return { result: null }; },
+        async register_issuer(args) { log.push({ method: "register_issuer", args }); return fakeTx("register_issuer"); },
+        async update_issuer_metadata(args) { log.push({ method: "update_issuer_metadata", args }); return fakeTx("update_issuer_metadata"); },
+        async register_corridor(args) { log.push({ method: "register_corridor", args }); return fakeTx("register_corridor"); },
+        async update_corridor(args) { log.push({ method: "update_corridor", args }); return fakeTx("update_corridor"); },
+        async update_issuer_root(args) { log.push({ method: "update_issuer_root", args }); return fakeTx("update_issuer_root"); },
+      };
+    },
+  });
+
+  await direct.updateIssuerMetadataAndSend(
+    { issuer: "GOVERRIDE", metadataUri: "https://issuer.test/new.json" },
+    { publicKey: "GSIGNER", async signTransaction(xdr) { return { signedTxXdr: xdr }; } },
+  );
+  assert.equal(publicKeys.at(-1), "GSIGNER");
+  assert.deepEqual(log.at(-1)?.args, {
+    issuer: "GOVERRIDE",
+    metadata_uri: "https://issuer.test/new.json",
+  });
+});
+
+test("planPublishRoots handles generated Option shapes and concurrent planning", async () => {
+  const optionShapes = [
+    { tag: "None" },
+    [],
+    { value: undefined },
+  ];
+  await Promise.all(
+    Array.from({ length: 75 }, async (_, index) => {
+      const log: Array<{ method: string; args: unknown }> = [];
+      const client = new WispIssuerClient(
+        {
+          rpcUrl: "https://rpc.test",
+          networkPassphrase: "test",
+          complianceId: "C123",
+          operatorPublicKey: "GOPERATOR",
+          issuerPublicKey: "GISSUER",
+        },
+        {
+          contractFactory: () => ({
+            async get_issuer() { return { result: optionShapes[index % optionShapes.length] }; },
+            async get_corridor() { return { result: { tag: "Some", value: {} } }; },
+            async register_issuer(args) { log.push({ method: "register_issuer", args }); return fakeTx("register"); },
+            async update_issuer_metadata() { return fakeTx("metadata"); },
+            async register_corridor() { return fakeTx("register_corridor"); },
+            async update_corridor() { return fakeTx("update_corridor"); },
+            async update_issuer_root() { return fakeTx("roots"); },
+          }),
+        },
+      );
+      const plan = await client.planPublishRoots({
+        corridorId: index,
+        metadataUri: "https://issuer.test/meta.json",
+        merkleRoot: "1",
+        sanctionsRoot: "2",
+        jurisdictionRoot: "3",
+        sourceJurisdictionRoot: "4",
+        destAddressRoot: "5",
+        corridorConfigHash: "6",
+      });
+      assert.ok(plan.registerIssuer);
+      assert.equal(plan.corridor.action, "update");
+      assert.equal(plan.corridorId, index);
+    }),
+  );
+});

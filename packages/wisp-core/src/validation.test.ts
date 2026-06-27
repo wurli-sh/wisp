@@ -72,3 +72,39 @@ test("validateProofPackage rebuilds public inputs from fixture roots", () => {
   assert.equal(result.ok, true);
   assert.equal(typeof result.publicInputs.nullifier, "string");
 });
+
+test("validatePackageStructure rejects every malformed path shape", () => {
+  for (const key of [
+    "membership",
+    "sanctions",
+    "jurisdiction",
+    "source_jurisdiction",
+    "dest_address",
+  ] as const) {
+    const badLength = loadFixturePackage();
+    badLength.paths[key] = badLength.paths[key].slice(1);
+    assert.throws(() => validatePackageStructure(badLength), new RegExp(`paths\\.${key} must have length 20`));
+
+    const badDirection = loadFixturePackage();
+    badDirection.paths[`${key}_indices`][0] = 2;
+    assert.throws(() => validatePackageStructure(badDirection), /only 0 or 1/);
+
+    const badField = loadFixturePackage();
+    badField.paths[key][0] = "not-a-field";
+    assert.throws(() => validatePackageStructure(badField), /decimal field elements/);
+  }
+});
+
+test("validatePackageStructure rejects malformed roots, public inputs, and schema versions", () => {
+  const root = loadFixturePackage();
+  root.roots!.merkle_root = "0x12";
+  assert.throws(() => validatePackageStructure(root), /roots\.merkle_root must be a decimal/);
+
+  const input = loadFixturePackage();
+  input.public_inputs!.amount = "1.5";
+  assert.throws(() => validatePackageStructure(input), /public_inputs\.amount must be a decimal/);
+
+  const schema = loadFixturePackage();
+  schema.schema_version = 2;
+  assert.throws(() => validatePackageStructure(schema), /unsupported ProofPackage schema_version/);
+});

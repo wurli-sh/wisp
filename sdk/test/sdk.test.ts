@@ -16,6 +16,7 @@ import {
   validatePackage,
   validatePackageStructure,
 } from "../src/index.js";
+import { loadConfigBrowser } from "../src/config-browser.js";
 import type { ProofPackage } from "@wisp_/js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -383,4 +384,16 @@ test("WispClient prove from issuer package", { timeout: 120_000 }, async (t) => 
       field,
     );
   }
+});
+
+test("config loaders reject invalid ledger values instead of leaking NaN", () => {
+  assert.throws(
+    () => loadConfigBrowser({ VALIDATE_START_LEDGER: "not-a-number" }),
+    /non-negative safe integer/,
+  );
+  assert.throws(
+    () => loadConfigBrowser({ COMPLIANCE_DEPLOY_LEDGER: "-1" }),
+    /non-negative safe integer/,
+  );
+  assert.equal(loadConfigBrowser({ VALIDATE_START_LEDGER: "0" }).validateStartLedger, 0);
 });
