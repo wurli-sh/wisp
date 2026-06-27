@@ -1,6 +1,6 @@
 import type { DemoTransferRequest, ProofPackage } from "@wisp_/js";
-import type { DemoIssuerClient, ProvenTransfer, WispClient } from "@wisp_/sdk";
-import type { WalletSigner } from "@wisp_/sdk";
+import type { DemoIssuerClient, ProvenTransfer, WispClient } from "@wisp_/sdk/browser";
+import type { WalletSigner } from "@wisp_/sdk/browser";
 import { env } from "@/config/env";
 import { demoLog, packageCheckpoint, provenCheckpoint } from "@/lib/demoLog";
 import { extractTxHash } from "@/lib/transferUtils";

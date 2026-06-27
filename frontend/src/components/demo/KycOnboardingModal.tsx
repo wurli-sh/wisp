@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { MockKycStatusResponse } from "@wisp_/sdk";
+import type { MockKycStatusResponse } from "@wisp_/sdk/browser";
 import { COPY } from "@/content/copy";
 import { useDemoIssuerClient } from "@/hooks/useDemoIssuerClient";
 import { useWallet } from "@/hooks/useWallet";

@@ -1,4 +1,4 @@
-import type { MockKycStatusResponse, MockKycSubmitResponse } from "@wisp_/sdk";
+import type { MockKycStatusResponse, MockKycSubmitResponse } from "@wisp_/sdk/browser";
 import { COPY } from "@/content/copy";
 
 export function kycMissingLabel(item: string): string {

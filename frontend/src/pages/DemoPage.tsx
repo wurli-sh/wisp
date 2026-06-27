@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { CorridorOption, DemoTransferRequest, ProofPackage } from "@wisp_/js";
-import type { MockKycStatusResponse, ProvenTransfer } from "@wisp_/sdk";
+import type { MockKycStatusResponse, ProvenTransfer } from "@wisp_/sdk/browser";
 import { COPY } from "@/content/copy";
 import { PAGE_PT, PAGE_PX } from "@/config/layout";
 import { useWispClient } from "@/hooks/useWispClient";

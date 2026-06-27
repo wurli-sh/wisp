@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { WispClient } from "@wisp_/sdk";
+import { WispClient } from "@wisp_/sdk/browser";
 import { env } from "@/config/env";
 
 export function useWispClient() {

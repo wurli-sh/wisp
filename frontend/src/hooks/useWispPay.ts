@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { DemoTransferRequest } from "@wisp_/js";
-import type { MockKycStatusResponse } from "@wisp_/sdk";
+import type { MockKycStatusResponse } from "@wisp_/sdk/browser";
 import { COPY } from "@/content/copy";
 import { useWispClient } from "@/hooks/useWispClient";
 import { useDemoIssuerClient } from "@/hooks/useDemoIssuerClient";

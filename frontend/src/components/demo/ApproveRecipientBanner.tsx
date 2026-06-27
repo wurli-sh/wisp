@@ -1,5 +1,5 @@
 import { Loader2 } from "lucide-react";
-import type { MockKycStatusResponse } from "@wisp_/sdk";
+import type { MockKycStatusResponse } from "@wisp_/sdk/browser";
 import { COPY } from "@/content/copy";
 import { Button } from "@/components/ui/Button";
 import { useApproveRecipientDestination } from "@/hooks/useApproveRecipientDestination";

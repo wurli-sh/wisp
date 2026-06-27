@@ -1,5 +1,5 @@
 import type { ProofPackage } from "@wisp_/js";
-import type { ProvenTransfer } from "@wisp_/sdk";
+import type { ProvenTransfer } from "@wisp_/sdk/browser";
 import { env } from "@/config/env";
 
 const PREFIX = "[wisp:demo]";

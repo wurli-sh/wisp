@@ -1,5 +1,5 @@
 import { ShieldCheck } from "lucide-react";
-import type { MockKycStatusResponse } from "@wisp_/sdk";
+import type { MockKycStatusResponse } from "@wisp_/sdk/browser";
 import { COPY } from "@/content/copy";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";

@@ -1,5 +1,5 @@
 import type { CorridorOption } from "@wisp_/js";
-import type { WispClient } from "@wisp_/sdk";
+import type { WispClient } from "@wisp_/sdk/browser";
 
 const STELLAR_ASSET_DECIMALS = 7;
 const STELLAR_ASSET_SCALE = 10_000_000n;

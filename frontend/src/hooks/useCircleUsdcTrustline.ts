@@ -4,7 +4,7 @@ import {
   establishCircleUsdcTrustline,
   hasCircleUsdcTrustline,
   type WalletSigner,
-} from "@wisp_/sdk";
+} from "@wisp_/sdk/browser";
 import { toast } from "sonner";
 import { env, getWispConfigOverrides, stellarExplorerTx } from "@/config/env";
 import { COPY } from "@/content/copy";

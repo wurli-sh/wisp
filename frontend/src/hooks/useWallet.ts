@@ -7,7 +7,7 @@ import {
   requestAccess,
   signTransaction,
 } from "@stellar/freighter-api";
-import type { WalletSigner } from "@wisp_/sdk";
+import type { WalletSigner } from "@wisp_/sdk/browser";
 import { COPY } from "@/content/copy";
 import { env } from "@/config/env";
 

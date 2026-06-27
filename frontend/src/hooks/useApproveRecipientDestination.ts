@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import type { MockKycStatusResponse } from "@wisp_/sdk";
+import type { MockKycStatusResponse } from "@wisp_/sdk/browser";
 import { toast } from "sonner";
 import { COPY } from "@/content/copy";
 import { env } from "@/config/env";

@@ -2,7 +2,7 @@ import { Loader2 } from "lucide-react";
 import { COPY } from "@/content/copy";
 import { Button } from "@/components/ui/Button";
 import { useCircleUsdcTrustline } from "@/hooks/useCircleUsdcTrustline";
-import type { WalletSigner } from "@wisp_/sdk";
+import type { WalletSigner } from "@wisp_/sdk/browser";
 
 interface CircleUsdcTrustlineBannerProps {
   address: string | null;
