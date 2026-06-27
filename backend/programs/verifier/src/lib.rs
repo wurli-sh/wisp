@@ -1,7 +1,9 @@
 #![no_std]
 use soroban_sdk::{
     contract, contracterror, contractimpl, contracttype,
-    crypto::bn254::{Fr, Bn254G1Affine, Bn254G2Affine, BN254_G1_SERIALIZED_SIZE, BN254_G2_SERIALIZED_SIZE},
+    crypto::bn254::{
+        Bn254G1Affine, Bn254G2Affine, Fr, BN254_G1_SERIALIZED_SIZE, BN254_G2_SERIALIZED_SIZE,
+    },
     BytesN, Env, Vec,
 };
 
@@ -32,13 +34,16 @@ pub struct Proof {
 
 mod vk;
 
-
 #[contract]
 pub struct Groth16Verifier;
 
 #[contractimpl]
 impl Groth16Verifier {
-    pub fn verify_proof(env: Env, proof: Proof, pub_signals: Vec<Fr>) -> Result<bool, Groth16Error> {
+    pub fn verify_proof(
+        env: Env,
+        proof: Proof,
+        pub_signals: Vec<Fr>,
+    ) -> Result<bool, Groth16Error> {
         let bn = env.crypto().bn254();
         let vk = vk::verification_key(&env);
 

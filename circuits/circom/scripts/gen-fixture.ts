@@ -10,11 +10,27 @@ import {
   buildWitnessInput as buildWitnessCore,
   demoFromFixture,
 } from "@wisp_/js/witness";
-import { PUBLIC_INPUT_FIELDS, PROTOCOL } from "@wisp_/bindings/publicInputs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const INPUTS_DIR = path.join(__dirname, "..", "inputs");
 const FIXTURES_DIR = path.join(__dirname, "..", "..", "..", "bindings", "fixtures");
+const BINDINGS_DIR = path.join(__dirname, "..", "..", "..", "bindings");
+const protocol = JSON.parse(
+  fs.readFileSync(path.join(BINDINGS_DIR, "protocol.json"), "utf8"),
+);
+const publicInputs = JSON.parse(
+  fs.readFileSync(path.join(BINDINGS_DIR, "public-inputs.json"), "utf8"),
+);
+export const PROTOCOL = {
+  ...protocol,
+  NULLIFIER_DOMAIN_TAG: BigInt(protocol.NULLIFIER_DOMAIN_TAG),
+  CREDENTIAL_DOMAIN_TAG: BigInt(protocol.CREDENTIAL_DOMAIN_TAG),
+  CORRIDOR_DOMAIN_TAG: BigInt(protocol.CORRIDOR_DOMAIN_TAG),
+  CORRIDOR_ID: BigInt(protocol.CORRIDOR_ID),
+};
+export const PUBLIC_INPUT_FIELDS = publicInputs.fields.map(
+  (field: { name: string }) => field.name,
+);
 
 export const EPOCH_LEN_SECS = PROTOCOL.EPOCH_LEN_SECS;
 export const CORRIDOR_ID = PROTOCOL.CORRIDOR_ID;
@@ -31,7 +47,7 @@ const demoTransfer = JSON.parse(
 
 export const DEMO = demoFromFixture(demoTransfer);
 
-export { addressToLimbs, computeCorridorConfigHash, PUBLIC_INPUT_FIELDS };
+export { addressToLimbs, computeCorridorConfigHash };
 
 export function buildWitnessInputFromDemo(overrides = {}) {
   return buildWitnessCore(DEMO, overrides, PROTOCOL);

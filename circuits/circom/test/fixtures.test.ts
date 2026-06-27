@@ -58,6 +58,27 @@ test("invalid fixtures fail witness generation", async () => {
   }
 });
 
+test("credential attributes cannot be forged against an issued membership root", async () => {
+  const valid = JSON.parse(
+    readFileSync(join(DIR, "inputs", "valid.us-mx.json"), "utf8"),
+  );
+  const wasm = readFileSync(WASM);
+  const witnessCalculator = await buildWitnessCalculator(wasm);
+  for (const [field, forged] of [
+    ["credential_secret", "777777"],
+    ["jurisdiction", "484"],
+    ["credential_expiry", "9999999999"],
+    ["issuer_lo", "123"],
+  ]) {
+    const input = { ...valid, [field]: forged };
+    await assert.rejects(
+      witnessCalculator.calculateWTNSBin(input, 0),
+      undefined,
+      `${field} forgery must fail`,
+    );
+  }
+});
+
 test("fixture files exist on disk", () => {
   const names = [
     "valid.us-mx.json",

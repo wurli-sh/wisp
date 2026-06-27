@@ -37,5 +37,8 @@ echo "=== Step 5/5: Contribute to zkey ==="
 snarkjs zkey contribute compliance_corridor_0000.zkey compliance_corridor_final.zkey \
   --name="wisp phase2" -v -e="$(date +%s%N)"
 
+echo "=== Exporting verification key ==="
+snarkjs zkey export verificationkey compliance_corridor_final.zkey verification_key.json
+
 echo "=== Done ==="
 ls -lh compliance_corridor_final.zkey

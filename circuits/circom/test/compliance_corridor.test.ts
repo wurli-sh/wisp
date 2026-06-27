@@ -5,10 +5,8 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import {
   computeCorridorConfigHash,
+  computeNullifier,
   mod,
-  NULLIFIER_DOMAIN_TAG,
-  poseidon2Hash1,
-  poseidon2Hash12,
   toString,
 } from "@wisp_/js";
 import {
@@ -25,26 +23,26 @@ test("public input field order matches generated ABI", () => {
   for (const key of PUBLIC_INPUT_FIELDS) {
     assert.ok(key in witness, `missing public field ${key}`);
   }
-  assert.equal(PUBLIC_INPUT_FIELDS.length, 17);
+  assert.equal(PUBLIC_INPUT_FIELDS.length, 19);
 });
 
 test("nullifier binds corridor_id per circuit", () => {
   const witness = buildWitnessInput({});
-  const domain = poseidon2Hash1(mod(NULLIFIER_DOMAIN_TAG));
-  const recomputed = poseidon2Hash12([
-    domain,
-    mod(424242n),
-    mod(witness.sender_lo as string),
-    mod(witness.sender_hi as string),
-    mod(witness.asset_lo as string),
-    mod(witness.asset_hi as string),
-    mod(witness.epoch as string),
-    mod(witness.recipient_lo as string),
-    mod(witness.recipient_hi as string),
-    mod(witness.amount as string),
-    mod(CORRIDOR_ID),
-    mod(witness.transfer_nonce as string),
-  ]);
+  const recomputed = computeNullifier({
+    credentialSecret: 424242n,
+    issuerLo: mod(witness.issuer_lo as string),
+    issuerHi: mod(witness.issuer_hi as string),
+    senderLo: mod(witness.sender_lo as string),
+    senderHi: mod(witness.sender_hi as string),
+    assetLo: mod(witness.asset_lo as string),
+    assetHi: mod(witness.asset_hi as string),
+    epoch: mod(witness.epoch as string),
+    recipientLo: mod(witness.recipient_lo as string),
+    recipientHi: mod(witness.recipient_hi as string),
+    amount: mod(witness.amount as string),
+    corridorId: CORRIDOR_ID,
+    transferNonce: mod(witness.transfer_nonce as string),
+  });
   assert.equal(witness.nullifier, toString(recomputed));
 });
 

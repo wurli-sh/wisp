@@ -6,7 +6,7 @@ BN254 Groth16 compliance corridor circuit with Poseidon2 hashing.
 
 | # | Check | Description |
 |---|-------|-------------|
-| 1 | Merkle membership | Sender in issuer's identity tree |
+| 1 | Credential membership | Wallet's issuer-scoped credential commitment in issuer's identity tree |
 | 2 | Nullifier binding | Domain-separated hash binding entire transfer context |
 | 3 | Sanctions exclusion | Sender NOT in sanctions SMT |
 | 4 | Jurisdiction membership | Sender's jurisdiction in issuer's jurisdiction tree |
@@ -15,9 +15,9 @@ BN254 Groth16 compliance corridor circuit with Poseidon2 hashing.
 | 7 | Corridor destination address | Recipient in corridor's destination tree |
 | 8 | Corridor binding | On-chain `corridor_config_hash` matches circuit input |
 
-## Public Inputs (17)
+## Public Inputs (19)
 
-merkle_root, nullifier, asset_lo/hi, sender_lo/hi, epoch, recipient_lo/hi, amount, sanctions_root, jurisdiction_root, timestamp, corridor_id, corridor_config_hash, source_jurisdiction_root, dest_address_root
+merkle_root, nullifier, asset_lo/hi, sender_lo/hi, epoch, recipient_lo/hi, amount, sanctions_root, jurisdiction_root, timestamp, corridor_id, corridor_config_hash, source_jurisdiction_root, dest_address_root, issuer_lo, issuer_hi
 
 ## Subdirectories
 

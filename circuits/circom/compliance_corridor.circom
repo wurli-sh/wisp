@@ -8,7 +8,7 @@ include "node_modules/circomlib/circuits/comparators.circom";
 template ComplianceCorridor() {
   var MERKLE_DEPTH = 20;
 
-  // ── Public inputs (17, load-bearing order) ──
+  // ── Public inputs (canonical load-bearing order) ──
   signal input merkle_root;
   signal input nullifier;
   signal input asset_lo;
@@ -26,6 +26,8 @@ template ComplianceCorridor() {
   signal input corridor_config_hash;
   signal input source_jurisdiction_root;
   signal input dest_address_root;
+  signal input issuer_lo;
+  signal input issuer_hi;
 
   // ── Private inputs ──
   signal input credential_secret;
@@ -46,10 +48,20 @@ template ComplianceCorridor() {
 
   // ── Check 1: Merkle membership ──
   component membership = MerklePath();
-  component sender_leaf = Poseidon2Hash2();
-  sender_leaf.a <== sender_lo;
-  sender_leaf.b <== sender_hi;
-  membership.leaf <== sender_leaf.out;
+  component credential_domain = Poseidon2Hash1();
+  credential_domain.in <== 24568945153365555; // Wisp credential domain tag
+  component credential_commitment = Poseidon2Hash10();
+  credential_commitment.in[0] <== credential_domain.out;
+  credential_commitment.in[1] <== issuer_lo;
+  credential_commitment.in[2] <== issuer_hi;
+  credential_commitment.in[3] <== sender_lo;
+  credential_commitment.in[4] <== sender_hi;
+  credential_commitment.in[5] <== credential_secret;
+  credential_commitment.in[6] <== jurisdiction;
+  credential_commitment.in[7] <== credential_expiry;
+  credential_commitment.in[8] <== 0;
+  credential_commitment.in[9] <== 0;
+  membership.leaf <== credential_commitment.out;
   for (var i = 0; i < MERKLE_DEPTH; i++) {
     membership.path[i] <== path[i];
     membership.path_indices[i] <== path_indices[i];
@@ -58,12 +70,18 @@ template ComplianceCorridor() {
 
   // ── Check 2: Nullifier binding (domain-separated, includes corridor_id) ──
   component nullifier_domain = Poseidon2Hash1();
-  nullifier_domain.in <== 24568945153365553; // "WISP_V1" domain tag
+  nullifier_domain.in <== 24568945153365555; // Wisp credential domain tag
+  component issuer_hash = Poseidon2Hash2();
+  issuer_hash.a <== issuer_lo;
+  issuer_hash.b <== issuer_hi;
+  component sender_hash = Poseidon2Hash2();
+  sender_hash.a <== sender_lo;
+  sender_hash.b <== sender_hi;
   component nullifier_hash = Poseidon2Hash12();
   nullifier_hash.in[0] <== nullifier_domain.out;
   nullifier_hash.in[1] <== credential_secret;
-  nullifier_hash.in[2] <== sender_lo;
-  nullifier_hash.in[3] <== sender_hi;
+  nullifier_hash.in[2] <== issuer_hash.out;
+  nullifier_hash.in[3] <== sender_hash.out;
   nullifier_hash.in[4] <== asset_lo;
   nullifier_hash.in[5] <== asset_hi;
   nullifier_hash.in[6] <== epoch;
@@ -145,5 +163,7 @@ component main {public [
   corridor_id,
   corridor_config_hash,
   source_jurisdiction_root,
-  dest_address_root
+  dest_address_root,
+  issuer_lo,
+  issuer_hi
 ]} = ComplianceCorridor();
