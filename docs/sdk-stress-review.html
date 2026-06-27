@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Wisp SDK stress and integration review</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #18201d; }
+    table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #ccd5d0; padding: 10px; text-align: left; vertical-align: top; }
+    code { background: #eef2f0; padding: 2px 4px; } .fixed { color: #17643a; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>Wisp SDK stress and integration review</h1>
+  <p>Review date: 2026-06-27. Scope: <code>@wisp_/js</code>, <code>core</code>,
+  <code>client</code>, <code>demo</code>, <code>flows</code>, <code>sdk</code>,
+  and <code>issuer-sdk</code>.</p>
+  <h2>Outcome</h2>
+  <p>Security: B. Quality: B. Testnet integration ready: yes. Mainnet ready: no;
+  this SDK remains explicitly beta/demo infrastructure.</p>
+  <table>
+    <thead><tr><th>Severity</th><th>Finding</th><th>Resolution</th></tr></thead>
+    <tbody>
+      <tr><td>High</td><td>Duplicate retry skipped replay detection.</td><td class="fixed">Fixed: retry re-fetches and re-checks; repeated nullifiers stop before approval.</td></tr>
+      <tr><td>High</td><td>Malformed Stellar addresses could be silently decoded, padded, or truncated.</td><td class="fixed">Fixed: canonical base32, checksum, version, and exact byte-length validation.</td></tr>
+      <tr><td>Medium</td><td>Malformed Merkle directions and field strings survived shape validation.</td><td class="fixed">Fixed: decimal, depth, length, index, and bit checks.</td></tr>
+      <tr><td>Medium</td><td>Invalid ledger environment values leaked as <code>NaN</code>.</td><td class="fixed">Fixed: config loaders reject unsafe or negative values.</td></tr>
+      <tr><td>Medium</td><td>HTTP retry and URL normalization behavior lacked package-level tests.</td><td class="fixed">Fixed: transient/permanent response, concurrency, and request-shape coverage.</td></tr>
+      <tr><td>High</td><td>Sequential Stellar root mutations could fail with <code>TxBadSeq</code>.</td><td class="fixed">Fixed: bounded retries rebuild transactions with a fresh account sequence.</td></tr>
+      <tr><td>Medium</td><td>RPC retention errors are plain objects, so ledger-range recovery did not recognize them.</td><td class="fixed">Fixed: range parsing supports Error, string, and RPC object shapes.</td></tr>
+      <tr><td>Medium</td><td>The conformance seed subprocess did not inherit values loaded from <code>.wisp/*.env</code>.</td><td class="fixed">Fixed: loaded Wisp configuration is forwarded to the seed subprocess.</td></tr>
+    </tbody>
+  </table>
+  <h2>Load coverage</h2>
+  <ul>
+    <li>100 concurrent issuer HTTP adapter requests.</li>
+    <li>75 concurrent issuer root publication plans across generated Option shapes.</li>
+    <li>250 repeated cryptographic path and StrKey operations.</li>
+  </ul>
+  <h2>Verification</h2>
+  <p><code>pnpm test:js</code>, issuer-service’s 31 Rust tests, and TypeScript
+  typechecks for all seven packages pass. Live issuer conformance also passed against
+  the configured Stellar testnet: metadata discovery, proof-package creation,
+  on-chain root validation, and Groth16 proving.</p>
+</body>
+</html>

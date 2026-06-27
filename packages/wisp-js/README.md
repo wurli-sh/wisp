@@ -37,7 +37,7 @@ const root = merkleRootForLeafAtIndex(leaves, index);
 
 ```ts
 import { buildWitnessInput } from "@wisp_/js/witness";
-import { decodeStrkey } from "@wisp_/js/strkey";
+import { decodeStrKey } from "@wisp_/js/strkey";
 ```
 
 ## Modules
@@ -58,10 +58,16 @@ import { decodeStrkey } from "@wisp_/js/strkey";
 
 Address limbs: `hi = bytes[0..16]`, `lo = bytes[16..32]` as big-endian field elements.
 
+Address inputs are deliberately strict: pass a checksum-valid Stellar `G...`/`C...`
+StrKey or exactly 64 hexadecimal characters (an optional `0x` prefix is accepted).
+Short hex, invalid checksums, and non-32-byte buffers throw instead of being padded or
+truncated. Merkle indices must be within the selected tree depth and path directions
+must be `0` or `1`.
+
 ## Test vectors
 
 ```bash
-pnpm --filter @wisp_/js test     # witness + publicInputs unit tests
+pnpm --filter @wisp_/js test       # vectors + malformed input + repeated-load tests
 pnpm test:witness                  # from repo root
 ```
 

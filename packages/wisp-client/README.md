@@ -49,11 +49,20 @@ Types: `ChainClientConfig`, `IssuerAdapter`, `IssuerCapabilities`, `IssuerWellKn
 
 Reads Soroban config (`STELLAR_RPC_URL`, `COMPLIANCE_CONTRACT_ID`, `VERIFIER_CONTRACT_ID`) via the host app's config. Pair with [`@wisp_/sdk`](../../sdk/README.md)'s `loadWispEnv()` for `.wisp/*.env` loading.
 
+## HTTP behavior
+
+`issuerFetch` retries network failures and HTTP `408`, `429`, `502`, `503`, and
+`504` twice with exponential backoff. Other HTTP responses are returned immediately
+for endpoint-specific error handling. Set `{ retries: 0 }` for non-idempotent
+operations that must never be replayed. Retry counts must be non-negative integers.
+Event readers automatically recover when Soroban RPC returns a pruned-ledger range
+as either an `Error` or a JSON-RPC error object.
+
 ## Build from source
 
 ```bash
 pnpm build:js
-pnpm --filter @wisp_/client typecheck
+pnpm --filter @wisp_/client test
 ```
 
 ## Related

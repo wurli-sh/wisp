@@ -54,6 +54,11 @@ Interfaces: `TransferClientLike`, `ProofPackageSource`, `WalletSigner`, `CreateA
 
 Subscribe via `onStage` to drive progress UI.
 
+`createAndSettleTransferWithRetry` requests and proves a fresh package once after a
+duplicate. The retry performs the duplicate check again; it never bypasses replay
+protection. If the issuer returns the same nullifier twice, the flow throws
+`DuplicateNullifierError` before approval or settlement.
+
 ## Build from source
 
 ```bash

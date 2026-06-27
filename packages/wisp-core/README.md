@@ -49,6 +49,11 @@ if (!issuerRootsMatch(expectedRoots, chainRoots)) {
 
 Re-exports the canonical types `ProofPackage`, `Credential`, `TransferParams`, `MerklePaths`, `Roots`, `WitnessPrivate` from `@wisp_/bindings`.
 
+`validatePackageStructure` rejects non-decimal roots/public inputs, non-decimal
+Merkle siblings, path lengths other than 20, and direction bits other than `0`/`1`.
+Treat a structural error as an issuer integration failure; do not coerce the package
+and continue.
+
 ## Build from source
 
 ```bash

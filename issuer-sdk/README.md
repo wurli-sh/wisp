@@ -48,6 +48,8 @@ await issuer.registerCorridorAndSend(
 );
 ```
 
+A runnable, typechecked operator example (orchestrated `publishRoots` + keypair signer + conformance) lives in [`examples/issuer-quickstart`](../examples/issuer-quickstart/README.md).
+
 ## Environment
 
 | Variable | Required | Description |
@@ -111,6 +113,21 @@ Then use `HttpIssuerAdapter` for real issuer APIs and `DemoIssuerClient` only fo
 | `normalizeRootHashToBytes` | Root hash encoding for contract calls |
 | `runIssuerConformance` | HTTP API conformance suite |
 
+Root inputs may be a 32-byte `Buffer`/`Uint8Array`, 64-character hex, or a canonical
+non-negative BN254 field decimal. Decimal values greater than or equal to the field
+modulus are rejected instead of silently wrapping. `publishRoots(input)` only plans
+transactions; pass a signer as the second argument to build, sign, and submit them
+sequentially.
+
+For CI, `pnpm test:issuer-sdk` covers encoding boundaries, generated contract `Option`
+shapes, signer propagation, transaction ordering, stale planning races, and concurrent
+publish planning. Run `pnpm test:issuer-conformance` separately against each live
+issuer deployment.
+
+For the reference issuer, `pnpm test:issuer-conformance -- --seed` forwards the
+loaded `.wisp/*.env` configuration to its seed subprocess, publishes current roots
+when required, then validates and proves a package.
+
 ## Build from source
 
 ```bash
@@ -120,6 +137,7 @@ pnpm --filter @wisp_/issuer-sdk test
 
 ## Related
 
+- Issuer operator quickstart: [`examples/issuer-quickstart`](../examples/issuer-quickstart/README.md)
 - End-user prove/settle: [`@wisp_/sdk`](../sdk/README.md)
 - Protocol validation + types: [`@wisp_/core`](../packages/wisp-core/README.md)
 - Issuer transports + chain reads: [`@wisp_/client`](../packages/wisp-client/README.md)
