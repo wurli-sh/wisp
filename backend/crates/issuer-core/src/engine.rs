@@ -108,7 +108,9 @@ impl IssuerEngine {
             plans.push(self.plan_publish(corridor.id).await?);
         }
         Ok(BootstrapIssuerResult {
-            issuer_name: request.issuer_name.or_else(|| self.options.issuer_name.clone()),
+            issuer_name: request
+                .issuer_name
+                .or_else(|| self.options.issuer_name.clone()),
             corridor_plans: plans,
         })
     }
@@ -136,12 +138,17 @@ impl IssuerEngine {
             .await?
             .ok_or_else(|| format!("unknown corridor id: {corridor_id}"))?;
         let computed_roots = self.compute_roots_for_corridor(corridor_id).await?;
-        let latest_snapshot = self.repository.latest_root_snapshot(Some(corridor_id)).await?;
+        let latest_snapshot = self
+            .repository
+            .latest_root_snapshot(Some(corridor_id))
+            .await?;
         let (roots_state, mut reasons) =
             self.evaluate_roots_state(&corridor, latest_snapshot.as_ref(), &computed_roots);
         let next_action = match roots_state {
             RootsState::Active => NextAction::None,
-            RootsState::Missing | RootsState::Stale | RootsState::Failed => NextAction::PublishRoots,
+            RootsState::Missing | RootsState::Stale | RootsState::Failed => {
+                NextAction::PublishRoots
+            }
             RootsState::Publishing => NextAction::None,
         };
         if !corridor.enabled {
@@ -220,7 +227,10 @@ impl IssuerEngine {
             .filter(|user| user.enabled)
             .cloned()
             .collect::<Vec<_>>();
-        let destinations = self.repository.list_enabled_destinations(corridor_id).await?;
+        let destinations = self
+            .repository
+            .list_enabled_destinations(corridor_id)
+            .await?;
         let sender = active_users
             .iter()
             .find(|user| {
@@ -348,13 +358,8 @@ impl IssuerEngine {
         recipient: Option<&str>,
     ) -> Result<IssuanceReadiness, String> {
         let wallet = normalize_wallet_hex(wallet)?;
-        let recipient = recipient
-            .map(normalize_wallet_hex)
-            .transpose()?;
-        let sender = self
-            .repository
-            .find_active_user_by_wallet(&wallet)
-            .await?;
+        let recipient = recipient.map(normalize_wallet_hex).transpose()?;
+        let sender = self.repository.find_active_user_by_wallet(&wallet).await?;
         let corridor = self.repository.get_corridor(corridor_id).await?;
         let mut reasons = Vec::new();
         let mut next_action = NextAction::None;
@@ -405,7 +410,9 @@ impl IssuerEngine {
             next_action = NextAction::RegisterCorridor;
         }
         let destination = if let Some(recipient) = recipient.as_deref() {
-            self.repository.find_destination(corridor_id, recipient).await?
+            self.repository
+                .find_destination(corridor_id, recipient)
+                .await?
         } else {
             self.repository
                 .list_enabled_destinations(corridor_id)
@@ -421,11 +428,17 @@ impl IssuerEngine {
             next_action = NextAction::ApproveDestination;
         }
         let computed_roots = self.compute_roots_for_corridor(corridor_id).await?;
-        let latest_snapshot = self.repository.latest_root_snapshot(Some(corridor_id)).await?;
+        let latest_snapshot = self
+            .repository
+            .latest_root_snapshot(Some(corridor_id))
+            .await?;
         let (roots_state, root_reasons) =
             self.evaluate_roots_state(&corridor, latest_snapshot.as_ref(), &computed_roots);
         reasons.extend(root_reasons);
-        if matches!(roots_state, RootsState::Missing | RootsState::Stale | RootsState::Failed) {
+        if matches!(
+            roots_state,
+            RootsState::Missing | RootsState::Stale | RootsState::Failed
+        ) {
             next_action = NextAction::PublishRoots;
         }
         Ok(IssuanceReadiness {
@@ -625,8 +638,8 @@ mod tests {
             .expect("upsert");
         let err = engine
             .issue_proof_package(&ProofPackageRequest {
-                sender_wallet:
-                    "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301".into(),
+                sender_wallet: "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301"
+                    .into(),
                 recipient_wallet:
                     "102132435465768798a9babbdcedfe0f0f1e2d3c4b5a69788796a5b4c3d2e1f0".into(),
                 amount: "100".into(),

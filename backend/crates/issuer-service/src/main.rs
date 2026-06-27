@@ -1,5 +1,6 @@
 mod auth;
 mod config;
+mod issuance;
 mod log_util;
 mod memory_snapshot;
 mod mock_kyc;
@@ -53,6 +54,8 @@ async fn main() {
         .init();
 
     let cfg = Config::from_env();
+    cfg.validate_security_mode()
+        .unwrap_or_else(|error| panic!("unsafe issuer configuration: {error}"));
     let state = AppState::load(&cfg).await;
     tracing::info!(
         listen = %cfg.listen_addr,
@@ -64,6 +67,7 @@ async fn main() {
             .unwrap_or_else(|| "unset".into()),
         publish_source = cfg.publish_source_account.as_deref().unwrap_or("unset"),
         fixture = %cfg.fixture_profile,
+        mode = %cfg.issuer_mode,
         kyc = %cfg.kyc_mode,
         store = state.store_label(),
         state_path = cfg.state_path.as_deref().unwrap_or("unset"),
@@ -74,7 +78,10 @@ async fn main() {
 
     let addr: SocketAddr = cfg.listen_addr.parse().expect("invalid ISSUER_LISTEN_ADDR");
     let listener = tokio::net::TcpListener::bind(addr).await.expect("bind");
-    tracing::info!("issuer-service listening on {}", listener.local_addr().expect("local_addr"));
+    tracing::info!(
+        "issuer-service listening on {}",
+        listener.local_addr().expect("local_addr")
+    );
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal(shutdown_state))
         .await

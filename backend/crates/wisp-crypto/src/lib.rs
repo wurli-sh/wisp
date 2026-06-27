@@ -16,6 +16,7 @@ pub use poseidon2::{
     poseidon2_permutation,
 };
 pub use protocol::{
-    address_to_limbs, compute_corridor_config_hash, compute_nullifier, AddressLimbs,
-    CORRIDOR_DOMAIN_TAG, NULLIFIER_DOMAIN_TAG,
+    address_to_limbs, compute_corridor_config_hash, compute_credential_commitment,
+    compute_nullifier, AddressLimbs, CORRIDOR_DOMAIN_TAG, CREDENTIAL_DOMAIN_TAG,
+    NULLIFIER_DOMAIN_TAG,
 };

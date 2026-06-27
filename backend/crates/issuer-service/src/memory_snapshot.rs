@@ -99,6 +99,7 @@ pub(crate) fn try_load_memory_snapshot(path: &str) -> SnapshotLoad {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn load_memory_snapshot(path: &str) -> Option<MemoryStore> {
     match try_load_memory_snapshot(path) {
         SnapshotLoad::Loaded(store) => Some(store),
@@ -192,10 +193,7 @@ mod tests {
 
     #[test]
     fn snapshot_roundtrip_preserves_mock_kyc_user() {
-        let dir = std::env::temp_dir().join(format!(
-            "wisp-issuer-snapshot-{}",
-            std::process::id()
-        ));
+        let dir = std::env::temp_dir().join(format!("wisp-issuer-snapshot-{}", std::process::id()));
         let _ = fs::create_dir_all(&dir);
         let path = dir.join("issuer-state.json");
         let _ = fs::remove_file(&path);
@@ -226,10 +224,8 @@ mod tests {
         use crate::config::Config;
         use crate::state::AppState;
 
-        let dir = std::env::temp_dir().join(format!(
-            "wisp-issuer-kyc-status-{}",
-            std::process::id()
-        ));
+        let dir =
+            std::env::temp_dir().join(format!("wisp-issuer-kyc-status-{}", std::process::id()));
         let _ = fs::create_dir_all(&dir);
         let path = dir.join("issuer-state.json");
         let path_str = path.to_str().expect("utf8 path").to_string();
@@ -237,12 +233,11 @@ mod tests {
 
         save_memory_snapshot(&path_str, &sample_store()).expect("save");
         let loaded = load_memory_snapshot(&path_str).expect("load");
-        let state = AppState::from_persisted_memory(PersistedMemory::new(
-            loaded,
-            Some(path_str.clone()),
-        ));
+        let state =
+            AppState::from_persisted_memory(PersistedMemory::new(loaded, Some(path_str.clone())));
 
         let cfg = Config {
+            issuer_mode: "demo".into(),
             listen_addr: "127.0.0.1:3000".into(),
             state_path: Some(path_str.clone()),
             api_token: None,
@@ -283,10 +278,7 @@ mod tests {
 
     #[test]
     fn write_guard_persist_does_not_deadlock() {
-        let dir = std::env::temp_dir().join(format!(
-            "wisp-issuer-deadlock-{}",
-            std::process::id()
-        ));
+        let dir = std::env::temp_dir().join(format!("wisp-issuer-deadlock-{}", std::process::id()));
         let _ = fs::create_dir_all(&dir);
         let path = dir.join("issuer-state.json");
         let path_str = path.to_str().expect("utf8 path").to_string();
@@ -316,10 +308,7 @@ mod tests {
 
     #[test]
     fn corrupt_snapshot_returns_empty_store() {
-        let dir = std::env::temp_dir().join(format!(
-            "wisp-issuer-corrupt-{}",
-            std::process::id()
-        ));
+        let dir = std::env::temp_dir().join(format!("wisp-issuer-corrupt-{}", std::process::id()));
         let _ = fs::create_dir_all(&dir);
         let path = dir.join("issuer-state.json");
         fs::write(&path, b"{not-json").expect("write corrupt");

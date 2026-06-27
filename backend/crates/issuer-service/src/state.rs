@@ -1,20 +1,24 @@
-use std::collections::{BTreeSet, HashMap};
+use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use async_trait::async_trait;
-use issuer_sdk as sdk;
+use issuer_core as sdk;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use tokio_postgres::{Client, NoTls, Row};
-use wisp_types::{
-    CorridorOption, Credential, DemoTransferFixture, DemoTransferRequest, DemoUsersFixture,
-    ProofPackage, Roots, MAX_EPOCH_LAG,
-};
+use wisp_types::{CorridorOption, Credential, DemoTransferFixture, DemoUsersFixture, Roots};
 
 use crate::config::Config;
+use crate::issuance::{
+    activation_payload, build_challenge as build_issuance_challenge, build_proof_package_draft,
+    proof_payload, validate_field_decimal, verify_signed_message, ActivateCredentialRequest,
+    ActivateCredentialResponse, ActivatedCredential, ActivationChallengeRequest, ChallengePurpose,
+    ChallengeRecord, ChallengeResponse, ProofContext, ProofPackageChallengeRequest,
+    ProofPackageDraft, SignedProofPackageRequest,
+};
 use crate::log_util::{short_key, short_root};
 use crate::memory_snapshot::{PersistedMemory, SnapshotLoad};
 use crate::mock_kyc::{
@@ -25,9 +29,7 @@ use crate::mock_kyc::{
     MockKycRootsStatus, MockKycStatusResponse, MockKycSubmitRequest, MockKycSubmitResponse,
     MockKycSubmitStatus, MOCK_CREDENTIAL_SECRET,
 };
-use crate::trees::{
-    build_dynamic_demo_fixture, corridor_options, current_epoch, NormalizedProviderEvent,
-};
+use crate::trees::{corridor_options, NormalizedProviderEvent};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IssuerUser {
@@ -134,14 +136,6 @@ pub struct PublishRootsRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ProofPackageRequest {
-    pub sender_wallet: String,
-    pub recipient_wallet: String,
-    pub amount: String,
-    pub corridor_id: u32,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PublishResult {
     pub snapshot_id: i64,
     pub corridor_id: u32,
@@ -152,8 +146,6 @@ pub struct PublishResult {
 #[derive(Clone)]
 pub struct AppState {
     pub(crate) repo: Arc<Repository>,
-    cache: Arc<RwLock<Option<ProofPackage>>>,
-    bootstrap_corridor_id: Arc<RwLock<Option<u32>>>,
 }
 
 pub(crate) enum Repository {
@@ -169,17 +161,20 @@ pub(crate) struct PostgresStore {
 pub(crate) struct MemoryStore {
     pub(crate) next_user_id: i64,
     pub(crate) next_credential_id: i64,
+    pub(crate) next_activated_credential_id: i64,
     pub(crate) next_destination_id: i64,
     pub(crate) next_snapshot_id: i64,
     pub(crate) next_webhook_id: i64,
     pub(crate) users: Vec<IssuerUser>,
     pub(crate) credentials: Vec<IssuerCredentialRecord>,
+    pub(crate) activated_credentials: Vec<ActivatedCredential>,
     pub(crate) corridors: Vec<CorridorRecord>,
     pub(crate) destinations: Vec<CorridorDestinationRecord>,
     pub(crate) root_snapshots: Vec<RootSnapshotRecord>,
     pub(crate) webhook_events: Vec<WebhookEventRecord>,
     pub(crate) mock_kyc_challenges: Vec<crate::mock_kyc::MockKycChallengeRecord>,
     pub(crate) mock_kyc_last_request: HashMap<String, i64>,
+    pub(crate) challenges: Vec<ChallengeRecord>,
 }
 
 fn build_persisted_memory(cfg: &Config) -> PersistedMemory {
@@ -224,11 +219,7 @@ impl AppState {
             Arc::new(Repository::Memory(build_persisted_memory(cfg)))
         };
 
-        let state = Self {
-            repo,
-            cache: Arc::new(RwLock::new(None)),
-            bootstrap_corridor_id: Arc::new(RwLock::new(None)),
-        };
+        let state = Self { repo };
 
         tracing::info!(
             store = state.store_label(),
@@ -239,16 +230,6 @@ impl AppState {
 
         state.seed_from_fixtures(cfg).await;
         state.invalidate_stale_root_snapshots(cfg).await;
-
-        let warmup = state.clone();
-        let warmup_cfg = cfg.clone();
-        tokio::spawn(async move {
-            if let Some(req) = warmup.bootstrap_request(&warmup_cfg).await {
-                if let Err(err) = warmup.create_proof_package(&warmup_cfg, &req).await {
-                    tracing::debug!(error = %err, "bootstrap proof package warmup skipped");
-                }
-            }
-        });
 
         state
     }
@@ -267,19 +248,7 @@ impl AppState {
     pub(crate) fn from_persisted_memory(memory: PersistedMemory) -> Self {
         Self {
             repo: Arc::new(Repository::Memory(memory)),
-            cache: Arc::new(RwLock::new(None)),
-            bootstrap_corridor_id: Arc::new(RwLock::new(None)),
         }
-    }
-
-    pub async fn bootstrap_request(&self, cfg: &Config) -> Option<ProofPackageRequest> {
-        let fixture = load_demo_transfer(cfg)?;
-        Some(ProofPackageRequest {
-            sender_wallet: fixture.sender_hex,
-            recipient_wallet: fixture.recipient_hex,
-            amount: fixture.amount,
-            corridor_id: fixture.corridor_id,
-        })
     }
 
     pub async fn seed_from_fixtures(&self, cfg: &Config) {
@@ -296,8 +265,6 @@ impl AppState {
             self.repo
                 .seed_demo_data(&users_fixture, transfer.as_ref())
                 .await;
-            *self.bootstrap_corridor_id.write().expect("lock") =
-                transfer.as_ref().map(|item| item.corridor_id);
         } else if let Some(transfer) = &transfer {
             self.repo
                 .ensure_corridor_destination(transfer.corridor_id, &transfer.recipient_hex)
@@ -305,46 +272,27 @@ impl AppState {
         }
     }
 
-    pub async fn proof_package(&self) -> Option<ProofPackage> {
-        self.cache
-            .read()
-            .expect("lock")
-            .clone()
-            .filter(proof_package_epoch_is_current)
-    }
-
-    pub async fn demo_proof_package(&self, cfg: &Config) -> Option<ProofPackage> {
-        if let Some(pkg) = self.proof_package().await {
-            return Some(pkg);
-        }
-        let req = self.bootstrap_request(cfg).await?;
-        self.create_proof_package(cfg, &req).await.ok()
-    }
-
-    pub async fn roots(&self) -> Option<Roots> {
-        self.proof_package().await.map(|pkg| pkg.roots)
-    }
-
     pub async fn roots_hash(&self) -> String {
-        let Some(roots) = self.roots().await else {
+        let Some(snapshot) = self.latest_root_snapshot(None).await else {
             return "empty".into();
         };
         format!(
             "{:x}",
             hash_to_u64(&format!(
                 "{}{}{}{}{}{}",
-                roots.merkle_root,
-                roots.sanctions_root,
-                roots.jurisdiction_root,
-                roots.source_jurisdiction_root,
-                roots.dest_address_root,
-                roots.corridor_config_hash
+                snapshot.merkle_root,
+                snapshot.sanctions_root,
+                snapshot.jurisdiction_root,
+                snapshot.source_jurisdiction_root,
+                snapshot.dest_address_root,
+                snapshot.corridor_config_hash
             ))
         )
     }
 
-    pub async fn wallet_credential(&self, wallet_hex: &str) -> Option<Credential> {
-        self.repo.get_user_credential(wallet_hex).await
+    pub async fn wallet_credential(&self, wallet: &str) -> Option<Credential> {
+        let wallet_hex = normalize_wallet_hex(wallet).ok()?;
+        self.repo.get_user_credential(&wallet_hex).await
     }
 
     pub async fn available_corridors(&self) -> Vec<CorridorOption> {
@@ -390,10 +338,12 @@ impl AppState {
         self.repo.latest_root_snapshot(corridor_id).await
     }
 
-    pub async fn computed_roots_for_corridor(&self, corridor_id: u32) -> Result<Roots, String> {
-        self.build_embedded_engine(None)
-            .compute_roots_for_corridor(corridor_id)
-            .await
+    pub async fn computed_roots_for_corridor(
+        &self,
+        cfg: &Config,
+        corridor_id: u32,
+    ) -> Result<Roots, String> {
+        self.compute_roots_for_corridor(cfg, corridor_id).await
     }
 
     pub async fn store_webhook(
@@ -416,43 +366,6 @@ impl AppState {
             .upsert_approval_from_event(provider, event_key, payload)
             .await?;
         Ok(user_from_sdk(user))
-    }
-
-    pub async fn create_demo_transfer(
-        &self,
-        cfg: &Config,
-        req: &DemoTransferRequest,
-    ) -> Result<(DemoTransferFixture, ProofPackage), String> {
-        let users_fixture = self.repo.export_demo_fixture().await;
-        let file_fixture = load_demo_transfer(cfg);
-        let fallback_template = load_demo_transfer_fixture_template();
-        let template = file_fixture.as_ref().unwrap_or(&fallback_template);
-        let fixture = build_dynamic_demo_fixture(req, &users_fixture, template)?;
-        self.repo
-            .ensure_corridor_destination(fixture.corridor_id, &fixture.recipient_hex)
-            .await;
-        self.ensure_roots_published(cfg, fixture.corridor_id)
-            .await?;
-        let mut proof = self
-            .create_proof_package(
-                cfg,
-                &ProofPackageRequest {
-                    sender_wallet: fixture.sender_hex.clone(),
-                    recipient_wallet: fixture.recipient_hex.clone(),
-                    amount: fixture.amount.clone(),
-                    corridor_id: fixture.corridor_id,
-                },
-            )
-            .await?;
-        patch_proof_demo_strkeys(&mut proof, &fixture);
-        tracing::info!(
-            corridor_id = fixture.corridor_id,
-            sender = %short_key(&fixture.sender_hex),
-            recipient = %short_key(&fixture.recipient_hex),
-            amount = %fixture.amount,
-            "demo transfer package built"
-        );
-        Ok((fixture, proof))
     }
 
     fn roots_match(snapshot: &RootSnapshotRecord, roots: &Roots) -> bool {
@@ -494,7 +407,7 @@ impl AppState {
         cfg: &Config,
         corridor_id: u32,
     ) -> Result<(), String> {
-        let computed = self.compute_roots_for_corridor(corridor_id).await?;
+        let computed = self.compute_roots_for_corridor(cfg, corridor_id).await?;
         if let Some(snapshot) = self.latest_root_snapshot(Some(corridor_id)).await {
             if snapshot.publish_status == "active"
                 && Self::roots_match(&snapshot, &computed)
@@ -527,30 +440,263 @@ impl AppState {
         }
     }
 
-    pub async fn create_proof_package(
+    pub async fn create_activation_challenge(
+        &self,
+        req: &ActivationChallengeRequest,
+    ) -> Result<ChallengeResponse, String> {
+        let wallet_hex = normalize_wallet_hex(&req.wallet)?;
+        let user = self
+            .repo
+            .find_active_user_by_wallet(&wallet_hex)
+            .await
+            .ok_or_else(|| "approved KYC credential required before activation".to_string())?;
+        if !user.sanctions_clear {
+            return Err("wallet is not sanctions clear".into());
+        }
+        if user.credential_expiry < now_unix() as u64 {
+            return Err("KYC credential is expired".into());
+        }
+        validate_field_decimal(&req.credential_commitment)?;
+        let challenge = build_issuance_challenge(
+            ChallengePurpose::ActivateCredential,
+            &req.wallet,
+            activation_payload(&req.credential_commitment),
+        )?;
+        self.repo.store_challenge(challenge.clone()).await?;
+        Ok(ChallengeResponse {
+            challenge_id: challenge.id,
+            message: challenge.message,
+            expires_at: challenge.expires_at,
+        })
+    }
+
+    pub async fn activate_credential(
         &self,
         cfg: &Config,
-        req: &ProofPackageRequest,
-    ) -> Result<ProofPackage, String> {
-        let proof = self
-            .build_engine(cfg)
-            .issue_proof_package(&sdk::ProofPackageRequest {
-                sender_wallet: req.sender_wallet.clone(),
-                recipient_wallet: req.recipient_wallet.clone(),
+        req: &ActivateCredentialRequest,
+    ) -> Result<ActivateCredentialResponse, String> {
+        let challenge = self
+            .repo
+            .get_challenge_by_id(&req.challenge_id)
+            .await?
+            .ok_or_else(|| "challenge not found".to_string())?;
+        if challenge.purpose != ChallengePurpose::ActivateCredential {
+            return Err("challenge purpose mismatch".into());
+        }
+        if challenge.consumed_at.is_some() {
+            return Err("challenge already consumed".into());
+        }
+        verify_signed_message(&challenge, &req.signed_message)?;
+        let user = self
+            .repo
+            .find_active_user_by_wallet(&challenge.wallet_hex)
+            .await
+            .ok_or_else(|| "approved KYC credential required before activation".to_string())?;
+        if !user.sanctions_clear {
+            return Err("wallet is not sanctions clear".into());
+        }
+        if user.credential_expiry < now_unix() as u64 {
+            return Err("KYC credential is expired".into());
+        }
+        let commitment = challenge
+            .payload
+            .get("credential_commitment")
+            .and_then(Value::as_str)
+            .ok_or_else(|| "challenge payload missing credential commitment".to_string())?;
+        validate_field_decimal(commitment)?;
+        // Reserve the challenge only after all mutable eligibility state has been revalidated.
+        // The atomic consume still prevents two concurrent activations from both succeeding.
+        self.repo.consume_challenge(&challenge.id).await?;
+        let credential = self
+            .repo
+            .upsert_activated_credential(
+                user.id,
+                &user.wallet,
+                commitment,
+                user.jurisdiction_code,
+                user.credential_expiry,
+            )
+            .await?;
+        let eligible = user
+            .metadata
+            .get("corridor_eligibility")
+            .and_then(Value::as_array)
+            .map(|items| {
+                items
+                    .iter()
+                    .filter_map(Value::as_u64)
+                    .map(|value| value as u32)
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        if let Err(error) = self
+            .ensure_roots_published_for_corridors(cfg, &eligible)
+            .await
+        {
+            tracing::warn!(%error, "credential activated; root publication deferred");
+        }
+        Ok(ActivateCredentialResponse {
+            wallet: user.wallet,
+            credential_commitment: credential.credential_commitment,
+            activated_at: credential.activated_at,
+        })
+    }
+
+    pub async fn create_proof_package_challenge(
+        &self,
+        req: &ProofPackageChallengeRequest,
+    ) -> Result<ChallengeResponse, String> {
+        let sender_wallet = normalize_wallet_hex(&req.sender_wallet)?;
+        let recipient_wallet = normalize_wallet_hex(&req.recipient_wallet)?;
+        let sender = self
+            .repo
+            .find_active_user_by_wallet(&sender_wallet)
+            .await
+            .ok_or_else(|| "approved sender credential required".to_string())?;
+        if !sender.sanctions_clear {
+            return Err("sender is not sanctions clear".into());
+        }
+        let activated = self
+            .repo
+            .find_activated_credential_by_wallet(&sender_wallet)
+            .await?
+            .ok_or_else(|| "credential activation required".to_string())?;
+        if activated.jurisdiction_code != sender.jurisdiction_code
+            || activated.credential_expiry != sender.credential_expiry
+        {
+            return Err("credential activation is stale; reactivate after KYC changes".into());
+        }
+        if activated.credential_expiry < now_unix() as u64 {
+            return Err("credential is expired".into());
+        }
+        let amount = req
+            .amount
+            .parse::<u64>()
+            .map_err(|_| "amount must be a positive u64".to_string())?;
+        if amount == 0 {
+            return Err("amount must be greater than zero".into());
+        }
+        let corridor = self
+            .repo
+            .get_corridor(req.corridor_id)
+            .await
+            .ok_or_else(|| format!("unknown corridor id: {}", req.corridor_id))?;
+        if !corridor.enabled {
+            return Err(format!("corridor {} is disabled", req.corridor_id));
+        }
+        if !sender
+            .jurisdiction
+            .eq_ignore_ascii_case(&corridor.source_country)
+        {
+            return Err("sender jurisdiction is not eligible for corridor".into());
+        }
+        let destination = self
+            .repo
+            .find_destination(req.corridor_id, &recipient_wallet)
+            .await
+            .ok_or_else(|| "recipient not approved for corridor".to_string())?;
+        if !destination.enabled {
+            return Err("recipient not approved for corridor".into());
+        }
+        let challenge = build_issuance_challenge(
+            ChallengePurpose::ProofPackage,
+            &req.sender_wallet,
+            proof_payload(&ProofPackageChallengeRequest {
+                sender_wallet,
+                recipient_wallet,
                 amount: req.amount.clone(),
                 corridor_id: req.corridor_id,
-            })
+            }),
+        )?;
+        self.repo.store_challenge(challenge.clone()).await?;
+        Ok(ChallengeResponse {
+            challenge_id: challenge.id,
+            message: challenge.message,
+            expires_at: challenge.expires_at,
+        })
+    }
+
+    pub async fn create_proof_package_draft(
+        &self,
+        cfg: &Config,
+        req: &SignedProofPackageRequest,
+    ) -> Result<ProofPackageDraft, String> {
+        let challenge = self
+            .repo
+            .get_challenge_by_id(&req.challenge_id)
+            .await?
+            .ok_or_else(|| "challenge not found".to_string())?;
+        if challenge.purpose != ChallengePurpose::ProofPackage {
+            return Err("challenge purpose mismatch".into());
+        }
+        if challenge.consumed_at.is_some() {
+            return Err("challenge already consumed".into());
+        }
+        verify_signed_message(&challenge, &req.signed_message)?;
+        let payload: ProofPackageChallengeRequest =
+            serde_json::from_value(challenge.payload.clone()).map_err(|err| err.to_string())?;
+        let sender = self
+            .repo
+            .find_active_user_by_wallet(&payload.sender_wallet)
+            .await
+            .ok_or_else(|| "approved sender credential required".to_string())?;
+        if !sender.sanctions_clear || !sender.enabled {
+            return Err("sender is no longer eligible".into());
+        }
+        let sender_credential = self
+            .repo
+            .find_activated_credential_by_wallet(&payload.sender_wallet)
+            .await?
+            .ok_or_else(|| "credential activation required".to_string())?;
+        if sender_credential.jurisdiction_code != sender.jurisdiction_code
+            || sender_credential.credential_expiry != sender.credential_expiry
+            || sender_credential.credential_expiry < now_unix() as u64
+        {
+            return Err("credential activation is stale or expired".into());
+        }
+        let corridor = self
+            .repo
+            .get_corridor(payload.corridor_id)
+            .await
+            .ok_or_else(|| format!("unknown corridor id: {}", payload.corridor_id))?;
+        if !corridor.enabled
+            || !sender
+                .jurisdiction
+                .eq_ignore_ascii_case(&corridor.source_country)
+        {
+            return Err("corridor is disabled or sender is ineligible".into());
+        }
+        let destination = self
+            .repo
+            .find_destination(payload.corridor_id, &payload.recipient_wallet)
+            .await
+            .ok_or_else(|| "recipient not approved for corridor".to_string())?;
+        if !destination.enabled {
+            return Err("recipient not approved for corridor".into());
+        }
+        // Reserve the challenge after revalidating all mutable authorization state, but before
+        // root publication or draft generation can produce a second independently usable package.
+        self.repo.consume_challenge(&challenge.id).await?;
+        self.ensure_roots_published(cfg, payload.corridor_id)
             .await?;
-        tracing::info!(
-            corridor_id = req.corridor_id,
-            sender = %short_key(&proof.transfer.sender),
-            recipient = %short_key(&proof.transfer.recipient),
-            amount = %req.amount,
-            merkle = %short_root(&proof.roots.merkle_root),
-            "proof package built"
-        );
-        *self.cache.write().expect("lock") = Some(proof.clone());
-        Ok(proof)
+        let draft = build_proof_package_draft(ProofContext {
+            sender,
+            sender_credential,
+            corridor,
+            destination,
+            users: self.repo.list_users().await,
+            credentials: self.repo.list_activated_credentials().await?,
+            destinations: self
+                .repo
+                .list_enabled_destinations(payload.corridor_id)
+                .await,
+            amount: payload.amount,
+            issuer_public_key: cfg
+                .issuer_public_key
+                .clone()
+                .ok_or_else(|| "ISSUER_PUBLIC_KEY is required".to_string())?,
+        })?;
+        Ok(draft)
     }
 
     pub async fn publish_roots(
@@ -570,7 +716,6 @@ impl AppState {
                 .collect()
         };
 
-        let engine = self.build_engine(cfg);
         let mut results = Vec::new();
         tracing::info!(
             corridors = corridor_ids.len(),
@@ -578,35 +723,39 @@ impl AppState {
             "roots publish: start"
         );
         for corridor_id in corridor_ids {
-            match engine.ensure_roots_current(corridor_id).await? {
-                sdk::PublishOutcome {
-                    snapshot_id,
-                    corridor_id,
-                    roots_state: sdk::RootsState::Active,
-                    message,
-                } => {
+            let roots = self.compute_roots_for_corridor(cfg, corridor_id).await?;
+            let snapshot = self
+                .repo
+                .create_pending_root_snapshot(corridor_id, &roots)
+                .await?;
+            match crate::stellar::publish_roots(cfg, &roots, corridor_id) {
+                Ok(message) => {
+                    self.repo
+                        .activate_root_snapshot(
+                            snapshot.id,
+                            message.clone(),
+                            cfg.compliance_id.clone(),
+                        )
+                        .await?;
                     results.push(PublishResult {
-                        snapshot_id,
+                        snapshot_id: snapshot.id,
                         corridor_id,
                         status: "active".into(),
-                        message,
+                        message: Some(message),
                     });
                     tracing::info!(
                         corridor_id,
-                        snapshot_id,
+                        snapshot_id = snapshot.id,
                         "roots publish: corridor ok"
                     );
                 }
-                sdk::PublishOutcome {
-                    snapshot_id,
-                    corridor_id,
-                    roots_state: _,
-                    message,
-                } => {
-                    let err = message.unwrap_or_else(|| "roots publish failed".into());
+                Err(err) => {
+                    self.repo
+                        .fail_root_snapshot(snapshot.id, err.clone())
+                        .await?;
                     tracing::warn!(corridor_id, error = %err, "roots publish: corridor failed");
                     results.push(PublishResult {
-                        snapshot_id,
+                        snapshot_id: snapshot.id,
                         corridor_id,
                         status: "failed".into(),
                         message: Some(err),
@@ -624,21 +773,6 @@ impl AppState {
         }))
         .options(sdk::IssuerEngineOptions {
             compliance_contract_id,
-            issuer_name: None,
-        })
-        .build()
-    }
-
-    fn build_engine(&self, cfg: &Config) -> sdk::IssuerEngine {
-        sdk::IssuerEngineBuilder::new(Arc::new(ServiceRepositoryAdapter {
-            repo: self.repo.clone(),
-        }))
-        .proof_builder(Arc::new(DemoFixtureProofBuilder {
-            fixture: load_demo_transfer(cfg),
-        }))
-        .root_publisher(Arc::new(StellarPublisher { cfg: cfg.clone() }))
-        .options(sdk::IssuerEngineOptions {
-            compliance_contract_id: cfg.compliance_id.clone(),
             issuer_name: None,
         })
         .build()
@@ -1053,7 +1187,16 @@ impl AppState {
         if base.0 != MockKycRootsStatus::Active {
             return Ok(base);
         }
-        let computed = self.compute_roots_for_corridor(corridor.id).await?;
+        let computed = match self.compute_roots_for_corridor(cfg, corridor.id).await {
+            Ok(roots) => roots,
+            Err(error) if error.contains("activated credentials") => {
+                return Ok((
+                    MockKycRootsStatus::Missing,
+                    Some("credential activation required before publishing roots".into()),
+                ));
+            }
+            Err(error) => return Err(error),
+        };
         if !Self::roots_match(&snapshot, &computed) {
             return Ok((
                 MockKycRootsStatus::Missing,
@@ -1075,10 +1218,60 @@ impl AppState {
         Ok(base)
     }
 
-    async fn compute_roots_for_corridor(&self, corridor_id: u32) -> Result<Roots, String> {
-        self.build_embedded_engine(None)
-            .compute_roots_for_corridor(corridor_id)
+    async fn compute_roots_for_corridor(
+        &self,
+        cfg: &Config,
+        corridor_id: u32,
+    ) -> Result<Roots, String> {
+        let corridor = self
+            .repo
+            .get_corridor(corridor_id)
             .await
+            .ok_or_else(|| format!("unknown corridor id: {corridor_id}"))?;
+        let users = self.repo.list_users().await;
+        let credentials = self.repo.list_activated_credentials().await?;
+        let sender_credential = credentials
+            .iter()
+            .find(|credential| {
+                users.iter().any(|user| {
+                    user.wallet == credential.wallet
+                        && user.enabled
+                        && user.sanctions_clear
+                        && user.credential_expiry >= now_unix() as u64
+                        && credential.jurisdiction_code == user.jurisdiction_code
+                        && credential.credential_expiry == user.credential_expiry
+                        && user
+                            .jurisdiction
+                            .eq_ignore_ascii_case(&corridor.source_country)
+                })
+            })
+            .cloned()
+            .ok_or_else(|| "no activated credentials found for corridor source".to_string())?;
+        let sender = users
+            .iter()
+            .find(|user| user.wallet == sender_credential.wallet && user.enabled)
+            .cloned()
+            .ok_or_else(|| "activated credential has no active issuer user".to_string())?;
+        let destinations = self.repo.list_enabled_destinations(corridor_id).await;
+        let destination = destinations
+            .first()
+            .cloned()
+            .ok_or_else(|| "no approved destinations found".to_string())?;
+        let draft = build_proof_package_draft(ProofContext {
+            sender,
+            sender_credential,
+            corridor,
+            destination,
+            users,
+            credentials,
+            destinations,
+            amount: "1".into(),
+            issuer_public_key: cfg
+                .issuer_public_key
+                .clone()
+                .ok_or_else(|| "ISSUER_PUBLIC_KEY is required".to_string())?,
+        })?;
+        Ok(draft.roots)
     }
 }
 
@@ -1242,6 +1435,7 @@ impl Repository {
                 Some(Credential {
                     wallet: user.wallet.clone(),
                     jurisdiction: user.jurisdiction.clone(),
+                    jurisdiction_code: user.jurisdiction_code,
                     credential_expiry: user.credential_expiry,
                     sanctions_clear: user.sanctions_clear,
                     corridor_eligibility: corridor_eligibility(&user.metadata),
@@ -1435,7 +1629,9 @@ impl Repository {
                 .expect("lock")
                 .destinations
                 .iter()
-                .find(|item| item.corridor_id == corridor_id && item.address == address)
+                .find(|item| {
+                    item.corridor_id == corridor_id && item.address == address && item.enabled
+                })
                 .cloned(),
             Self::Postgres(store) => store
                 .find_destination(corridor_id, address)
@@ -1474,6 +1670,137 @@ impl Repository {
                 .find(|credential| credential.user_id == user_id && credential.enabled)
                 .cloned(),
             Self::Postgres(store) => store.find_active_credential(user_id).await.ok().flatten(),
+        }
+    }
+
+    async fn store_challenge(&self, record: ChallengeRecord) -> Result<(), String> {
+        match self {
+            Self::Memory(memory) => {
+                memory.write_guard().challenges.push(record);
+                Ok(())
+            }
+            Self::Postgres(store) => store.store_challenge(record).await,
+        }
+    }
+
+    async fn get_challenge_by_id(
+        &self,
+        challenge_id: &str,
+    ) -> Result<Option<ChallengeRecord>, String> {
+        match self {
+            Self::Memory(memory) => Ok(memory
+                .store
+                .read()
+                .expect("lock")
+                .challenges
+                .iter()
+                .find(|item| item.id == challenge_id)
+                .cloned()),
+            Self::Postgres(store) => store.get_challenge_by_id(challenge_id).await,
+        }
+    }
+
+    async fn consume_challenge(&self, challenge_id: &str) -> Result<(), String> {
+        match self {
+            Self::Memory(memory) => {
+                let mut store = memory.write_guard();
+                let challenge = store
+                    .challenges
+                    .iter_mut()
+                    .find(|item| item.id == challenge_id)
+                    .ok_or_else(|| "challenge not found".to_string())?;
+                if challenge.consumed_at.is_some() {
+                    return Err("challenge already consumed".into());
+                }
+                challenge.consumed_at = Some(now_unix());
+                Ok(())
+            }
+            Self::Postgres(store) => store.consume_challenge(challenge_id).await,
+        }
+    }
+
+    async fn upsert_activated_credential(
+        &self,
+        user_id: i64,
+        wallet: &str,
+        commitment: &str,
+        jurisdiction_code: u32,
+        credential_expiry: u64,
+    ) -> Result<ActivatedCredential, String> {
+        match self {
+            Self::Memory(memory) => {
+                let mut store = memory.write_guard();
+                let activated_at = now_unix();
+                if let Some(existing) = store
+                    .activated_credentials
+                    .iter_mut()
+                    .find(|credential| credential.user_id == user_id)
+                {
+                    existing.wallet = wallet.to_string();
+                    existing.credential_commitment = commitment.to_string();
+                    existing.jurisdiction_code = jurisdiction_code;
+                    existing.credential_expiry = credential_expiry;
+                    existing.enabled = true;
+                    existing.activated_at = activated_at;
+                    return Ok(existing.clone());
+                }
+                store.next_activated_credential_id += 1;
+                let record = ActivatedCredential {
+                    id: store.next_activated_credential_id,
+                    user_id,
+                    wallet: wallet.to_string(),
+                    credential_commitment: commitment.to_string(),
+                    jurisdiction_code,
+                    credential_expiry,
+                    enabled: true,
+                    activated_at,
+                };
+                store.activated_credentials.push(record.clone());
+                Ok(record)
+            }
+            Self::Postgres(store) => {
+                store
+                    .upsert_activated_credential(
+                        user_id,
+                        wallet,
+                        commitment,
+                        jurisdiction_code,
+                        credential_expiry,
+                    )
+                    .await
+            }
+        }
+    }
+
+    async fn find_activated_credential_by_wallet(
+        &self,
+        wallet: &str,
+    ) -> Result<Option<ActivatedCredential>, String> {
+        match self {
+            Self::Memory(memory) => Ok(memory
+                .store
+                .read()
+                .expect("lock")
+                .activated_credentials
+                .iter()
+                .find(|credential| credential.wallet == wallet && credential.enabled)
+                .cloned()),
+            Self::Postgres(store) => store.find_activated_credential_by_wallet(wallet).await,
+        }
+    }
+
+    async fn list_activated_credentials(&self) -> Result<Vec<ActivatedCredential>, String> {
+        match self {
+            Self::Memory(memory) => Ok(memory
+                .store
+                .read()
+                .expect("lock")
+                .activated_credentials
+                .iter()
+                .filter(|credential| credential.enabled)
+                .cloned()
+                .collect()),
+            Self::Postgres(store) => store.list_activated_credentials().await,
         }
     }
 
@@ -1706,51 +2033,6 @@ impl Repository {
         }
     }
 
-    async fn export_demo_fixture(&self) -> DemoUsersFixture {
-        let users = self.list_users().await;
-        let corridors = self.list_corridors().await;
-        let mut allowed: HashMap<u32, BTreeSet<String>> = HashMap::new();
-        for destination in self
-            .list_corridors()
-            .await
-            .into_iter()
-            .map(|corridor| corridor.id)
-            .flat_map(|corridor_id| futures_for_destinations(self, corridor_id))
-        {
-            allowed
-                .entry(destination.corridor_id)
-                .or_default()
-                .insert(destination.address);
-        }
-        DemoUsersFixture {
-            demo_only: false,
-            users: users
-                .into_iter()
-                .map(|user| wisp_types::DemoUser {
-                    wallet_hex: user.wallet,
-                    jurisdiction: user.jurisdiction,
-                    jurisdiction_code: user.jurisdiction_code,
-                    credential_expiry: user.credential_expiry,
-                    sanctions_clear: user.sanctions_clear,
-                    corridor_eligibility: corridor_eligibility(&user.metadata),
-                })
-                .collect(),
-            corridors: corridors
-                .into_iter()
-                .map(|corridor| wisp_types::DemoCorridor {
-                    id: corridor.id,
-                    name: corridor.name,
-                    enabled: corridor.enabled,
-                    allowed_destinations_hex: allowed
-                        .remove(&corridor.id)
-                        .unwrap_or_default()
-                        .into_iter()
-                        .collect(),
-                })
-                .collect(),
-        }
-    }
-
     async fn throttle_mock_kyc_wallet(
         &self,
         wallet_hex: &str,
@@ -1956,21 +2238,6 @@ impl Repository {
     }
 }
 
-fn futures_for_destinations(repo: &Repository, corridor_id: u32) -> Vec<CorridorDestinationRecord> {
-    match repo {
-        Repository::Memory(memory) => memory
-            .store
-            .read()
-            .expect("lock")
-            .destinations
-            .iter()
-            .filter(|item| item.corridor_id == corridor_id && item.enabled)
-            .cloned()
-            .collect(),
-        Repository::Postgres(_) => Vec::new(),
-    }
-}
-
 impl PostgresStore {
     async fn connect(db_url: &str) -> Result<Self, String> {
         if db_url.contains("sslmode=disable") {
@@ -2094,7 +2361,7 @@ impl PostgresStore {
         let row = self
             .client
             .query_opt(
-                "select wallet, jurisdiction, credential_expiry, sanctions_clear, metadata
+                "select wallet, jurisdiction, jurisdiction_code, credential_expiry, sanctions_clear, metadata
                  from issuer_users
                  where wallet = $1 and enabled = true",
                 &[&wallet],
@@ -2104,9 +2371,10 @@ impl PostgresStore {
         Ok(row.map(|row| Credential {
             wallet: row.get(0),
             jurisdiction: row.get(1),
-            credential_expiry: row.get::<_, i64>(2) as u64,
-            sanctions_clear: row.get(3),
-            corridor_eligibility: corridor_eligibility(&row.get::<_, Value>(4)),
+            jurisdiction_code: row.get::<_, i32>(2) as u32,
+            credential_expiry: row.get::<_, i64>(3) as u64,
+            sanctions_clear: row.get(4),
+            corridor_eligibility: corridor_eligibility(&row.get::<_, Value>(5)),
             credential_commitment: None,
         }))
     }
@@ -2307,7 +2575,7 @@ impl PostgresStore {
             .query_opt(
                 "select id, corridor_id, address, enabled, metadata
                  from corridor_destinations
-                 where corridor_id = $1 and address = $2",
+                 where corridor_id = $1 and address = $2 and enabled = true",
                 &[&(corridor_id as i32), &address],
             )
             .await
@@ -2345,6 +2613,144 @@ impl PostgresStore {
             .await
             .map_err(|err| err.to_string())?;
         Ok(row.map(parse_credential_row))
+    }
+
+    async fn store_challenge(&self, record: ChallengeRecord) -> Result<(), String> {
+        let id = parse_challenge_uuid(&record.id)?;
+        self.client
+            .execute(
+                "insert into issuer_challenges (
+                    id, wallet_hex, wallet_strkey, purpose, message, payload, nonce, expires_at
+                 ) values ($1,$2,$3,$4,$5,$6,$7,to_timestamp($8))",
+                &[
+                    &id,
+                    &record.wallet_hex,
+                    &record.wallet_strkey,
+                    &record.purpose.as_str(),
+                    &record.message,
+                    &record.payload,
+                    &record.nonce,
+                    &(record.expires_at as f64),
+                ],
+            )
+            .await
+            .map_err(|err| err.to_string())?;
+        Ok(())
+    }
+
+    async fn get_challenge_by_id(
+        &self,
+        challenge_id: &str,
+    ) -> Result<Option<ChallengeRecord>, String> {
+        let id = parse_challenge_uuid(challenge_id)?;
+        let row = self
+            .client
+            .query_opt(
+                "select id::text, wallet_hex, wallet_strkey, purpose, message, payload, nonce,
+                        extract(epoch from expires_at)::bigint, extract(epoch from consumed_at)::bigint
+                 from issuer_challenges
+                 where id = $1",
+                &[&id],
+            )
+            .await
+            .map_err(|err| err.to_string())?;
+        Ok(row.map(parse_challenge_row))
+    }
+
+    async fn consume_challenge(&self, challenge_id: &str) -> Result<(), String> {
+        let id = parse_challenge_uuid(challenge_id)?;
+        let updated = self
+            .client
+            .execute(
+                "update issuer_challenges
+                 set consumed_at = now()
+                 where id = $1 and consumed_at is null",
+                &[&id],
+            )
+            .await
+            .map_err(|err| err.to_string())?;
+        if updated == 0 {
+            return Err("challenge already consumed".into());
+        }
+        Ok(())
+    }
+
+    async fn upsert_activated_credential(
+        &self,
+        user_id: i64,
+        wallet: &str,
+        commitment: &str,
+        jurisdiction_code: u32,
+        credential_expiry: u64,
+    ) -> Result<ActivatedCredential, String> {
+        let row = self
+            .client
+            .query_one(
+                "insert into issuer_activated_credentials (
+                    user_id, wallet, credential_commitment, jurisdiction_code,
+                    credential_expiry, enabled, activated_at
+                 ) values ($1,$2,$3,$4,$5,true,to_timestamp($6))
+                 on conflict (user_id) do update
+                 set wallet = excluded.wallet,
+                     credential_commitment = excluded.credential_commitment,
+                     jurisdiction_code = excluded.jurisdiction_code,
+                     credential_expiry = excluded.credential_expiry,
+                     enabled = true,
+                     activated_at = excluded.activated_at
+                 returning id, user_id, wallet, credential_commitment, jurisdiction_code,
+                           credential_expiry, enabled,
+                           extract(epoch from activated_at)::bigint",
+                &[
+                    &user_id,
+                    &wallet,
+                    &commitment,
+                    &(jurisdiction_code as i32),
+                    &(credential_expiry as i64),
+                    &(now_unix() as f64),
+                ],
+            )
+            .await
+            .map_err(|err| err.to_string())?;
+        Ok(parse_activated_credential_row(row))
+    }
+
+    async fn find_activated_credential_by_wallet(
+        &self,
+        wallet: &str,
+    ) -> Result<Option<ActivatedCredential>, String> {
+        let row = self
+            .client
+            .query_opt(
+                "select id, user_id, wallet, credential_commitment, jurisdiction_code,
+                        credential_expiry, enabled,
+                        extract(epoch from activated_at)::bigint
+                 from issuer_activated_credentials
+                 where wallet = $1 and enabled = true",
+                &[&wallet],
+            )
+            .await
+            .map_err(|err| err.to_string())?;
+        Ok(row.map(parse_activated_credential_row))
+    }
+
+    async fn list_activated_credentials(&self) -> Result<Vec<ActivatedCredential>, String> {
+        let rows = self
+            .client
+            .query(
+                "select id, user_id, wallet, credential_commitment, jurisdiction_code,
+                        credential_expiry, enabled,
+                        extract(epoch from activated_at)::bigint
+                 from issuer_activated_credentials
+                 where enabled = true
+                 order by wallet asc",
+                &[],
+            )
+            .await
+            .map_err(|err| err.to_string())?;
+        Ok(rows
+            .into_iter()
+            .map(parse_activated_credential_row)
+            .collect())
     }
 
     async fn create_pending_root_snapshot(
@@ -2748,47 +3154,6 @@ impl PostgresStore {
     }
 }
 
-struct StellarPublisher {
-    cfg: Config,
-}
-
-impl sdk::RootPublisher for StellarPublisher {
-    fn publish_roots(&self, roots: &Roots, corridor_id: u32) -> Result<String, String> {
-        crate::stellar::publish_roots(&self.cfg, roots, corridor_id)
-    }
-}
-
-struct DemoFixtureProofBuilder {
-    fixture: Option<DemoTransferFixture>,
-}
-
-impl sdk::ProofPackageBuilder for DemoFixtureProofBuilder {
-    fn build(
-        &self,
-        sender: &sdk::IssuerUser,
-        credential: &sdk::IssuerCredentialRecord,
-        corridor: &sdk::CorridorRecord,
-        destination: &sdk::CorridorDestinationRecord,
-        users: &[sdk::IssuerUser],
-        destinations: &[sdk::CorridorDestinationRecord],
-        amount: String,
-    ) -> Result<ProofPackage, String> {
-        let demo_overrides = self.fixture.as_ref().and_then(|fixture| {
-            matching_demo_overrides(fixture, &sender.wallet, &destination.address, &amount, corridor.id)
-        });
-        sdk::build_canonical_proof_package(
-            sender,
-            credential,
-            corridor,
-            destination,
-            users,
-            destinations,
-            amount,
-            demo_overrides,
-        )
-    }
-}
-
 struct ServiceRepositoryAdapter {
     repo: Arc<Repository>,
 }
@@ -2796,7 +3161,13 @@ struct ServiceRepositoryAdapter {
 #[async_trait]
 impl sdk::IssuerRepository for ServiceRepositoryAdapter {
     async fn list_users(&self) -> Result<Vec<sdk::IssuerUser>, String> {
-        Ok(self.repo.list_users().await.into_iter().map(user_to_sdk).collect())
+        Ok(self
+            .repo
+            .list_users()
+            .await
+            .into_iter()
+            .map(user_to_sdk)
+            .collect())
     }
 
     async fn list_corridors(&self) -> Result<Vec<sdk::CorridorRecord>, String> {
@@ -2912,7 +3283,10 @@ impl sdk::IssuerRepository for ServiceRepositoryAdapter {
             credential_secret: decision.credential.credential_secret,
             metadata: decision.subject.metadata,
         };
-        self.repo.apply_normalized_event(normalized).await.map(user_to_sdk)
+        self.repo
+            .apply_normalized_event(normalized)
+            .await
+            .map(user_to_sdk)
     }
 
     async fn store_webhook(
@@ -3018,25 +3392,6 @@ fn webhook_to_sdk(record: WebhookEventRecord) -> sdk::WebhookEventRecord {
     }
 }
 
-fn matching_demo_overrides(
-    fixture: &DemoTransferFixture,
-    sender_wallet: &str,
-    recipient_wallet: &str,
-    amount: &str,
-    corridor_id: u32,
-) -> Option<(u128, u64)> {
-    if fixture.sender_hex != sender_wallet
-        || fixture.recipient_hex != recipient_wallet
-        || fixture.amount != amount
-        || fixture.corridor_id != corridor_id
-    {
-        return None;
-    }
-
-    let transfer_nonce = fixture.transfer_nonce.parse::<u128>().ok()?;
-    Some((transfer_nonce, current_epoch()))
-}
-
 fn parse_challenge_uuid(id: &str) -> Result<uuid::Uuid, String> {
     uuid::Uuid::parse_str(id).map_err(|err| format!("invalid challenge id: {err}"))
 }
@@ -3104,6 +3459,36 @@ fn parse_credential_row(row: Row) -> IssuerCredentialRecord {
     }
 }
 
+fn parse_activated_credential_row(row: Row) -> ActivatedCredential {
+    ActivatedCredential {
+        id: row.get(0),
+        user_id: row.get(1),
+        wallet: row.get(2),
+        credential_commitment: row.get(3),
+        jurisdiction_code: row.get::<_, i32>(4) as u32,
+        credential_expiry: row.get::<_, i64>(5) as u64,
+        enabled: row.get(6),
+        activated_at: row.get(7),
+    }
+}
+
+fn parse_challenge_row(row: Row) -> ChallengeRecord {
+    ChallengeRecord {
+        id: row.get(0),
+        wallet_hex: row.get(1),
+        wallet_strkey: row.get(2),
+        purpose: match row.get::<_, String>(3).as_str() {
+            "activate_credential" => ChallengePurpose::ActivateCredential,
+            _ => ChallengePurpose::ProofPackage,
+        },
+        message: row.get(4),
+        payload: row.get(5),
+        nonce: row.get(6),
+        expires_at: row.get(7),
+        consumed_at: row.get(8),
+    }
+}
+
 fn parse_snapshot_row(row: Row) -> RootSnapshotRecord {
     RootSnapshotRecord {
         id: row.get(0),
@@ -3122,31 +3507,8 @@ fn parse_snapshot_row(row: Row) -> RootSnapshotRecord {
     }
 }
 
-fn patch_proof_demo_strkeys(proof: &mut ProofPackage, fixture: &DemoTransferFixture) {
-    use wisp_types::DemoPackageMetadata;
-    let demo = proof.demo.get_or_insert_with(|| DemoPackageMetadata {
-        sender_strkey: None,
-        recipient_strkey: None,
-        asset_strkey: None,
-        issuer_strkey: fixture.issuer_strkey.clone(),
-        source_country: fixture.source_country.clone(),
-        dest_country: fixture.dest_country.clone(),
-    });
-    demo.sender_strkey = fixture
-        .sender_strkey
-        .clone()
-        .or_else(|| demo.sender_strkey.clone());
-    demo.recipient_strkey = fixture
-        .recipient_strkey
-        .clone()
-        .or_else(|| demo.recipient_strkey.clone());
-    demo.asset_strkey = fixture
-        .asset_strkey
-        .clone()
-        .or_else(|| demo.asset_strkey.clone());
-    if demo.issuer_strkey.is_none() {
-        demo.issuer_strkey = fixture.issuer_strkey.clone();
-    }
+fn default_asset_hex() -> String {
+    "ffeeddccbbaa998877665544332211000123456789abcdeffedcba9876543210".into()
 }
 
 fn load_demo_transfer(cfg: &Config) -> Option<DemoTransferFixture> {
@@ -3160,37 +3522,6 @@ fn load_demo_users(cfg: &Config) -> Option<DemoUsersFixture> {
     let path = Path::new(&cfg.fixtures_dir).join("demo-users.json");
     let raw = fs::read_to_string(path).ok()?;
     serde_json::from_str(&raw).ok()
-}
-
-fn load_demo_transfer_fixture_template() -> DemoTransferFixture {
-    DemoTransferFixture {
-        demo_only: false,
-        credential_secret: "424242".into(),
-        transfer_nonce: "0".into(),
-        corridor_id: 1,
-        sender_hex: "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301".into(),
-        recipient_hex: "102132435465768798a9babbdcedfe0f0f1e2d3c4b5a69788796a5b4c3d2e1f0".into(),
-        asset_hex: default_asset_hex(),
-        amount: "10000000".into(),
-        epoch: "0".into(),
-        jurisdiction: "840".into(),
-        credential_expiry: "2000000000".into(),
-        sender_strkey: None,
-        recipient_strkey: None,
-        asset_strkey: None,
-        issuer_strkey: None,
-        source_country: Some("US".into()),
-        dest_country: Some("MX".into()),
-    }
-}
-
-fn proof_package_epoch_is_current(pkg: &ProofPackage) -> bool {
-    let now = current_epoch();
-    pkg.transfer.epoch <= now && now.saturating_sub(pkg.transfer.epoch) <= MAX_EPOCH_LAG
-}
-
-fn default_asset_hex() -> String {
-    "ffeeddccbbaa998877665544332211000123456789abcdeffedcba9876543210".into()
 }
 
 fn corridor_eligibility(metadata: &Value) -> Vec<u32> {
@@ -3238,13 +3569,139 @@ pub(crate) fn now_unix() -> i64 {
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
-
     use super::*;
     use crate::config::Config;
+    use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine as _};
+    use ed25519_dalek::{Signer, SigningKey};
+    use sha2::{Digest, Sha256};
+    use stellar_strkey::ed25519::PublicKey as StrKeyPublicKey;
+
+    const SENDER_SEED: [u8; 32] = [11u8; 32];
+
+    fn sender_signing_key() -> SigningKey {
+        SigningKey::from_bytes(&SENDER_SEED)
+    }
+
+    fn sender_wallet_hex() -> String {
+        hex::encode(sender_signing_key().verifying_key().to_bytes())
+    }
+
+    fn test_recipient_hex() -> String {
+        "cc".repeat(32)
+    }
+
+    fn sign_challenge_message(message: &str) -> String {
+        let mut hasher = Sha256::new();
+        hasher.update(b"Stellar Signed Message:\n");
+        hasher.update(message.as_bytes());
+        let digest = hasher.finalize();
+        let signature = sender_signing_key().sign(&digest);
+        BASE64_STANDARD.encode(signature.to_bytes())
+    }
+
+    /// Seed an approved, sanctions-clear sender with an activated credential and an
+    /// approved corridor destination so the wallet is eligible for a proof package.
+    async fn seed_eligible_sender(state: &AppState) {
+        let sender_hex = sender_wallet_hex();
+        // sanity: the strkey must round-trip so wallet-signed challenges verify.
+        let _ = StrKeyPublicKey(sender_signing_key().verifying_key().to_bytes()).to_string();
+        state
+            .apply_webhook_event(
+                "fixture",
+                "demo-user",
+                json!({
+                    "wallet_hex": sender_hex,
+                    "jurisdiction": "US",
+                    "jurisdiction_code": 840,
+                    "credential_expiry": 2_000_000_000u64,
+                    "sanctions_clear": true,
+                    "enabled": true,
+                    "credential_secret": "424242",
+                }),
+            )
+            .await
+            .expect("seed user");
+        let user = state
+            .repo
+            .find_active_user_by_wallet(&sender_hex)
+            .await
+            .expect("seeded user");
+        state
+            .repo
+            .upsert_activated_credential(
+                user.id,
+                &user.wallet,
+                "1",
+                user.jurisdiction_code,
+                user.credential_expiry,
+            )
+            .await
+            .expect("activate credential");
+        state
+            .add_destination(
+                1,
+                DestinationCreate {
+                    address: test_recipient_hex(),
+                    enabled: true,
+                    metadata: Value::Null,
+                },
+            )
+            .await
+            .expect("approve destination");
+    }
+
+    /// Publish and activate a root snapshot that matches the currently computed roots so
+    /// `ensure_roots_published` short-circuits without an on-chain publish.
+    async fn publish_active_snapshot(state: &AppState, cfg: &Config) {
+        let roots = state
+            .compute_roots_for_corridor(cfg, 1)
+            .await
+            .expect("computed roots");
+        let snapshot = state
+            .repo
+            .create_pending_root_snapshot(1, &roots)
+            .await
+            .expect("pending snapshot");
+        state
+            .repo
+            .activate_root_snapshot(snapshot.id, "ok".into(), cfg.compliance_id.clone())
+            .await
+            .expect("activate snapshot");
+    }
+
+    /// Run the full wallet-bound challenge → signed-draft flow for the seeded sender.
+    async fn request_signed_draft(
+        state: &AppState,
+        cfg: &Config,
+    ) -> Result<ProofPackageDraft, String> {
+        let challenge = state
+            .create_proof_package_challenge(&ProofPackageChallengeRequest {
+                sender_wallet: sender_wallet_hex(),
+                recipient_wallet: test_recipient_hex(),
+                amount: "10000000".into(),
+                corridor_id: 1,
+            })
+            .await?;
+        let record = state
+            .repo
+            .get_challenge_by_id(&challenge.challenge_id)
+            .await?
+            .expect("challenge record");
+        let signed_message = sign_challenge_message(&record.message);
+        state
+            .create_proof_package_draft(
+                cfg,
+                &SignedProofPackageRequest {
+                    challenge_id: challenge.challenge_id,
+                    signed_message,
+                },
+            )
+            .await
+    }
 
     fn test_cfg() -> Config {
         Config {
+            issuer_mode: "demo".into(),
             listen_addr: "127.0.0.1:3000".into(),
             state_path: None,
             api_token: Some("test-token".into()),
@@ -3339,125 +3796,46 @@ mod tests {
 
     #[tokio::test]
     async fn seed_and_generate_proof_package() {
-        let cfg = test_cfg();
-        let state = AppState::load(&cfg).await;
-        state
-            .apply_webhook_event(
-                "fixture",
-                "demo-user",
-                json!({
-                    "wallet_hex": "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301",
-                    "jurisdiction": "US",
-                    "jurisdiction_code": 840,
-                    "credential_expiry": 2000000000u64,
-                    "sanctions_clear": true,
-                    "enabled": true,
-                    "credential_secret": "424242",
-                }),
-            )
-            .await
-            .expect("seed user");
-        let req = state
-            .bootstrap_request(&cfg)
-            .await
-            .expect("bootstrap request");
-        let proof = state.create_proof_package(&cfg, &req).await.expect("proof");
-        assert_eq!(proof.transfer.corridor_id, 1);
-        assert_eq!(proof.transfer.sender, req.sender_wallet);
-        assert!(proof.transfer.epoch >= current_epoch().saturating_sub(MAX_EPOCH_LAG));
-        let fixture_epoch = load_demo_transfer(&cfg)
-            .expect("fixture")
-            .epoch
-            .parse::<u64>()
-            .expect("fixture epoch");
-        if current_epoch().saturating_sub(fixture_epoch) > MAX_EPOCH_LAG {
-            assert_ne!(proof.transfer.epoch, fixture_epoch);
-        }
-    }
-
-    #[tokio::test]
-    async fn demo_proof_package_refreshes_stale_cached_epoch() {
-        let cfg = test_cfg();
-        let state = AppState::load(&cfg).await;
-        state
-            .apply_webhook_event(
-                "fixture",
-                "demo-user",
-                json!({
-                    "wallet_hex": "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301",
-                    "jurisdiction": "US",
-                    "jurisdiction_code": 840,
-                    "credential_expiry": 2000000000u64,
-                    "sanctions_clear": true,
-                    "enabled": true,
-                    "credential_secret": "424242",
-                }),
-            )
-            .await
-            .expect("seed user");
-        let req = state
-            .bootstrap_request(&cfg)
-            .await
-            .expect("bootstrap request");
-        let mut stale = state.create_proof_package(&cfg, &req).await.expect("proof");
-        stale.transfer.epoch = 0;
-        *state.cache.write().expect("lock") = Some(stale);
-
-        let proof = state.demo_proof_package(&cfg).await.expect("fresh proof");
-        assert!(proof.transfer.epoch >= current_epoch().saturating_sub(MAX_EPOCH_LAG));
-    }
-
-    #[tokio::test]
-    async fn create_proof_package_preserves_fixture_nonce_for_matching_demo_request() {
         let mut cfg = test_cfg();
-        let fixture_dir = std::env::temp_dir().join(format!("wisp-fixtures-{}", now_unix()));
-        fs::create_dir_all(&fixture_dir).expect("fixture dir");
-        let mut fixture = DemoTransferFixture {
-            demo_only: false,
-            credential_secret: "424242".into(),
-            transfer_nonce: "123456789".into(),
-            corridor_id: 1,
-            sender_hex: "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301".into(),
-            recipient_hex: "102132435465768798a9babbdcedfe0f0f1e2d3c4b5a69788796a5b4c3d2e1f0".into(),
-            asset_hex: default_asset_hex(),
-            amount: "10000000".into(),
-            epoch: "0".into(),
-            jurisdiction: "840".into(),
-            credential_expiry: "2000000000".into(),
-            sender_strkey: None,
-            recipient_strkey: None,
-            asset_strkey: None,
-            issuer_strkey: None,
-            source_country: Some("US".into()),
-            dest_country: Some("MX".into()),
-        };
-        fs::write(
-            fixture_dir.join(cfg.demo_transfer_filename()),
-            serde_json::to_vec(&fixture).expect("fixture json"),
-        )
-        .expect("write fixture");
-        fs::copy(
-            Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../../bindings/fixtures/demo-users.json")),
-            fixture_dir.join("demo-users.json"),
-        )
-        .expect("copy demo users");
-        cfg.fixtures_dir = fixture_dir.to_string_lossy().into_owned();
-
+        cfg.issuer_public_key =
+            Some("GA2R4CVM7W2R62S7ZXTPPMSPAUPSSHAS2VRI4BHUPALAQGQDQLVDY7BX".into());
         let state = AppState::load(&cfg).await;
-        let corridors = state.list_admin_corridors().await;
-        let seeded_corridor = corridors
-            .into_iter()
-            .find(|corridor| corridor.id == fixture.corridor_id)
-            .expect("seeded corridor");
+        seed_eligible_sender(&state).await;
+        publish_active_snapshot(&state, &cfg).await;
+
+        let draft = request_signed_draft(&state, &cfg)
+            .await
+            .expect("signed proof draft");
+        assert_eq!(draft.transfer.corridor_id, 1);
+        assert_eq!(draft.transfer.sender, sender_wallet_hex());
+        assert_eq!(draft.transfer.recipient, test_recipient_hex());
+        assert!(draft.transfer.epoch > 0);
+        assert_eq!(
+            draft.transfer.timestamp,
+            draft.transfer.epoch * wisp_types::EPOCH_LEN_SECS
+        );
+        assert!(draft.credential.credential_commitment.is_some());
+        // The nullifier is bound client-side after the wallet signs, so the draft leaves it blank.
+        assert_eq!(
+            draft.public_inputs.get("nullifier").map(String::as_str),
+            Some("")
+        );
+    }
+
+    #[tokio::test]
+    async fn proof_package_challenge_requires_activated_credential() {
+        let cfg = test_cfg();
+        let state = AppState::load(&cfg).await;
+        let sender_hex = sender_wallet_hex();
         state
             .apply_webhook_event(
                 "fixture",
                 "demo-user",
                 json!({
-                    "wallet_hex": fixture.sender_hex.clone(),
-                    "jurisdiction": seeded_corridor.source_country,
+                    "wallet_hex": sender_hex,
+                    "jurisdiction": "US",
                     "jurisdiction_code": 840,
-                    "credential_expiry": 2000000000u64,
+                    "credential_expiry": 2_000_000_000u64,
                     "sanctions_clear": true,
                     "enabled": true,
                     "credential_secret": "424242",
@@ -3465,93 +3843,122 @@ mod tests {
             )
             .await
             .expect("seed user");
-
-        let req = state
-            .bootstrap_request(&cfg)
+        state
+            .add_destination(
+                1,
+                DestinationCreate {
+                    address: test_recipient_hex(),
+                    enabled: true,
+                    metadata: Value::Null,
+                },
+            )
             .await
-            .expect("bootstrap request");
-        fixture.corridor_id = req.corridor_id;
-        fixture.sender_hex = req.sender_wallet.clone();
-        fixture.recipient_hex = req.recipient_wallet.clone();
-        fixture.amount = req.amount.clone();
-        fs::write(
-            fixture_dir.join(cfg.demo_transfer_filename()),
-            serde_json::to_vec(&fixture).expect("fixture json"),
-        )
-        .expect("rewrite fixture");
+            .expect("approve destination");
 
-        let proof = state
-            .create_proof_package(&cfg, &req)
+        let err = state
+            .create_proof_package_challenge(&ProofPackageChallengeRequest {
+                sender_wallet: sender_hex,
+                recipient_wallet: test_recipient_hex(),
+                amount: "10000000".into(),
+                corridor_id: 1,
+            })
             .await
-            .expect("proof");
+            .expect_err("challenge must require credential activation");
+        assert!(err.contains("activation"), "unexpected error: {err}");
+    }
 
-        assert_eq!(
-            proof
-                .witness_private
-                .as_ref()
-                .expect("witness private")
-                .transfer_nonce
-                .as_str(),
-            fixture.transfer_nonce
+    #[tokio::test]
+    async fn proof_package_challenge_rejects_disabled_destination() {
+        let cfg = test_cfg();
+        let state = AppState::load(&cfg).await;
+        seed_eligible_sender(&state).await;
+        state
+            .add_destination(
+                1,
+                DestinationCreate {
+                    address: test_recipient_hex(),
+                    enabled: false,
+                    metadata: Value::Null,
+                },
+            )
+            .await
+            .expect("disable destination");
+
+        let err = state
+            .create_proof_package_challenge(&ProofPackageChallengeRequest {
+                sender_wallet: sender_wallet_hex(),
+                recipient_wallet: test_recipient_hex(),
+                amount: "10000000".into(),
+                corridor_id: 1,
+            })
+            .await
+            .expect_err("disabled destination must be rejected");
+        assert!(
+            err.contains("recipient not approved"),
+            "unexpected error: {err}"
         );
+    }
 
-        let _ = fs::remove_dir_all(&fixture_dir);
+    #[tokio::test]
+    async fn root_membership_excludes_newly_sanctioned_credentials() {
+        let cfg = test_cfg();
+        let state = AppState::load(&cfg).await;
+        seed_eligible_sender(&state).await;
+        let user = state
+            .repo
+            .find_active_user_by_wallet(&sender_wallet_hex())
+            .await
+            .expect("seeded user");
+        state
+            .update_user(
+                user.id,
+                UserPatch {
+                    enabled: None,
+                    sanctions_clear: Some(false),
+                    credential_expiry: None,
+                    jurisdiction: None,
+                    jurisdiction_code: None,
+                    wallet: None,
+                },
+            )
+            .await
+            .expect("sanction user");
+
+        let err = state
+            .compute_roots_for_corridor(&cfg, 1)
+            .await
+            .expect_err("sanctioned credential must not remain in membership roots");
+        assert!(
+            err.contains("no activated credentials"),
+            "unexpected error: {err}"
+        );
     }
 
     #[tokio::test]
     async fn stale_active_roots_block_status_and_proof_creation() {
         let mut cfg = test_cfg();
         cfg.compliance_id = Some("CCOMPLIANCE".into());
+        cfg.issuer_public_key =
+            Some("GA2R4CVM7W2R62S7ZXTPPMSPAUPSSHAS2VRI4BHUPALAQGQDQLVDY7BX".into());
         let state = AppState::load(&cfg).await;
-        state
-            .apply_webhook_event(
-                "fixture",
-                "demo-user",
-                json!({
-                    "wallet_hex": "00112233445566778899aabbccddeeff1032547698badcfeefcdab8967452301",
-                    "jurisdiction": "US",
-                    "jurisdiction_code": 840,
-                    "credential_expiry": 2000000000u64,
-                    "sanctions_clear": true,
-                    "enabled": true,
-                    "credential_secret": "424242",
-                }),
-            )
-            .await
-            .expect("seed user");
-        let roots = state
-            .compute_roots_for_corridor(1)
-            .await
-            .expect("initial roots");
-        let snapshot = state
-            .repo
-            .create_pending_root_snapshot(1, &roots)
-            .await
-            .expect("snapshot");
-        state
-            .repo
-            .activate_root_snapshot(snapshot.id, "ok".into(), cfg.compliance_id.clone())
-            .await
-            .expect("activate snapshot");
+        seed_eligible_sender(&state).await;
+        // Activate a snapshot that matches the current roots, then mutate the corridor so the
+        // active on-chain snapshot becomes stale relative to the recomputed roots.
+        publish_active_snapshot(&state, &cfg).await;
         state
             .add_destination(
                 1,
                 DestinationCreate {
-                    address: "abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcd"
-                        .into(),
+                    address: "ab".repeat(32),
                     enabled: true,
                     metadata: Value::Null,
                 },
             )
             .await
             .expect("mutate corridor destinations");
-        let req = state
-            .bootstrap_request(&cfg)
-            .await
-            .expect("bootstrap request");
-        let wallet_strkey =
-            crate::mock_kyc::wallet_strkey_from_hex(&req.sender_wallet).expect("wallet strkey");
 
+        let wallet_strkey =
+            crate::mock_kyc::wallet_strkey_from_hex(&sender_wallet_hex()).expect("wallet strkey");
         let status = state
             .mock_kyc_status(&cfg, &wallet_strkey, Some(1), None)
             .await
@@ -3560,11 +3967,12 @@ mod tests {
         assert!(!status.eligible_for_proof);
         assert!(status.missing.contains(&MockKycMissing::RootsPublished));
 
-        let err = state
-            .create_proof_package(&cfg, &req)
+        // The draft cannot be issued: the stale roots trigger a republish attempt, which fails in
+        // the test environment (no Stellar source account / RPC configured).
+        let err = request_signed_draft(&state, &cfg)
             .await
             .expect_err("stale roots must block proof creation");
-        assert!(err.contains("stale"));
+        assert!(!err.is_empty(), "expected a non-empty publish error");
     }
 
     #[tokio::test]

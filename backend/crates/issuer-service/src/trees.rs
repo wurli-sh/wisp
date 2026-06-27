@@ -1,9 +1,5 @@
-use std::time::{SystemTime, UNIX_EPOCH};
-
 use serde_json::Value;
-use wisp_types::{
-    CorridorOption, DemoTransferFixture, DemoTransferRequest, DemoUsersFixture, EPOCH_LEN_SECS,
-};
+use wisp_types::{CorridorOption, DemoUsersFixture};
 
 #[derive(Debug)]
 pub struct NormalizedProviderEvent {
@@ -53,23 +49,6 @@ pub fn payload_to_hex(payload: &[u8; 32]) -> String {
     payload.iter().map(|b| format!("{b:02x}")).collect()
 }
 
-pub fn current_epoch() -> u64 {
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .expect("system time before unix epoch")
-        .as_secs();
-    now / EPOCH_LEN_SECS
-}
-
-fn country_code(users: &DemoUsersFixture, country: &str) -> Result<u32, String> {
-    users
-        .users
-        .iter()
-        .find(|u| u.jurisdiction.eq_ignore_ascii_case(country))
-        .map(|u| u.jurisdiction_code)
-        .ok_or_else(|| format!("unsupported source country: {country}"))
-}
-
 pub fn corridor_options(users: &DemoUsersFixture) -> Vec<CorridorOption> {
     users
         .corridors
@@ -88,68 +67,4 @@ pub fn corridor_options(users: &DemoUsersFixture) -> Vec<CorridorOption> {
             })
         })
         .collect()
-}
-
-pub fn build_dynamic_demo_fixture(
-    req: &DemoTransferRequest,
-    users: &DemoUsersFixture,
-    template: &DemoTransferFixture,
-) -> Result<DemoTransferFixture, String> {
-    let sender = strkey_to_payload(&req.sender_strkey)?;
-    let recipient = strkey_to_payload(&req.recipient_strkey)?;
-
-    let corridor = corridor_options(users)
-        .into_iter()
-        .find(|c| c.id == req.corridor_id && c.enabled)
-        .ok_or_else(|| format!("unknown enabled corridor id: {}", req.corridor_id))?;
-
-    if !corridor
-        .source_country
-        .eq_ignore_ascii_case(&req.source_country)
-    {
-        return Err(format!(
-            "source country {} does not match corridor {}",
-            req.source_country, corridor.name
-        ));
-    }
-    if !corridor
-        .dest_country
-        .eq_ignore_ascii_case(&req.dest_country)
-    {
-        return Err(format!(
-            "destination country {} does not match corridor {}",
-            req.dest_country, corridor.name
-        ));
-    }
-
-    let amount = req.amount.trim();
-    let parsed_amount: i128 = amount
-        .parse()
-        .map_err(|_| format!("invalid amount: {}", req.amount))?;
-    if parsed_amount <= 0 {
-        return Err("amount must be greater than zero".into());
-    }
-
-    let epoch = current_epoch();
-    let jurisdiction_code = country_code(users, &req.source_country)?;
-
-    Ok(DemoTransferFixture {
-        demo_only: true,
-        credential_secret: template.credential_secret.clone(),
-        transfer_nonce: template.transfer_nonce.clone(),
-        corridor_id: req.corridor_id,
-        sender_hex: payload_to_hex(&sender),
-        recipient_hex: payload_to_hex(&recipient),
-        asset_hex: template.asset_hex.clone(),
-        amount: parsed_amount.to_string(),
-        epoch: epoch.to_string(),
-        jurisdiction: jurisdiction_code.to_string(),
-        credential_expiry: template.credential_expiry.clone(),
-        sender_strkey: Some(req.sender_strkey.clone()),
-        recipient_strkey: Some(req.recipient_strkey.clone()),
-        asset_strkey: template.asset_strkey.clone(),
-        issuer_strkey: template.issuer_strkey.clone(),
-        source_country: Some(corridor.source_country),
-        dest_country: Some(corridor.dest_country),
-    })
 }

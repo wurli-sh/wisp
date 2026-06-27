@@ -4,9 +4,9 @@ use std::path::PathBuf;
 use serde::Deserialize;
 
 use wisp_crypto::{
-    address_to_limbs, assert_fr_eq, compute_corridor_config_hash, compute_nullifier,
-    fr_from_decimal, merkle_root_for_leaf_at_index, mod_u128, poseidon2_hash1, poseidon2_hash2,
-    sparse_sanctions_path, NULLIFIER_DOMAIN_TAG,
+    address_to_limbs, assert_fr_eq, compute_corridor_config_hash, compute_credential_commitment,
+    compute_nullifier, fr_from_decimal, merkle_root_for_leaf_at_index, mod_u128, poseidon2_hash1,
+    poseidon2_hash2, sparse_sanctions_path, NULLIFIER_DOMAIN_TAG,
 };
 
 fn zero_string() -> String {
@@ -101,6 +101,7 @@ struct DemoTransfer {
     amount: String,
     epoch: String,
     jurisdiction: String,
+    credential_expiry: String,
 }
 
 fn assert_limbs(bytes: &[u8], expected_lo: &str, expected_hi: &str) {
@@ -147,7 +148,15 @@ fn crypto_fixtures_match_js() {
     let nullifier_domain = poseidon2_hash1(mod_u128(NULLIFIER_DOMAIN_TAG));
     assert_fr_eq(nullifier_domain, &crypto.poseidon2.nullifier_domain);
 
-    let sender_leaf = poseidon2_hash2(sender_limbs.lo, sender_limbs.hi);
+    let sender_leaf = compute_credential_commitment(
+        sender_limbs.lo,
+        sender_limbs.hi,
+        sender_limbs.lo,
+        sender_limbs.hi,
+        fr_from_decimal(&demo.credential_secret),
+        fr_from_decimal(&demo.jurisdiction),
+        fr_from_decimal(&demo.credential_expiry),
+    );
     assert_fr_eq(sender_leaf, &crypto.poseidon2.sender_leaf);
 
     let jurisdiction = fr_from_decimal(&demo.jurisdiction);
@@ -165,19 +174,17 @@ fn crypto_fixtures_match_js() {
     assert_fr_eq(jurisdiction_root, &crypto.merkle.jurisdiction_root);
     assert_fr_eq(jurisdiction_root, &crypto.merkle.source_jurisdiction_root);
 
-    let dest_address_root =
-        merkle_root_for_leaf_at_index(dest_leaf, 0, wisp_crypto::MERKLE_DEPTH);
+    let dest_address_root = merkle_root_for_leaf_at_index(dest_leaf, 0, wisp_crypto::MERKLE_DEPTH);
     assert_fr_eq(dest_address_root, &crypto.merkle.dest_address_root);
 
-    let sanctions = sparse_sanctions_path(
-        sender_limbs.lo,
-        sender_limbs.hi,
-        wisp_crypto::MERKLE_DEPTH,
-    );
+    let sanctions =
+        sparse_sanctions_path(sender_limbs.lo, sender_limbs.hi, wisp_crypto::MERKLE_DEPTH);
     assert_fr_eq(sanctions.root, &crypto.merkle.sanctions_root);
 
     let nullifier = compute_nullifier(
         fr_from_decimal(&demo.credential_secret),
+        sender_limbs.lo,
+        sender_limbs.hi,
         sender_limbs.lo,
         sender_limbs.hi,
         asset_limbs.lo,

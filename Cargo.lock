@@ -1361,7 +1361,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8e04e2fd2b8188ea827b32ef11de88377086d690286ab35747ef7f9bf3ccb590"
 
 [[package]]
-name = "issuer-sdk"
+name = "issuer-core"
 version = "0.1.0"
 dependencies = [
  "ark-bn254 0.6.0",
@@ -1383,10 +1383,11 @@ dependencies = [
  "ark-ff 0.6.0",
  "async-trait",
  "axum",
+ "base64",
  "ed25519-dalek",
  "hex",
  "http-body-util",
- "issuer-sdk",
+ "issuer-core",
  "native-tls",
  "postgres-native-tls",
  "rand 0.10.1",

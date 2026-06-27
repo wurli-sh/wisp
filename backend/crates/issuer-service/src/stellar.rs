@@ -76,28 +76,43 @@ fn is_bad_sequence(output: &str) -> bool {
     output.contains("TxBadSeq") || output.contains("tx_bad_seq")
 }
 
-fn invoke_with_sequence_retry(cfg: &Config, args: &[String]) -> Result<Output, String> {
-    const MAX_ATTEMPTS: u32 = 3;
+/// Invoke `stellar` with retry/backoff for transient submission failures.
+///
+/// Retries on `TxBadSeq` (stale account sequence) and on any contract error
+/// code in `retry_codes`. The latter exists because a prerequisite write may
+/// not have settled yet: e.g. `register_issuer` and `update_issuer_root` are
+/// submitted back-to-back, so the update can briefly observe `#4 UnknownIssuer`
+/// until the registration tx closes. Retrying with backoff lets it settle.
+fn invoke_with_retry(cfg: &Config, args: &[String], retry_codes: &[u32]) -> Result<Output, String> {
+    const MAX_ATTEMPTS: u32 = 5;
     for attempt in 1..=MAX_ATTEMPTS {
         let output = stellar_command(cfg)
             .args(args)
             .output()
             .map_err(|e| format!("stellar invoke failed: {e}"))?;
-        if output.status.success() || !is_bad_sequence(&invoke_output(&output)) {
+        if output.status.success() {
             return Ok(output);
         }
-        if attempt < MAX_ATTEMPTS {
-            tracing::warn!(
-                attempt,
-                max_attempts = MAX_ATTEMPTS,
-                "stellar invoke returned TxBadSeq; retrying with a fresh account sequence"
-            );
-            thread::sleep(Duration::from_secs(u64::from(attempt)));
-        } else {
+        let text = invoke_output(&output);
+        let transient = is_bad_sequence(&text)
+            || retry_codes
+                .iter()
+                .any(|code| contract_error_code(&text, *code));
+        if !transient || attempt == MAX_ATTEMPTS {
             return Ok(output);
         }
+        tracing::warn!(
+            attempt,
+            max_attempts = MAX_ATTEMPTS,
+            "stellar invoke transient failure (bad sequence or unsettled prerequisite); retrying after backoff"
+        );
+        thread::sleep(Duration::from_secs(u64::from(attempt)));
     }
-    unreachable!("sequence retry loop always returns")
+    unreachable!("retry loop always returns")
+}
+
+fn invoke_with_sequence_retry(cfg: &Config, args: &[String]) -> Result<Output, String> {
+    invoke_with_retry(cfg, args, &[])
 }
 
 fn is_already_registered(output: &str) -> bool {
@@ -123,7 +138,7 @@ pub fn publish_roots(cfg: &Config, roots: &Roots, corridor_id: u32) -> Result<St
         .ok_or("COMPLIANCE_CONTRACT_ID not set")?;
     let source = cfg
         .publish_source_account()
-        .ok_or("Set PUBLISH_SOURCE_ACCOUNT / SOURCE or ISSUER_SECRET_KEY for issuer-authenticated v2 publishing")?;
+        .ok_or("Set PUBLISH_SOURCE_ACCOUNT / SOURCE or ISSUER_SECRET_KEY for issuer-authenticated publishing")?;
     let issuer = cfg
         .issuer_public_key
         .as_ref()
@@ -161,7 +176,7 @@ pub fn publish_roots(cfg: &Config, roots: &Roots, corridor_id: u32) -> Result<St
         if looks_like_v1_issuer_registry(&output) {
             return Err(
                 "register_issuer failed against an old v1 compliance contract ABI. \
-Redeploy the compliance contract with the v2 initialize signature, update COMPLIANCE_CONTRACT_ID, then retry publishing roots."
+Redeploy the compliance contract with the current initialize signature, update COMPLIANCE_CONTRACT_ID, then retry publishing roots."
                     .into(),
             );
         }
@@ -187,7 +202,9 @@ Redeploy the compliance contract with the v2 initialize signature, update COMPLI
         "--jurisdiction_root".into(),
         jurisdiction.clone(),
     ]);
-    let update = invoke_with_sequence_retry(cfg, &update_args)?;
+    // Retry on #4 (UnknownIssuer): the register_issuer tx above may not have
+    // settled yet when this update simulates.
+    let update = invoke_with_retry(cfg, &update_args, &[4])?;
     if !update.status.success() {
         return Err(format!(
             "update_issuer_root failed: {}",
@@ -215,7 +232,8 @@ Redeploy the compliance contract with the v2 initialize signature, update COMPLI
         "--corridor_config_hash".into(),
         corridor_hash.clone(),
     ]);
-    let register_corridor = invoke_with_sequence_retry(cfg, &register_corridor_args)?;
+    // Retry on #4 (UnknownIssuer) in case issuer registration is still settling.
+    let register_corridor = invoke_with_retry(cfg, &register_corridor_args, &[4])?;
 
     if !register_corridor.status.success() {
         let output = invoke_output(&register_corridor);
@@ -290,10 +308,10 @@ pub fn stellar_available() -> bool {
             .filter(|value| !value.is_empty())
             .unwrap_or_else(|| "stellar".into()),
     )
-        .arg("--version")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false)
+    .arg("--version")
+    .output()
+    .map(|o| o.status.success())
+    .unwrap_or(false)
 }
 
 // hex helper without extra dep in lib — use simple hex encode

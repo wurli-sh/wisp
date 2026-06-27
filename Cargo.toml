@@ -5,7 +5,7 @@ members = [
     "backend/programs/compliance",
     "backend/crates/wisp-crypto",
     "backend/crates/wisp-types",
-    "backend/crates/issuer-sdk",
+    "backend/crates/issuer-core",
     "backend/crates/issuer-service",
 ]
 

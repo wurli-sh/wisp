@@ -155,6 +155,8 @@ pub fn build_canonical_proof_package(
         mod_u128(credential_secret),
         sender_limbs.lo,
         sender_limbs.hi,
+        sender_limbs.lo,
+        sender_limbs.hi,
         asset_limbs.lo,
         asset_limbs.hi,
         mod_u64(epoch),
@@ -194,6 +196,8 @@ pub fn build_canonical_proof_package(
         corridor_config_hash,
         source_tree.root,
         destination_tree.root,
+        sender_limbs.lo,
+        sender_limbs.hi,
     );
     let public_inputs = wisp_types::PUBLIC_INPUT_FIELDS
         .iter()
@@ -201,10 +205,10 @@ pub fn build_canonical_proof_package(
         .map(|(name, value)| (name.to_string(), value.clone()))
         .collect();
     Ok(ProofPackage {
-        schema_version: 1,
         credential: Credential {
             wallet: sender.wallet.clone(),
             jurisdiction: sender.jurisdiction.clone(),
+            jurisdiction_code: sender.jurisdiction_code,
             credential_expiry: sender.credential_expiry,
             sanctions_clear: sender.sanctions_clear,
             corridor_eligibility: sender

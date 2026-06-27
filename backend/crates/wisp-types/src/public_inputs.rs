@@ -29,6 +29,8 @@ pub fn public_inputs_from_roots(
     corridor_config_hash: Fr,
     source_jurisdiction_root: Fr,
     dest_address_root: Fr,
+    issuer_lo: Fr,
+    issuer_hi: Fr,
 ) -> Vec<String> {
     use crate::PUBLIC_INPUT_FIELDS;
     let mut map: HashMap<&str, String> = HashMap::new();
@@ -61,6 +63,8 @@ pub fn public_inputs_from_roots(
         "dest_address_root",
         fr_to_canonical_decimal(dest_address_root),
     );
+    map.insert("issuer_lo", fr_to_canonical_decimal(issuer_lo));
+    map.insert("issuer_hi", fr_to_canonical_decimal(issuer_hi));
 
     PUBLIC_INPUT_FIELDS
         .iter()
@@ -78,7 +82,7 @@ mod tests {
 
     #[test]
     fn public_input_count_matches_storage_constant() {
-        assert_eq!(PUBLIC_INPUT_COUNT, 17);
+        assert_eq!(PUBLIC_INPUT_COUNT, 19);
     }
 
     #[test]

@@ -9,14 +9,14 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 use tower_http::cors::{Any, CorsLayer};
 
-use wisp_types::{DemoTransferRequest, ProofPackage};
-
 use crate::auth::require_token;
 use crate::config::Config;
-use crate::mock_kyc::{MockKycChallengeRequest, MockKycSubmitRequest};
-use crate::state::{
-    AppState, CorridorPatch, DestinationCreate, ProofPackageRequest, PublishRootsRequest, UserPatch,
+use crate::issuance::{
+    ActivateCredentialRequest, ActivateCredentialResponse, ActivationChallengeRequest,
+    ChallengeResponse, ProofPackageChallengeRequest, ProofPackageDraft, SignedProofPackageRequest,
 };
+use crate::mock_kyc::{MockKycChallengeRequest, MockKycSubmitRequest};
+use crate::state::{AppState, CorridorPatch, DestinationCreate, PublishRootsRequest, UserPatch};
 
 pub fn router(cfg: Config, state: AppState) -> Router {
     let cors = CorsLayer::new()
@@ -27,45 +27,71 @@ pub fn router(cfg: Config, state: AppState) -> Router {
     let public = Router::new()
         .route("/health", get(health))
         .route("/.well-known/wisp-issuer.json", get(well_known_issuer))
-        .route("/v1/credential/{wallet}", get(get_credential))
-        .route("/v1/merkle-path/{wallet}", get(merkle_path))
+        .route("/credentials/{wallet}", get(get_credential))
+        .route("/corridors/{id}", get(get_corridor))
+        .route("/corridors", get(list_corridors))
         .route(
-            "/v1/jurisdiction-path/{jurisdiction}",
-            get(jurisdiction_path),
+            "/credentials/activation-challenges",
+            post(create_activation_challenge),
         )
-        .route("/v1/sanctions-path/{wallet}", get(sanctions_path))
-        .route("/v1/dest-path/{corridor_id}/{address}", get(dest_path))
-        .route("/v1/corridor/{id}", get(get_corridor))
-        .route("/v1/corridors", get(list_corridors))
-        .route("/v1/proof-packages", post(create_proof_package))
-        .route("/v1/provider/webhooks/{provider}", post(provider_webhook))
-        .route("/v1/fixtures/demo-transfer", get(demo_transfer))
-        .route("/v1/fixtures/demo-transfer", post(create_demo_transfer))
-        .route("/v1/mock-kyc/challenge", post(mock_kyc_challenge))
-        .route("/v1/mock-kyc/submit", post(mock_kyc_submit))
-        .route("/v1/mock-kyc/status/{wallet}", get(mock_kyc_status))
-        .route("/auth", get(sep10_auth));
+        .route("/credentials/activate", post(activate_credential))
+        .route(
+            "/proof-packages/challenges",
+            post(create_proof_package_challenge),
+        )
+        .route("/proof-packages", post(create_proof_package));
+
+    let provider = if cfg.is_production() {
+        Router::new()
+            .route(
+                "/provider/webhooks/{provider}",
+                post(security_upgrade_required),
+            )
+            .route("/auth", get(security_upgrade_required))
+    } else {
+        Router::new()
+            .route("/provider/webhooks/{provider}", post(provider_webhook))
+            .route("/auth", get(sep10_auth))
+    };
+
+    let demo = if cfg.is_production() {
+        Router::new()
+    } else {
+        Router::new()
+            .route("/mock-kyc/challenge", post(mock_kyc_challenge))
+            .route("/mock-kyc/submit", post(mock_kyc_submit))
+            .route("/mock-kyc/status/{wallet}", get(mock_kyc_status))
+    };
 
     let protected = Router::new()
-        .route("/v1/admin/users", get(list_users))
-        .route("/v1/admin/users/{id}", patch(patch_user))
-        .route("/v1/admin/corridors", get(list_admin_corridors))
-        .route("/v1/admin/corridors/{id}", patch(patch_corridor))
-        .route(
-            "/v1/admin/corridors/{id}/destinations",
-            post(add_destination),
-        )
-        .route("/v1/admin/roots/publish", post(publish_roots_handler))
-        .route("/v1/admin/roots/latest", get(latest_root))
-        .route("/v1/admin/roots/computed", get(computed_roots))
+        .route("/admin/users", get(list_users))
+        .route("/admin/users/{id}", patch(patch_user))
+        .route("/admin/corridors", get(list_admin_corridors))
+        .route("/admin/corridors/{id}", patch(patch_corridor))
+        .route("/admin/corridors/{id}/destinations", post(add_destination))
+        .route("/admin/roots/publish", post(publish_roots_handler))
+        .route("/admin/roots/latest", get(latest_root))
+        .route("/admin/roots/computed", get(computed_roots))
         .layer(axum::middleware::from_fn(require_token));
 
     Router::new()
         .merge(public)
+        .merge(provider)
+        .merge(demo)
         .merge(protected)
         .layer(cors)
         .layer(axum::Extension(cfg))
         .with_state(state)
+}
+
+async fn security_upgrade_required() -> impl IntoResponse {
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        Json(json!({
+            "error": "security_upgrade_required",
+            "message": "This integration is disabled in production."
+        })),
+    )
 }
 
 async fn health(State(state): State<AppState>) -> impl IntoResponse {
@@ -78,52 +104,62 @@ async fn health(State(state): State<AppState>) -> impl IntoResponse {
 
 async fn well_known_issuer(axum::Extension(cfg): axum::Extension<Config>) -> impl IntoResponse {
     Json(json!({
-        "api_version": "2",
-        "protocol_version": "2",
+        "issuer_mode": cfg.issuer_mode,
+        "issuance_available": true,
         "issuer_stellar_address": cfg.issuer_public_key,
         "metadata_uri": cfg.metadata_uri(),
         "service_url": cfg.public_base_url,
         "compliance_contract_id": cfg.compliance_id,
         "verifier_contract_id": cfg.verifier_id,
         "circuit_vk_hash": cfg.expected_vk_hash,
-        "proof_package_schema": 1,
         "network_passphrase": cfg.network_passphrase,
     }))
 }
 
-async fn demo_transfer(
-    axum::Extension(cfg): axum::Extension<Config>,
+async fn create_activation_challenge(
     State(state): State<AppState>,
-) -> Result<Json<ProofPackage>, StatusCode> {
+    Json(req): Json<ActivationChallengeRequest>,
+) -> Result<Json<ChallengeResponse>, (StatusCode, String)> {
     state
-        .demo_proof_package(&cfg)
+        .create_activation_challenge(&req)
         .await
         .map(Json)
-        .ok_or(StatusCode::NOT_FOUND)
+        .map_err(|err| issuance_error_status(&err))
 }
 
-async fn create_demo_transfer(
+async fn activate_credential(
     axum::Extension(cfg): axum::Extension<Config>,
     State(state): State<AppState>,
-    Json(req): Json<DemoTransferRequest>,
-) -> Result<Json<ProofPackage>, (StatusCode, String)> {
-    let (_, proof_package) = state
-        .create_demo_transfer(&cfg, &req)
+    Json(req): Json<ActivateCredentialRequest>,
+) -> Result<Json<ActivateCredentialResponse>, (StatusCode, String)> {
+    state
+        .activate_credential(&cfg, &req)
         .await
-        .map_err(|e| (StatusCode::BAD_REQUEST, e))?;
-    Ok(Json(proof_package))
+        .map(Json)
+        .map_err(|err| issuance_error_status(&err))
+}
+
+async fn create_proof_package_challenge(
+    State(state): State<AppState>,
+    Json(req): Json<ProofPackageChallengeRequest>,
+) -> Result<Json<ChallengeResponse>, (StatusCode, String)> {
+    state
+        .create_proof_package_challenge(&req)
+        .await
+        .map(Json)
+        .map_err(|err| issuance_error_status(&err))
 }
 
 async fn create_proof_package(
     axum::Extension(cfg): axum::Extension<Config>,
     State(state): State<AppState>,
-    Json(req): Json<ProofPackageRequest>,
-) -> Result<Json<ProofPackage>, (StatusCode, String)> {
+    Json(req): Json<SignedProofPackageRequest>,
+) -> Result<Json<ProofPackageDraft>, (StatusCode, String)> {
     state
-        .create_proof_package(&cfg, &req)
+        .create_proof_package_draft(&cfg, &req)
         .await
         .map(Json)
-        .map_err(|err| (StatusCode::BAD_REQUEST, err))
+        .map_err(|err| issuance_error_status(&err))
 }
 
 async fn mock_kyc_challenge(
@@ -205,6 +241,30 @@ fn mock_kyc_error_status(err: &str, fallback: StatusCode) -> (StatusCode, String
     (status, err.to_string())
 }
 
+fn issuance_error_status(err: &str) -> (StatusCode, String) {
+    let status = if err.contains("invalid signature")
+        || err.contains("challenge expired")
+        || err.contains("challenge purpose mismatch")
+    {
+        StatusCode::UNAUTHORIZED
+    } else if err.contains("already consumed") {
+        StatusCode::CONFLICT
+    } else if err.contains("not approved")
+        || err.contains("activation required")
+        || err.contains("sanctions clear")
+    {
+        StatusCode::FORBIDDEN
+    } else if err.contains("unknown corridor")
+        || err.contains("invalid")
+        || err.contains("recipient not approved")
+    {
+        StatusCode::BAD_REQUEST
+    } else {
+        StatusCode::BAD_REQUEST
+    };
+    (status, err.to_string())
+}
+
 async fn get_credential(
     State(state): State<AppState>,
     Path(wallet): Path<String>,
@@ -214,59 +274,6 @@ async fn get_credential(
         .await
         .map(Json)
         .ok_or(StatusCode::NOT_FOUND)
-}
-
-async fn merkle_path(
-    State(state): State<AppState>,
-    Path(wallet): Path<String>,
-) -> Result<Json<Value>, StatusCode> {
-    let pkg = state.proof_package().await.ok_or(StatusCode::NOT_FOUND)?;
-    if wallet != pkg.transfer.sender {
-        return Err(StatusCode::NOT_FOUND);
-    }
-    Ok(Json(json!({
-        "path": pkg.paths.membership,
-        "path_indices": pkg.paths.membership_indices,
-    })))
-}
-
-async fn jurisdiction_path(
-    State(state): State<AppState>,
-    Path(_jurisdiction): Path<String>,
-) -> Result<Json<Value>, StatusCode> {
-    let pkg = state.proof_package().await.ok_or(StatusCode::NOT_FOUND)?;
-    Ok(Json(json!({
-        "path": pkg.paths.jurisdiction,
-        "path_indices": pkg.paths.jurisdiction_indices,
-    })))
-}
-
-async fn sanctions_path(
-    State(state): State<AppState>,
-    Path(wallet): Path<String>,
-) -> Result<Json<Value>, StatusCode> {
-    let pkg = state.proof_package().await.ok_or(StatusCode::NOT_FOUND)?;
-    if wallet != pkg.transfer.sender {
-        return Err(StatusCode::NOT_FOUND);
-    }
-    Ok(Json(json!({
-        "path": pkg.paths.sanctions,
-        "path_indices": pkg.paths.sanctions_indices,
-    })))
-}
-
-async fn dest_path(
-    State(state): State<AppState>,
-    Path((_corridor_id, address)): Path<(u32, String)>,
-) -> Result<Json<Value>, StatusCode> {
-    let pkg = state.proof_package().await.ok_or(StatusCode::NOT_FOUND)?;
-    if address != pkg.transfer.recipient {
-        return Err(StatusCode::NOT_FOUND);
-    }
-    Ok(Json(json!({
-        "path": pkg.paths.dest_address,
-        "path_indices": pkg.paths.dest_address_indices,
-    })))
 }
 
 async fn get_corridor(
@@ -373,11 +380,12 @@ struct ComputedRootsQuery {
 }
 
 async fn computed_roots(
+    axum::Extension(cfg): axum::Extension<Config>,
     State(state): State<AppState>,
     Query(query): Query<ComputedRootsQuery>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     let roots = state
-        .computed_roots_for_corridor(query.corridor_id)
+        .computed_roots_for_corridor(&cfg, query.corridor_id)
         .await
         .map_err(|err| (StatusCode::BAD_REQUEST, err))?;
     let snapshot = state.latest_root_snapshot(Some(query.corridor_id)).await;
@@ -499,41 +507,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn demo_transfer_returns_package() {
-        let mut cfg = Config::from_env();
-        cfg.api_token = Some("test-token".into());
-        cfg.webhook_secrets = vec![("persona".into(), "shh".into())];
-        cfg.fixtures_dir =
-            concat!(env!("CARGO_MANIFEST_DIR"), "/../../../bindings/fixtures").into();
-        // Unit tests should not depend on on-chain events being available.
-        cfg.compliance_id = None;
-        let state = AppState::load(&cfg).await;
-        seed_demo_user(&state).await;
-        let _ = state
-            .create_proof_package(
-                &cfg,
-                &state.bootstrap_request(&cfg).await.expect("bootstrap"),
-            )
-            .await
-            .expect("bootstrap package");
-        let app = router(cfg, state);
-        let res = app
-            .oneshot(
-                Request::get("/v1/fixtures/demo-transfer")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_eq!(res.status(), StatusCode::OK);
-    }
-
-    #[tokio::test]
     async fn publish_requires_auth() {
         let app = test_app().await;
         let res = app
             .oneshot(
-                Request::post("/v1/admin/roots/publish")
+                Request::post("/admin/roots/publish")
                     .header("content-type", "application/json")
                     .body(Body::from(r#"{}"#))
                     .unwrap(),
@@ -548,7 +526,7 @@ mod tests {
         let app = test_app().await;
         let res = app
             .oneshot(
-                Request::get("/v1/admin/roots/computed?corridor_id=1")
+                Request::get("/admin/roots/computed?corridor_id=1")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -558,7 +536,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn computed_roots_returns_merkle_fields() {
+    async fn computed_roots_requires_activated_credentials() {
         let mut cfg = Config::from_env();
         cfg.api_token = Some("test-token".into());
         cfg.webhook_secrets = vec![("persona".into(), "shh".into())];
@@ -569,20 +547,19 @@ mod tests {
         let app = router(cfg, state);
         let res = app
             .oneshot(
-                Request::get("/v1/admin/roots/computed?corridor_id=1")
+                Request::get("/admin/roots/computed?corridor_id=1")
                     .header("authorization", "Bearer test-token")
                     .body(Body::empty())
                     .unwrap(),
             )
             .await
             .unwrap();
-        assert_eq!(res.status(), StatusCode::OK);
+        assert_eq!(res.status(), StatusCode::BAD_REQUEST);
         let body = axum::body::to_bytes(res.into_body(), usize::MAX)
             .await
             .unwrap();
-        let json: Value = serde_json::from_slice(&body).unwrap();
-        assert!(json.get("computed_roots").is_some());
-        assert!(json["computed_roots"].get("merkle_root").is_some());
+        let error = String::from_utf8(body.to_vec()).unwrap();
+        assert!(error.contains("activated credentials"));
     }
 
     #[tokio::test]
@@ -611,8 +588,8 @@ mod tests {
             .await
             .unwrap();
         let json: Value = serde_json::from_slice(&body).unwrap();
-        assert_eq!(json["api_version"], "2");
-        assert_eq!(json["protocol_version"], "2");
+        assert!(json.get("api_version").is_none());
+        assert!(json.get("protocol_version").is_none());
         assert_eq!(json["issuer_stellar_address"], "GISSUER");
         assert_eq!(
             json["metadata_uri"],
@@ -622,8 +599,48 @@ mod tests {
         assert_eq!(json["compliance_contract_id"], "CCOMPLIANCE");
         assert_eq!(json["verifier_contract_id"], "CVERIFIER");
         assert_eq!(json["circuit_vk_hash"], "deadbeef");
-        assert_eq!(json["proof_package_schema"], 1);
+        assert!(json.get("proof_package_schema").is_none());
         assert_eq!(json["network_passphrase"], cfg.network_passphrase);
+    }
+
+    #[tokio::test]
+    async fn production_exposes_only_canonical_issuance_endpoints() {
+        let mut cfg = Config::from_env();
+        cfg.issuer_mode = "production".into();
+        cfg.kyc_mode = "provider".into();
+        cfg.fixture_profile = "disabled".into();
+        cfg.issuer_public_key =
+            Some("GACQZG6QDR7NI5QQ3YYLMX3UO5HJW7JSG2PE4BQZXM4RXXRPX4NT5H3Q".into());
+        let state = AppState::load(&cfg).await;
+        let app = router(cfg, state);
+
+        let obsolete = app
+            .clone()
+            .oneshot(
+                Request::post("/versioned/proof-packages")
+                    .header("content-type", "application/json")
+                    .body(Body::from("{}"))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert!(matches!(
+            obsolete.status(),
+            StatusCode::NOT_FOUND | StatusCode::UNAUTHORIZED
+        ));
+
+        let canonical = app
+            .oneshot(
+                Request::post("/credentials/activation-challenges")
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        r#"{"wallet":"GACQZG6QDR7NI5QQ3YYLMX3UO5HJW7JSG2PE4BQZXM4RXXRPX4NT5H3Q","credential_commitment":"1"}"#,
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(canonical.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
@@ -631,7 +648,7 @@ mod tests {
         let app = test_app().await;
         let res = app
             .oneshot(
-                Request::post("/v1/provider/webhooks/persona")
+                Request::post("/provider/webhooks/persona")
                     .header("content-type", "application/json")
                     .body(Body::from(r#"{"id":"evt_1"}"#))
                     .unwrap(),
@@ -639,5 +656,32 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[tokio::test]
+    async fn production_does_not_mount_demo_routes() {
+        let mut cfg = Config::from_env();
+        cfg.issuer_mode = "production".into();
+        cfg.fixture_profile = "disabled".into();
+        cfg.compliance_id = None;
+        let state = AppState::load(&cfg).await;
+        let app = router(cfg, state);
+
+        let demo = app
+            .oneshot(
+                Request::post("/mock-kyc/challenge")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert!(
+            matches!(
+                demo.status(),
+                StatusCode::NOT_FOUND | StatusCode::UNAUTHORIZED
+            ),
+            "demo route must not execute in production"
+        );
     }
 }

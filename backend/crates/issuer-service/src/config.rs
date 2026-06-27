@@ -2,6 +2,7 @@ use std::env;
 
 #[derive(Clone, Debug)]
 pub struct Config {
+    pub issuer_mode: String,
     pub listen_addr: String,
     pub state_path: Option<String>,
     pub api_token: Option<String>,
@@ -17,6 +18,9 @@ pub struct Config {
     pub network_passphrase: String,
     pub compliance_id: Option<String>,
     pub issuer_public_key: Option<String>,
+    /// Documented operational input (`ADMIN_PUBLIC_KEY`). Root publishing currently signs with the
+    /// admin/issuer secret key, so this is retained for config-surface compatibility only.
+    #[allow(dead_code)]
     pub admin_public_key: Option<String>,
     pub admin_secret_key: Option<String>,
     pub issuer_secret_key: Option<String>,
@@ -35,6 +39,16 @@ pub struct Config {
 impl Config {
     pub fn from_env() -> Self {
         Self {
+            issuer_mode: env::var("ISSUER_MODE").unwrap_or_else(|_| {
+                if env::var("WISP_ENV")
+                    .map(|value| value.eq_ignore_ascii_case("production"))
+                    .unwrap_or(false)
+                {
+                    "production".into()
+                } else {
+                    "demo".into()
+                }
+            }),
             listen_addr: env::var("ISSUER_LISTEN_ADDR").unwrap_or_else(|_| "127.0.0.1:3000".into()),
             state_path: env::var("ISSUER_STATE_PATH").ok().filter(|s| !s.is_empty()),
             api_token: env::var("ISSUER_API_TOKEN").ok().filter(|s| !s.is_empty()),
@@ -89,6 +103,35 @@ impl Config {
                     .map(|value| value.eq_ignore_ascii_case("production"))
                     .unwrap_or(false),
         }
+    }
+
+    pub fn is_production(&self) -> bool {
+        self.issuer_mode.eq_ignore_ascii_case("production")
+    }
+
+    pub fn validate_security_mode(&self) -> Result<(), String> {
+        if !matches!(self.issuer_mode.as_str(), "production" | "demo") {
+            return Err("ISSUER_MODE must be either production or demo".into());
+        }
+        if !self.is_production() {
+            return Ok(());
+        }
+        if self.fixture_profile != "disabled" {
+            return Err(
+                "production requires WISP_FIXTURE_PROFILE=disabled; fixtures are demo-only".into(),
+            );
+        }
+        if self.kyc_mode.eq_ignore_ascii_case("mock") {
+            return Err("production cannot use KYC_MODE=mock".into());
+        }
+        if self.webhook_secrets.iter().any(|(provider, secret)| {
+            provider.eq_ignore_ascii_case("fixture")
+                || secret == "demo-fixture-secret"
+                || secret == "demo-token"
+        }) {
+            return Err("production contains a demo/fixture webhook secret".into());
+        }
+        Ok(())
     }
 
     /// Account that signs root publish invokes (`stellar contract invoke --source-account`).
@@ -146,6 +189,7 @@ mod tests {
 
     fn test_cfg() -> Config {
         Config {
+            issuer_mode: "demo".into(),
             listen_addr: "127.0.0.1:3000".into(),
             state_path: None,
             api_token: None,
@@ -204,5 +248,21 @@ mod tests {
         assert_eq!(parsed.len(), 2);
         assert_eq!(parsed[0], ("persona".into(), "abc".into()));
         assert_eq!(parsed[1], ("sumsub".into(), "def".into()));
+    }
+
+    #[test]
+    fn production_rejects_fixture_configuration() {
+        let mut cfg = test_cfg();
+        cfg.issuer_mode = "production".into();
+        cfg.fixture_profile = "testnet".into();
+        assert!(cfg.validate_security_mode().is_err());
+    }
+
+    #[test]
+    fn production_accepts_disabled_fixtures() {
+        let mut cfg = test_cfg();
+        cfg.issuer_mode = "production".into();
+        cfg.fixture_profile = "disabled".into();
+        assert!(cfg.validate_security_mode().is_ok());
     }
 }
