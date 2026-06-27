@@ -1,10 +1,7 @@
-import fs from "node:fs";
-import path from "node:path";
 import { Keypair, TransactionBuilder } from "@stellar/stellar-sdk";
 import { Client } from "@wisp_/compliance";
 import type { ProofPackage } from "@wisp_/js";
 import type { WispConfig } from "../config.js";
-import { REPO_ROOT } from "../config.js";
 import type { ProvenTransfer } from "../prove/prover.js";
 import { sdkCheckpoint } from "../debug.js";
 import { fieldDecimalToBytes32, fieldDecimalToU256String } from "./encoding.js";
@@ -38,15 +35,13 @@ async function loadDemoFixture(cfg: WispConfig): Promise<DemoFixture> {
     }
     return cachedRemoteFixture;
   }
-  const name =
-    cfg.profile === "testnet"
-      ? "demo-transfer-testnet.json"
-      : "demo-transfer.json";
-  const raw = fs.readFileSync(
-    path.join(REPO_ROOT, "bindings/fixtures", name),
-    "utf8",
-  );
-  return JSON.parse(raw) as DemoFixture;
+  // Disk fallback is Node-only. The specifier is held in a variable so browser
+  // bundlers do not statically analyze (and try to resolve) the `node:fs` graph
+  // it pulls in; in the browser `demoFixtureUrl`/`demoStrkeys` is always set so
+  // this branch never executes.
+  const diskLoader = "./demo-fixture-fs.js";
+  const { readDemoFixtureFromDisk } = await import(/* @vite-ignore */ diskLoader);
+  return readDemoFixtureFromDisk(cfg.profile);
 }
 
 async function resolveSettleParties(proven: ProvenTransfer | null, pkg: ProofPackage, cfg: WispConfig) {

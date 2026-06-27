@@ -87,17 +87,10 @@ export function validatePackageStructure(pkg: ProofPackage): void {
 
 export async function validatePackageStrict(pkg: ProofPackage): Promise<void> {
   validatePackageStructure(pkg);
-  const { default: Ajv } = await import("ajv");
-  const fs = await import("node:fs");
-  const path = await import("node:path");
-  const { fileURLToPath } = await import("node:url");
-  const { REPO_ROOT } = await import("../config.js");
-  const schemaPath = path.join(REPO_ROOT, "bindings/schemas/proof-package.v1.json");
-  const schema = JSON.parse(fs.readFileSync(schemaPath, "utf8")) as object;
-  const ajv = new Ajv({ allErrors: true, strict: false });
-  const validate = ajv.compile(schema);
-  if (!validate(pkg)) {
-    const detail = ajv.errorsText(validate.errors);
-    throw new Error(`ProofPackage JSON Schema validation failed: ${detail}`);
-  }
+  // Node-only (ajv + fs + schema on disk). Held in a variable so browser
+  // bundlers do not statically resolve the `node:*` graph; `strict` is only set
+  // in Node callers.
+  const strictNode = "./structure-strict-node.js";
+  const { runStrictSchemaValidation } = await import(/* @vite-ignore */ strictNode);
+  await runStrictSchemaValidation(pkg);
 }

@@ -8,7 +8,8 @@ This is the **umbrella** package. It bundles the modular Wisp layers and re-expo
 
 | Import | Re-exports | Standalone package |
 | ------ | ---------- | ------------------ |
-| `@wisp_/sdk` | full prove/settle/audit facade | — |
+| `@wisp_/sdk` | full prove/settle/audit facade (Node prover + `fromEnv`) | — |
+| `@wisp_/sdk/browser` | same facade, **browser-safe** (no `node:*` in graph) | — |
 | `@wisp_/sdk/core` | validation, root compare, types | [`@wisp_/core`](../packages/wisp-core/README.md) |
 | `@wisp_/sdk/client` | issuer adapter + chain reads | [`@wisp_/client`](../packages/wisp-client/README.md) |
 | `@wisp_/sdk/flows` | transfer orchestration | [`@wisp_/flows`](../packages/wisp-flows/README.md) |
@@ -46,6 +47,8 @@ const audit = await client.audit(proven.nullifier, senderPublicKey);
 
 For a real issuer API, swap `DemoIssuerClient` for `HttpIssuerAdapter` and fetch a package from `POST /v1/proof-packages`.
 
+Runnable, typechecked starting points (browser + Node) live in [`examples/quickstart`](../examples/quickstart/README.md).
+
 ## Environment
 
 Loaded from `.wisp/*.env`, repo `.env`, or `process.env` via `loadWispEnv()`.
@@ -68,7 +71,24 @@ Use `DemoIssuerClient` only for the demo fixture + mock-KYC flow. Production iss
 
 ## Browser proving
 
+Import from `@wisp_/sdk/browser` in browser/bundler targets. Its reachable
+import graph contains **no `node:*` references**, so it bundles without aliasing
+the Node prover or shimming `node:fs`/`path`/`os`/`url`/`child_process`:
+
 ```ts
+import { WispClient } from "@wisp_/sdk/browser";
+
+const client = new WispClient({
+  rpcUrl: import.meta.env.VITE_STELLAR_RPC_URL,
+  complianceId: import.meta.env.VITE_COMPLIANCE_CONTRACT_ID,
+  issuerUrl: import.meta.env.VITE_ISSUER_URL,
+  issuerPublicKey: import.meta.env.VITE_ISSUER_PUBLIC_KEY,
+  wasmUrl: "/circuits/compliance_corridor.wasm",
+  zkeyUrl: "/circuits/compliance_corridor_final.zkey",
+  // ...remaining WispConfig fields
+});
+// or: WispClient.fromEnv({ ...overrides }) — reads overrides only, never the fs
+
 const proven = await client.prove({
   package: pkg,
   browser: true,
@@ -76,6 +96,12 @@ const proven = await client.prove({
   zkeyUrl: "/circuits/compliance_corridor_final.zkey",
 });
 ```
+
+The default `@wisp_/sdk` entry stays Node-only (it statically wires the
+`circom`/`snarkjs` CLI prover and `.env`-file loading); calling `prove()`
+without `browser: true` from the browser entry throws. Stellar/snarkjs still
+expect a global `Buffer`, so provide a `Buffer` polyfill in your app entry — a
+standard browser concern, not a Wisp one.
 
 ## Wallet settle (Freighter)
 
@@ -113,6 +139,7 @@ pnpm --filter @wisp_/sdk test
 
 ## Related
 
+- Quickstart examples (browser + Node): [`examples/quickstart`](../examples/quickstart/README.md)
 - Protocol core (no chain deps): [`@wisp_/core`](../packages/wisp-core/README.md)
 - Transports + chain reads: [`@wisp_/client`](../packages/wisp-client/README.md)
 - Transfer orchestration: [`@wisp_/flows`](../packages/wisp-flows/README.md)

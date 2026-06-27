@@ -12,11 +12,14 @@ TypeScript SDK (`@wisp_/sdk`) — prove, settle, audit compliant transfers on St
 | `src/audit/` | Nullifier attestation checks, root event parsing, ledger window, verifier queries |
 | `src/demo/` | Demo-specific flows and helpers |
 | `src/validate/` | Input validation for transfer parameters |
-| `src/config.ts` | Env-backed config (`loadConfig`) |
+| `src/config.ts` | Env-backed config (`loadConfig`, Node fs/path) |
+| `src/config-browser.ts` | Browser config (`loadConfigBrowser`, overrides only, no fs) |
 | `src/env.ts` | `.env` / `.wisp/*.env` loader (`loadWispEnv`) |
 | `src/debug.ts` | Debug/diagnostic helpers |
 | `src/errors.ts` | Typed error classes |
-| `src/index.ts` | `WispClient` facade |
+| `src/wisp-client.ts` | Browser-safe `WispClient` base (browser-only `prove`, no `node:*`) |
+| `src/index.ts` | Node entry: `WispClient` + `fromEnv` + Node prover override |
+| `src/browser.ts` | Browser entry (`@wisp_/sdk/browser`): node-free graph |
 
 Build: `pnpm --filter @wisp_/sdk run build` (requires compliance client + `@wisp_/js` built first).
 
