@@ -17,7 +17,7 @@ Users complete KYC once with a trusted issuer, then generate client-side Groth16
 | 5 | Credential expiry | KYC credential hasn't expired |
 | 6 | Corridor source | Sender's jurisdiction matches corridor source (e.g. US) |
 | 7 | Corridor destination | Recipient is in corridor's destination registry (e.g. MX) |
-| 8 | Corridor binding | Corridor config hash matches on-chain state |
+| 8 | Corridor binding + travel-rule cap | Corridor config hash is recomputed in-circuit and matches on-chain state, and `amount <= travel_rule_threshold` is enforced (`0` = unlimited) |
 
 ## Architecture
 

@@ -48,6 +48,7 @@ test("invalid fixtures fail witness generation", async () => {
     "invalid.expired.json",
     "invalid.sanctioned.json",
     "invalid.corridor.json",
+    "invalid.over-threshold.json",
   ];
   for (const fixture of invalid) {
     const ok = await witnessFails(
@@ -55,6 +56,32 @@ test("invalid fixtures fail witness generation", async () => {
       `/tmp/wisp-test-${fixture}`,
     );
     assert.ok(ok, `${fixture} should be rejected by the circuit`);
+  }
+});
+
+test("valid.threshold.json passes with a non-zero travel-rule threshold (amount <= threshold)", async () => {
+  await witnessSucceeds(
+    join(DIR, "inputs", "valid.threshold.json"),
+    "/tmp/wisp-test-valid-threshold.wtns",
+  );
+});
+
+test("travel-rule threshold and enabled are bound to corridor_config_hash", async () => {
+  const valid = JSON.parse(
+    readFileSync(join(DIR, "inputs", "valid.threshold.json"), "utf8"),
+  );
+  const wasm = readFileSync(WASM);
+  const witnessCalculator = await buildWitnessCalculator(wasm);
+  for (const [field, forged] of [
+    ["travel_rule_threshold", "5"],
+    ["enabled", "0"],
+  ]) {
+    const input = { ...valid, [field]: forged };
+    await assert.rejects(
+      witnessCalculator.calculateWTNSBin(input, 0),
+      undefined,
+      `${field} tamper must break the corridor_config_hash binding`,
+    );
   }
 });
 
@@ -82,11 +109,13 @@ test("credential attributes cannot be forged against an issued membership root",
 test("fixture files exist on disk", () => {
   const names = [
     "valid.us-mx.json",
+    "valid.threshold.json",
     "invalid.amount.json",
     "invalid.recipient.json",
     "invalid.corridor.json",
     "invalid.expired.json",
     "invalid.sanctioned.json",
+    "invalid.over-threshold.json",
   ];
   for (const name of names) {
     const body = readFileSync(join(DIR, "inputs", name), "utf8");

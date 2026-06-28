@@ -45,6 +45,8 @@ template ComplianceCorridor() {
   signal input sanctions_path_indices[MERKLE_DEPTH];
   signal input sanctions_leaf_value;
   signal input transfer_nonce;
+  signal input travel_rule_threshold;
+  signal input enabled;
 
   // ── Check 1: Merkle membership ──
   component membership = MerklePath();
@@ -141,9 +143,34 @@ template ComplianceCorridor() {
   }
   dest_address_root === dest_check.root;
 
-  // corridor_id, corridor_config_hash, source_jurisdiction_root, and dest_address_root
-  // are public inputs. corridor_id is bound via the nullifier; config hash is
-  // verified on-chain by the compliance contract against stored corridor config.
+  // ── Check 8: Corridor config binding + travel-rule cap ──
+  // Recompute corridor_config_hash in-circuit so the private travel-rule
+  // threshold and enabled flag are bound to the public hash (which the
+  // compliance contract verifies against the stored corridor config).
+  component corridor_domain = Poseidon2Hash1();
+  corridor_domain.in <== 0x574953505f5631; // Wisp corridor domain tag ("WISP_V1")
+  component corridor_config = Poseidon2Hash10();
+  corridor_config.in[0] <== corridor_domain.out;
+  corridor_config.in[1] <== corridor_id;
+  corridor_config.in[2] <== source_jurisdiction_root;
+  corridor_config.in[3] <== dest_address_root;
+  corridor_config.in[4] <== travel_rule_threshold;
+  corridor_config.in[5] <== enabled;
+  corridor_config.in[6] <== 0;
+  corridor_config.in[7] <== 0;
+  corridor_config.in[8] <== 0;
+  corridor_config.in[9] <== 0;
+  corridor_config_hash === corridor_config.out;
+
+  // Travel-rule cap: threshold == 0 (unlimited) OR amount <= threshold.
+  // amount is fixed by the contract (i128 >= 0, so < 2^127); threshold is bound
+  // to the published u64 via the hash above, so both operands are in range.
+  component threshold_is_zero = IsZero();
+  threshold_is_zero.in <== travel_rule_threshold;
+  component amount_within_threshold = LessEqThan(128);
+  amount_within_threshold.in[0] <== amount;
+  amount_within_threshold.in[1] <== travel_rule_threshold;
+  (1 - threshold_is_zero.out) * (1 - amount_within_threshold.out) === 0;
 }
 
 component main {public [

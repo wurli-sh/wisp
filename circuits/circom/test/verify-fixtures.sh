@@ -18,7 +18,7 @@ node "$GEN_WITNESS" "$WASM" "$DIR/inputs/valid.us-mx.json" /tmp/wisp-valid.wtns
 pass "valid.us-mx.json"
 
 echo "=== Invalid fixtures should fail witness generation ==="
-for fixture in invalid.amount.json invalid.recipient.json invalid.expired.json invalid.sanctioned.json invalid.corridor.json; do
+for fixture in invalid.amount.json invalid.recipient.json invalid.expired.json invalid.sanctioned.json invalid.corridor.json invalid.over-threshold.json; do
   if node "$GEN_WITNESS" "$WASM" "$DIR/inputs/$fixture" "/tmp/wisp-${fixture}" 2>/dev/null; then
     fail "$fixture produced a witness (expected constraint failure)"
   else

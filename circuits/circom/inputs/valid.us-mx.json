@@ -242,5 +242,7 @@
     0,
     1
   ],
-  "sanctions_leaf_value": "0"
+  "sanctions_leaf_value": "0",
+  "travel_rule_threshold": "0",
+  "enabled": "1"
 }

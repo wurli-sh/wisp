@@ -72,6 +72,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     "invalid.sanctioned": {
       sanctions_leaf_value: 1n,
     },
+    // travel_rule_threshold == amount (10000000): amount <= threshold holds, so
+    // the cap passes with a non-zero threshold and a correctly-bound hash.
+    "valid.threshold": { travel_rule_threshold: 10000000n },
+    // travel_rule_threshold=1 with the demo amount (10000000) exceeds the cap;
+    // the corridor_config_hash is rebuilt with threshold=1 so it binds correctly
+    // and the fixture fails only on the amount<=threshold constraint.
+    "invalid.over-threshold": { travel_rule_threshold: 1n },
   };
 
   const writeTampered = (name: string, mutate: (w: Record<string, unknown>) => void) => {

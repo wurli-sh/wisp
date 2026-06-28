@@ -13,7 +13,9 @@ BN254 Groth16 compliance corridor circuit with Poseidon2 hashing.
 | 5 | Expiry | `timestamp <= credential_expiry` |
 | 6 | Corridor source jurisdiction | Sender's jurisdiction in corridor's source tree |
 | 7 | Corridor destination address | Recipient in corridor's destination tree |
-| 8 | Corridor binding | On-chain `corridor_config_hash` matches circuit input |
+| 8 | Corridor binding + travel-rule cap | `corridor_config_hash` is recomputed in-circuit (Poseidon2Hash10 over corridor id/roots + private `travel_rule_threshold` and `enabled`) and constrained `===` the public hash, AND `amount <= travel_rule_threshold` is enforced (`threshold == 0` means unlimited) |
+
+The private inputs `travel_rule_threshold` and `enabled` are bound to the public, on-chain-verified `corridor_config_hash`, so the travel-rule cap is enforced cryptographically rather than only on-chain.
 
 ## Public Inputs (19)
 
