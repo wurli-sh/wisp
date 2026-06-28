@@ -113,6 +113,8 @@ pub struct DraftWitnessPrivate {
     pub jurisdiction: String,
     pub credential_expiry: String,
     pub sanctions_leaf_value: String,
+    pub travel_rule_threshold: String,
+    pub enabled: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -487,6 +489,13 @@ pub fn build_proof_package_draft(ctx: ProofContext) -> Result<ProofPackageDraft,
             jurisdiction: ctx.sender_credential.jurisdiction_code.to_string(),
             credential_expiry: ctx.sender_credential.credential_expiry.to_string(),
             sanctions_leaf_value: "0".into(),
+            travel_rule_threshold: ctx
+                .corridor
+                .travel_rule_threshold
+                .parse::<u64>()
+                .unwrap_or_default()
+                .to_string(),
+            enabled: u64::from(ctx.corridor.enabled).to_string(),
         },
         public_inputs,
     })

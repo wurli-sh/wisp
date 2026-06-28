@@ -273,6 +273,12 @@ pub fn build_canonical_proof_package(
             jurisdiction: sender.jurisdiction_code.to_string(),
             credential_expiry: sender.credential_expiry.to_string(),
             sanctions_leaf_value: "0".into(),
+            travel_rule_threshold: corridor
+                .travel_rule_threshold
+                .parse::<u64>()
+                .unwrap_or_default()
+                .to_string(),
+            enabled: u64::from(corridor.enabled).to_string(),
         }),
         public_inputs: Some(public_inputs),
     })

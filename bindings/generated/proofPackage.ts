@@ -48,6 +48,8 @@ export interface WitnessPrivate {
   jurisdiction: string;
   credential_expiry: string;
   sanctions_leaf_value: string;
+  travel_rule_threshold?: string;
+  enabled?: string;
 }
 
 export interface ProofPackage {

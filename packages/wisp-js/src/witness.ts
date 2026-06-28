@@ -37,6 +37,12 @@ export function demoFromFixture(fixture: DemoFixture): DemoParams {
     jurisdiction: BigInt(fixture.jurisdiction),
     credential_expiry: BigInt(fixture.credential_expiry),
     corridor_id: fixture.corridor_id != null ? BigInt(fixture.corridor_id) : undefined,
+    travel_rule_threshold:
+      fixture.travel_rule_threshold != null ? BigInt(fixture.travel_rule_threshold) : undefined,
+    enabled:
+      fixture.enabled != null
+        ? BigInt(typeof fixture.enabled === "boolean" ? (fixture.enabled ? 1 : 0) : fixture.enabled)
+        : undefined,
   };
 }
 
@@ -99,10 +105,15 @@ export function buildWitnessInput(
       transferNonce: d.transfer_nonce,
     });
 
+  const travelRuleThreshold = d.travel_rule_threshold ?? 0n;
+  const enabled = d.enabled ?? 1n;
+
   const corridorConfigHash = computeCorridorConfigHash({
     corridorId,
     sourceJurisdictionRoot,
     destAddressRoot,
+    enabled,
+    travelRuleThreshold,
   });
 
   return {
@@ -140,7 +151,17 @@ export function buildWitnessInput(
     sanctions_path: fieldsToJson(sanctions.path),
     sanctions_path_indices: sanctions.pathIndices,
     sanctions_leaf_value: "0",
+    travel_rule_threshold: fieldToJson(travelRuleThreshold),
+    enabled: fieldToJson(enabled),
   };
+}
+
+/** Normalize an enabled flag (string/number/boolean) to a "0"/"1" field string. */
+function normalizeEnabled(value: string | number | boolean | undefined): string {
+  if (value === true) return "1";
+  if (value === false) return "0";
+  if (value == null) return "1";
+  return String(value);
 }
 
 /**
@@ -207,5 +228,7 @@ export function proofPackageToWitnessInput(
     sanctions_path: pkg.paths.sanctions,
     sanctions_path_indices: pkg.paths.sanctions_indices,
     sanctions_leaf_value: wp.sanctions_leaf_value ?? "0",
+    travel_rule_threshold: String(wp.travel_rule_threshold ?? 0),
+    enabled: normalizeEnabled(wp.enabled),
   };
 }

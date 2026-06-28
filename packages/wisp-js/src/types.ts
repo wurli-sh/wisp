@@ -11,6 +11,8 @@ export interface DemoFixture {
   jurisdiction: string | number;
   credential_expiry: string | number;
   corridor_id?: string | number;
+  travel_rule_threshold?: string | number;
+  enabled?: string | number | boolean;
 }
 
 export interface DemoParams {
@@ -25,6 +27,8 @@ export interface DemoParams {
   credential_expiry: bigint;
   issuer?: Buffer;
   corridor_id?: bigint;
+  travel_rule_threshold?: bigint;
+  enabled?: bigint;
 }
 
 export interface ProtocolConfig {
@@ -95,6 +99,8 @@ export interface DraftWitnessPrivate {
   jurisdiction: string | number;
   credential_expiry: string | number;
   sanctions_leaf_value?: string;
+  travel_rule_threshold?: string | number;
+  enabled?: string | number | boolean;
 }
 
 export interface ProofPackageDraft {
@@ -160,6 +166,8 @@ export interface ProofPackage {
     jurisdiction: string | number;
     credential_expiry: string | number;
     sanctions_leaf_value?: string;
+    travel_rule_threshold?: string | number;
+    enabled?: string | number | boolean;
   };
   public_inputs?: Record<string, string | number>;
 }

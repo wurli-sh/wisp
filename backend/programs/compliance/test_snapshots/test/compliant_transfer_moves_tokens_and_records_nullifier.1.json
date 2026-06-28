@@ -34,7 +34,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
                 },
                 {
-                  "bytes": "3ea87034b94f427de47c7884cee93c3dea107d579a6b90e04b7343ebac222319"
+                  "bytes": "71616474091bcd8f189bebb7aa4b59243003ebcfbff15c4ef59872b48be4a913"
                 }
               ]
             }
@@ -263,7 +263,7 @@
                         "symbol": "a"
                       },
                       "val": {
-                        "bytes": "28e1d6e85bb4365855d78691754a15a6e4b38e4c8580b15b3a01129b0ff7c64f18189d77528f5f066980d3bb0236012a684e1cf046bd93ac23b858abc199cce7"
+                        "bytes": "201f4fe03b063dfaa17ddf71547b55ad7008010373c66dd61e448e2d7ae6e8da270c5cd43af0f7250a004b53bac751b5f5452f17c6b8c40a7d59d642ac8660eb"
                       }
                     },
                     {
@@ -271,7 +271,7 @@
                         "symbol": "b"
                       },
                       "val": {
-                        "bytes": "2c970198b3f85bc0c9d59df02837ef925da2f0e9ba7af11cf3eeb1d73e382eaf0b9ca03e16cb5e200fc243777090dcde8947737daf59e8a3365050453a8e90f114a7fe101d83dfc187d823a264f6339d4269bdff73b37e6afa411f9d8a06e88c0a07d4faf4e884f7fe86155f76668c0a33bd873023a478d2d8a46300113f325e"
+                        "bytes": "068c439e8884068960553a06bc616ce5ada6ffc27f7b8984d801e0602f1f755c088f6043a6b3a0904e744f70208aba98e427b7f2fa91c84cffc098c05dd875b72ac49ffb014bf5beed8f4ae0ae72097e2cbce690ac56b81858d326190bac1d061d0d28b0cd79630238e885be207d8103cee9fce8b26128863cb19e447f1ecbef"
                       }
                     },
                     {
@@ -279,7 +279,7 @@
                         "symbol": "c"
                       },
                       "val": {
-                        "bytes": "18b387def4f379407a0e37ef4aa7e5fe10f57fcacce202e9b99c904f4a2e61441652aa34b10925e372a1dea6420caf2101da1a98d214e858946edf9de0bbf46a"
+                        "bytes": "214c777dd0ce188987b7f35e5288aefeb40aba7a914e82b1b7f71f2c18d4f15f1b7eeb57f4e4dba27bd14a7ab33b5474299b52750dc6c3bea1f38a1cfac72f7d"
                       }
                     }
                   ]
@@ -724,7 +724,7 @@
                               "symbol": "expected_vk_hash"
                             },
                             "val": {
-                              "bytes": "3ea87034b94f427de47c7884cee93c3dea107d579a6b90e04b7343ebac222319"
+                              "bytes": "71616474091bcd8f189bebb7aa4b59243003ebcfbff15c4ef59872b48be4a913"
                             }
                           },
                           {

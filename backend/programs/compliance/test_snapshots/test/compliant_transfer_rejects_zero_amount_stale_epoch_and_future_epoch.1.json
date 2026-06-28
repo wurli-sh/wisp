@@ -34,7 +34,7 @@
                   "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
                 },
                 {
-                  "bytes": "3ea87034b94f427de47c7884cee93c3dea107d579a6b90e04b7343ebac222319"
+                  "bytes": "71616474091bcd8f189bebb7aa4b59243003ebcfbff15c4ef59872b48be4a913"
                 }
               ]
             }
@@ -521,7 +521,7 @@
                               "symbol": "expected_vk_hash"
                             },
                             "val": {
-                              "bytes": "3ea87034b94f427de47c7884cee93c3dea107d579a6b90e04b7343ebac222319"
+                              "bytes": "71616474091bcd8f189bebb7aa4b59243003ebcfbff15c4ef59872b48be4a913"
                             }
                           },
                           {

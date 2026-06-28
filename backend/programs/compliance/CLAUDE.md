@@ -10,13 +10,13 @@ Orchestrates compliant transfers on Stellar. The main entry point is `compliant_
 | `src/storage.rs` | Data model: Config, IssuerRoots, CorridorConfig, DataKey enum |
 | `src/error.rs` | 22 error variants (AlreadyInitialized, Unauthorized, UnknownIssuer, DuplicateNullifier, InvalidProof, etc.) |
 | `src/events.rs` | Events: ProofSettled, PauseChanged, AdminProposed, etc. |
-| `src/public_inputs.rs` | 17-field public input reconstruction and validation |
+| `src/public_inputs.rs` | 19-field public input reconstruction and validation |
 | `src/test.rs` | Comprehensive tests covering all validation gates |
 | `src/test_sac.rs` | Mock SAC contract embedded in compliance test suite (replaces standalone mock-sac) |
 
 ## compliant_transfer Flow
 
-1. Validate amount > 0, public input length = 17
+1. Validate amount > 0, public input length = 19
 2. Check not paused, issuer exists/enabled, corridor exists/enabled
 3. Check issuer roots not stale (>172800 ledgers)
 4. Check epoch not future or >1 stale

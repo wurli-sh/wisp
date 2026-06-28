@@ -4,6 +4,10 @@ fn zero_string() -> String {
     "0".to_string()
 }
 
+fn one_string() -> String {
+    "1".to_string()
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Credential {
     pub wallet: String,
@@ -62,6 +66,10 @@ pub struct WitnessPrivate {
     pub jurisdiction: String,
     pub credential_expiry: String,
     pub sanctions_leaf_value: String,
+    #[serde(default = "zero_string")]
+    pub travel_rule_threshold: String,
+    #[serde(default = "one_string")]
+    pub enabled: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

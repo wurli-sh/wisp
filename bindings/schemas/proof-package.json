@@ -68,7 +68,9 @@
         "transfer_nonce": { "type": "string" },
         "jurisdiction": { "type": "string" },
         "credential_expiry": { "type": "string" },
-        "sanctions_leaf_value": { "type": "string" }
+        "sanctions_leaf_value": { "type": "string" },
+        "travel_rule_threshold": { "type": "string" },
+        "enabled": { "type": "string" }
       },
       "not": { "required": ["credential_secret"] }
     },

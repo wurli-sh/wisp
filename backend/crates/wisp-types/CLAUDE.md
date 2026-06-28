@@ -6,7 +6,7 @@ Shared type definitions shared across the Wisp Rust ecosystem.
 
 | Type | Description |
 |------|-------------|
-| `PublicInputs` | 17-field Groth16 public input struct with serde + default |
+| `PublicInputs` | 19-field Groth16 public input struct with serde + default |
 | `ProofPackage` | Full transfer package: proof, public inputs, identity metadata |
 | `VerificationKey` | Groth16 VK struct matching snarkjs output format |
 | `Credential` | KYC credential with wallet, jurisdiction, expiry |
