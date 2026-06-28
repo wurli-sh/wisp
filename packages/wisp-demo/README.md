@@ -9,7 +9,7 @@ Mock KYC and demo administration helpers for the reference Wisp issuer service.
 ## Install
 
 ```bash
-npm install @wisp_/demo@0.2.1
+npm install @wisp_/demo@0.3.0
 ```
 
 ## Quick start

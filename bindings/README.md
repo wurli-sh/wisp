@@ -7,9 +7,9 @@ Canonical ABI and encoding rules for the compliance corridor Groth16 circuit.
 ## Published packages
 
 ```bash
-npm install @wisp_/bindings@0.2.1
-npm install @wisp_/compliance@0.2.1
-npm install @wisp_/verifier@0.2.1
+npm install @wisp_/bindings@0.3.0
+npm install @wisp_/compliance@0.3.0
+npm install @wisp_/verifier@0.3.0
 ```
 
 | Package | Purpose |

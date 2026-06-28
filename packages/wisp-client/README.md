@@ -7,7 +7,7 @@ Wisp client transports and chain access — issuer HTTP adapter plus typed reads
 ## Install
 
 ```bash
-npm install @wisp_/client@0.2.1
+npm install @wisp_/client@0.3.0
 ```
 
 ## Quick start

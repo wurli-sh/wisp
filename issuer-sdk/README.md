@@ -9,7 +9,7 @@ Pairs with the portable Wisp layers: read on-chain state with [`@wisp_/client`](
 ## Install
 
 ```bash
-npm install @wisp_/issuer-sdk@0.2.1 @wisp_/sdk@0.2.1 @wisp_/js@0.2.1
+npm install @wisp_/issuer-sdk@0.3.0 @wisp_/sdk@0.3.0 @wisp_/js@0.3.0
 ```
 
 ## Quick start
@@ -172,5 +172,5 @@ pnpm --filter @wisp_/issuer-sdk test
 - Protocol validation + types: [`@wisp_/core`](../packages/wisp-core/README.md)
 - Issuer transports + chain reads: [`@wisp_/client`](../packages/wisp-client/README.md)
 - Witness/crypto: [`@wisp_/js`](../packages/wisp-js/README.md)
-- Contract clients: `@wisp_/compliance@0.2.1`, `@wisp_/verifier@0.2.1`
+- Contract clients: `@wisp_/compliance@0.3.0`, `@wisp_/verifier@0.3.0`
 - Issuer HTTP service: [`backend/crates/issuer-service/`](../backend/crates/issuer-service/)

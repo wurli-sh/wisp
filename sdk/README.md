@@ -20,7 +20,7 @@ Issuer and compliance integrations that don't need the prover can depend on the 
 ## Install
 
 ```bash
-npm install @wisp_/sdk@0.2.1 @wisp_/js@0.2.1
+npm install @wisp_/sdk@0.3.0 @wisp_/js@0.3.0
 ```
 
 Peer deps are bundled; you also need circuit artifacts (WASM + zkey) for proving.
@@ -162,4 +162,4 @@ pnpm --filter @wisp_/sdk test
 - Crypto primitives: [`@wisp_/js`](../packages/wisp-js/README.md)
 - Issuer operations: [`@wisp_/issuer-sdk`](../issuer-sdk/README.md)
 - Public input ABI: [`@wisp_/bindings`](../bindings/README.md)
-- Contract clients: `@wisp_/compliance@0.2.1`, `@wisp_/verifier@0.2.1`
+- Contract clients: `@wisp_/compliance@0.3.0`, `@wisp_/verifier@0.3.0`

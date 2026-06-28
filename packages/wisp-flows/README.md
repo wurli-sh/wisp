@@ -9,7 +9,7 @@ Flows depend only on `@wisp_/js` and program against a `TransferClientLike` inte
 ## Install
 
 ```bash
-npm install @wisp_/flows@0.2.1
+npm install @wisp_/flows@0.3.0
 ```
 
 ## Quick start

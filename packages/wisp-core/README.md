@@ -9,7 +9,7 @@ Use this when you need to validate proof packages or compare on-chain roots with
 ## Install
 
 ```bash
-npm install @wisp_/core@0.2.1
+npm install @wisp_/core@0.3.0
 ```
 
 ## Quick start
