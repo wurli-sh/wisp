@@ -112,6 +112,34 @@ const CONTRACT_HINTS: [RegExp, string][] = [
     "Circle USDC trustline missing — in Freighter add USDC with issuer GBBD47… (circle.com), then fund from faucet.circle.com (Stellar Testnet).",
   ],
   [
+    /tx_bad_auth|tx_bad_auth_extra/i,
+    "Signature rejected (tx_bad_auth) — Freighter signed for a different network or account. Set Freighter to Test Net and ensure the connected account matches the transaction source, then retry.",
+  ],
+  [
+    /tx_bad_seq/i,
+    "Stale sequence number (tx_bad_seq) — the account moved since the tx was built. Just retry; the SDK reloads the latest sequence.",
+  ],
+  [
+    /op_low_reserve/i,
+    "Not enough XLM for the trustline reserve (op_low_reserve) — each trustline locks 0.5 XLM. Fund more testnet XLM via Friendbot and retry.",
+  ],
+  [
+    /op_no_issuer/i,
+    "Asset issuer not found (op_no_issuer) — the Circle USDC issuer (GBBD47…) was not found on this network. Confirm Freighter and the app are both on Stellar Test Net.",
+  ],
+  [
+    /approve simulation failed/i,
+    "USDC allowance approval failed during simulation — usually the wallet has no Circle USDC trustline/balance, or the SAC contract id is wrong. Confirm the Circle USDC trustline (issuer GBBD47…) and fund from faucet.circle.com (Stellar Testnet), then retry.",
+  ],
+  [
+    /approve transaction failed|approve send failed|approve transaction not confirmed/i,
+    "USDC allowance approval was submitted but did not succeed on-chain — check the Soroban RPC and that the wallet still holds enough XLM for fees, then retry.",
+  ],
+  [
+    /account .+ not found on-chain/i,
+    "Wallet account does not exist on-chain yet — fund it with testnet XLM via Friendbot, then retry.",
+  ],
+  [
     /op_underfunded|insufficient balance/i,
     "Insufficient Circle USDC — add the circle.com USDC asset in Freighter and fund the wallet (faucet.circle.com → Stellar Testnet).",
   ],
@@ -174,6 +202,12 @@ function extractErrorMessage(err: unknown): string {
     const response = obj.response as { data?: unknown; statusText?: string } | undefined;
     if (response) {
       const data = response.data;
+      // Stellar Horizon embeds the real failure reason here on tx 400s.
+      const resultCodes = (data as { extras?: { result_codes?: unknown } } | undefined)
+        ?.extras?.result_codes;
+      if (resultCodes && typeof resultCodes === "object") {
+        return `Horizon rejected the transaction: ${JSON.stringify(resultCodes)}`;
+      }
       if (typeof data === "string" && data) return data;
       if (data && typeof data === "object") {
         const nested = (data as Record<string, unknown>).message ?? (data as Record<string, unknown>).error;
@@ -217,6 +251,13 @@ const FRIENDLY_HINTS: [RegExp, string][] = [
   [/insufficient allowance/i, "Approve USDC for the compliance contract, then try again."],
   [/resulting balance is not within the allowed range|op_underfunded|insufficient balance/i, "Not enough testnet USDC in this wallet."],
   [/trustline entry is missing/i, "Add the USDC trustline in Freighter, then try again."],
+  [/tx_bad_auth/i, "Signature was rejected. Set Freighter to Test Net and use the connected account, then try again."],
+  [/tx_bad_seq/i, "Account changed mid-flight. Please try again."],
+  [/op_low_reserve/i, "Not enough XLM to reserve the trustline. Fund more testnet XLM and try again."],
+  [/op_no_issuer/i, "The USDC issuer wasn't found. Make sure Freighter is on Test Net, then try again."],
+  [/approve simulation failed/i, "Couldn't approve USDC. Make sure you've added the Circle USDC trustline and have a balance, then try again."],
+  [/approve transaction failed|approve send failed|approve transaction not confirmed/i, "Approving USDC didn't go through. Please try again in a moment."],
+  [/account .+ not found on-chain/i, "Fund this wallet with testnet XLM first, then try again."],
   [/Failed to fetch|fetch failed|network ?error|Load failed/i, "Can't reach the issuer right now. Please retry in a moment."],
   [/recipient not approved for corridor/i, "This recipient isn't approved for the corridor yet."],
   [/active credential not found|sender missing from membership set/i, "Finish verifying this wallet, then try again."],

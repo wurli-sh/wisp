@@ -48,6 +48,21 @@ export async function hasCircleUsdcTrustline(
   }
 }
 
+/**
+ * Pulls Horizon's `extras.result_codes` out of a failed submission so callers
+ * see the real reason (e.g. `tx_bad_auth`, `op_low_reserve`, `op_no_issuer`)
+ * instead of an opaque `400 Bad Request`.
+ */
+function describeSubmitError(err: unknown): string | null {
+  const codes = (
+    err as {
+      response?: { data?: { extras?: { result_codes?: unknown } } };
+    }
+  )?.response?.data?.extras?.result_codes;
+  if (!codes || typeof codes !== "object") return null;
+  return JSON.stringify(codes);
+}
+
 export async function establishCircleUsdcTrustline(
   cfg: WispConfig,
   wallet: WalletSigner,
@@ -66,7 +81,16 @@ export async function establishCircleUsdcTrustline(
 
   const signed = await wallet.signTransaction(tx.toXDR());
   const signedTx = TransactionBuilder.fromXDR(signed.signedTxXdr, cfg.networkPassphrase);
-  const result = await server.submitTransaction(signedTx);
+  let result: Awaited<ReturnType<typeof server.submitTransaction>>;
+  try {
+    result = await server.submitTransaction(signedTx);
+  } catch (err) {
+    const codes = describeSubmitError(err);
+    if (codes) {
+      throw new Error(`changeTrust rejected by Horizon: ${codes}`);
+    }
+    throw err;
+  }
   if (!result.successful) {
     throw new Error(`changeTrust failed: ${JSON.stringify(result)}`);
   }

@@ -20,6 +20,19 @@ async function allowanceExpirationLedger(server: rpc.Server): Promise<number> {
   return Math.min(latest.sequence + SAC_ALLOWANCE_TTL_LEDGERS, 0xffff_ffff);
 }
 
+/** Best-effort extraction of a human-readable reason from a Soroban error. */
+function describeSorobanError(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  try {
+    const json = JSON.stringify(err);
+    if (json && json !== "{}") return json;
+  } catch {
+    // fall through
+  }
+  return String(err);
+}
+
 async function waitForSentTransaction(
   server: rpc.Server,
   hash: string,
@@ -32,7 +45,12 @@ async function waitForSentTransaction(
       return;
     }
     if (tx.status === rpc.Api.GetTransactionStatus.FAILED) {
-      throw new Error(`approve transaction failed: ${hash}`);
+      const detail =
+        (tx as { resultXdr?: { toXDR?: (f: string) => string } }).resultXdr
+          ?.toXDR?.("base64") ?? "";
+      throw new Error(
+        `approve transaction failed (${hash})${detail ? `: ${detail}` : ""}`,
+      );
     }
     await new Promise((resolve) => setTimeout(resolve, 1_000));
   }
@@ -50,7 +68,18 @@ export async function approveSacAllowance(
   }
 
   const server = new rpc.Server(cfg.rpcUrl);
-  const source = await server.getAccount(wallet.publicKey);
+  let source;
+  try {
+    source = await server.getAccount(wallet.publicKey);
+  } catch (err) {
+    const reason = describeSorobanError(err);
+    if (/not\s*found|404/i.test(reason)) {
+      throw new Error(
+        `approve failed: account ${wallet.publicKey} not found on-chain — fund the wallet with testnet XLM first`,
+      );
+    }
+    throw err;
+  }
   const expirationLedger = await allowanceExpirationLedger(server);
   const contract = new Contract(assetContractId);
   const operation = contract.call(
@@ -69,7 +98,13 @@ export async function approveSacAllowance(
     .setTimeout(30)
     .build();
 
-  tx = await server.prepareTransaction(tx);
+  try {
+    tx = await server.prepareTransaction(tx);
+  } catch (err) {
+    throw new Error(
+      `approve simulation failed for asset ${assetContractId}: ${describeSorobanError(err)}`,
+    );
+  }
   const signed = await wallet.signTransaction(tx.toXDR());
   const signedTx = TransactionBuilder.fromXDR(
     signed.signedTxXdr,
