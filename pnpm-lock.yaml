@@ -11,6 +11,9 @@ importers:
 
   .:
     devDependencies:
+      '@stellar/stellar-sdk':
+        specifier: ^14.6.1
+        version: 14.6.1
       '@wisp_/bindings':
         specifier: workspace:*
         version: link:bindings

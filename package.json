@@ -17,6 +17,7 @@
     "verify:phase3-blockers": "./scripts/dev/verify-phase3-blockers.sh",
     "demo:phase3": "./scripts/dev/demo-phase3.sh",
     "demo:phase4": "./scripts/dev/demo-phase4.sh",
+    "demo:portability": "node --import tsx scripts/dev/portability-demo.ts",
     "dev:frontend": "pnpm --filter @wisp_/web dev",
     "build:frontend": "pnpm --filter @wisp_/web build",
     "test:e2e:frontend": "pnpm --filter @wisp_/web run test:e2e",
@@ -32,6 +33,7 @@
     "test:ceremony": "./circuits/circom/test/ceremony-gates.test.sh"
   },
   "devDependencies": {
+    "@stellar/stellar-sdk": "^14.6.1",
     "@wisp_/bindings": "workspace:*",
     "@wisp_/issuer-sdk": "workspace:*",
     "@wisp_/js": "workspace:*",
