@@ -14,10 +14,13 @@ services:
         value: "1"
       - key: WISP_ENV
         value: production
+      # Hosted site is a testnet demo: ISSUER_MODE=demo keeps the /mock-kyc/*
+      # routes that the frontend /demo and /wisp-pay flows depend on. Switching
+      # to production removes those routes (mock-KYC requests then 401).
       - key: ISSUER_MODE
-        value: production
+        value: demo
       - key: WISP_FIXTURE_PROFILE
-        value: disabled
+        value: testnet
       - key: WISP_FIXTURES_DIR
         value: /app/bindings/fixtures
       - key: KYC_MODE
