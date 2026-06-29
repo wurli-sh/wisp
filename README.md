@@ -1,6 +1,6 @@
 <img src="docs/wisp-banner.png" width="100%" alt="Wisp" />
 
-[Live demo](https://wisp-zk.vercel.app/) - [Demo video](https://www.youtube.com/watch?v=jAiUz92IPZQ) - [Super Launch I](https://www.youtube.com/watch?v=p3UdTfTjNd4) - [Super Launch II](https://www.youtube.com/watch?v=tTyu3Z3pJ5o) - [Pitch deck](https://drive.google.com/file/d/1Pz9oVlbFe6Wx1JJngxHkyrusLuk-FOSa/view?usp=sharing)
+[Live demo](https://wisp-zk.vercel.app/) - [Demo video](https://www.youtube.com/watch?v=jAiUz92IPZQ) - [Super Launch I](https://www.youtube.com/watch?v=p3UdTfTjNd4) - [Super Launch II](https://www.youtube.com/watch?v=tTyu3Z3pJ5o) - [Pitch deck](https://drive.google.com/file/d/1srXYDkhR2cS5DNOuO9ICDnlDwQ5j5pVQ/view?usp=sharing)
 
 Verify users once with a trusted issuer, publish compliance roots on-chain, and generate client-side Groth16 proofs per transfer. Soroban verifies the proof, records the nullifier, and gates settlement — no customer documents on-chain.
 
